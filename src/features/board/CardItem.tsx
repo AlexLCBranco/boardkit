@@ -38,7 +38,7 @@ function CardItemImpl({ cardId, listId }: CardItemProps) {
   // only place that membership is available at drop time.
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: cardId,
-    data: { listId },
+    data: { type: "card", listId },
   });
 
   const style = {

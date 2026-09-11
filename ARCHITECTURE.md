@@ -74,7 +74,20 @@ application.
    opacity as a placeholder while a `DragOverlay` copy tracks the pointer.
    Cross-list drops are recognised — via `listId` carried in each sortable
    item's `data` — and deliberately ignored, since that is milestone 5.)*
-5. **Drag across lists and drag lists themselves.**
+5. **Drag across lists and drag lists themselves.** *(Complete: one
+   `DndContext` still, but every draggable and droppable now carries a
+   `{ type }` tag in its `data` -- `"card"`, `"list"`, or `"list-empty"` for
+   an empty list's drop target -- and a custom `collisionDetection` wrapper
+   filters candidates by that tag before running `closestCenter`, so a card
+   drag can never resolve onto a list-reorder target or vice versa. A card
+   is moved into a different list eagerly, in `onDragOver`, via the new
+   `moveBetweenLists`; reordering within the list it is already in stays
+   commit-on-drop via `moveWithinList`, unchanged from milestone 4, since
+   dnd-kit's sortable preview already renders that live. Lists reorder the
+   same way milestone 4's cards did -- `moveList` plus a `SortableContext` over
+   `listOrder` -- with the column's `<header>` as the sole drag handle via
+   split `listeners`/`setNodeRef`, so grabbing a card never grabs its list.
+   dnd-kit's default auto-scroll needed no extra code.)*
 6. **Motion and performance pass** — animation choreography, memoisation,
    measurement at thousands of cards.
 7. **Customisation** — per-list colours, icons, card numbering.

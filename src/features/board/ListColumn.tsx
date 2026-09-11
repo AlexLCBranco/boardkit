@@ -1,4 +1,6 @@
-import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { useDroppable } from "@dnd-kit/core";
+import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { memo } from "react";
 
 import { Composer } from "../../components/Composer";
@@ -31,6 +33,13 @@ interface ListColumnProps {
  * scrolls independently and, later, can be virtualised on its own. The
  * add-card composer sits inside that same scroller, after the cards, so it
  * scrolls with them rather than pinning to the bottom of the column.
+ *
+ * The whole column is a sortable item -- `setNodeRef` and its transform sit
+ * on the outer `<section>`, so the entire column (cards included) slides as
+ * one piece when lists reorder. Only the `listeners` that actually start a
+ * drag are spread on the header, per the milestone's call for the header to
+ * be the drag handle: without that split, grabbing a card would also be a
+ * valid pointer-down on the list's own draggable surface.
  */
 function ListColumnImpl({ listId }: ListColumnProps) {
   const list = useList(listId);
@@ -40,9 +49,24 @@ function ListColumnImpl({ listId }: ListColumnProps) {
   const deleteList = useDeleteList();
   const addCard = useAddCard();
 
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: listId,
+    data: { type: "list" },
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
   return (
-    <section className={styles.column} data-list-id={listId}>
-      <header className={styles.header}>
+    <section
+      ref={setNodeRef}
+      style={style}
+      className={`${styles.column} ${isDragging ? styles.dragging : ""}`}
+      data-list-id={listId}
+    >
+      <header className={styles.header} {...attributes} {...listeners}>
         <h2 className={styles.title}>
           <InlineEditable
             value={list.title}
@@ -62,7 +86,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
       </header>
 
       <div className={styles.scroller}>
-        {cardIds.length > 0 && (
+        {cardIds.length > 0 ? (
           <SortableContext items={[...cardIds]} strategy={verticalListSortingStrategy}>
             <ul className={styles.cards}>
               {cardIds.map((cardId) => (
@@ -72,6 +96,8 @@ function ListColumnImpl({ listId }: ListColumnProps) {
               ))}
             </ul>
           </SortableContext>
+        ) : (
+          <EmptyListDropZone listId={listId} />
         )}
         <div className={styles.composerSlot}>
           <Composer
@@ -86,3 +112,23 @@ function ListColumnImpl({ listId }: ListColumnProps) {
 }
 
 export const ListColumn = memo(ListColumnImpl);
+
+/**
+ * The drop target an empty list needs. A list with cards already offers its
+ * cards as collision targets for an incoming drag; an empty one has nothing
+ * to hover over, so it needs its own droppable area or a card could never be
+ * dropped into it.
+ */
+function EmptyListDropZone({ listId }: { readonly listId: ListId }) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: `empty-list-drop:${listId}`,
+    data: { type: "list-empty", listId },
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`${styles.emptyDropZone} ${isOver ? styles.emptyDropZoneOver : ""}`}
+    />
+  );
+}

@@ -19,6 +19,30 @@
   gap: var(--space-2);
   padding: var(--space-3);
   flex: 0 0 auto;
+  cursor: grab;
+  /* Required by dnd-kit's pointer sensor: without it, a touch drag on the
+     handle scrolls the page instead of picking the list up. */
+  touch-action: none;
+}
+
+/* The original column while it is the one being dragged: left in place as a
+   placeholder (so the rail doesn't collapse) but faded, matching how a card
+   behaves in the same situation. */
+.dragging {
+  opacity: 0.4;
+}
+
+.dragging .header {
+  cursor: grabbing;
+}
+
+/* The DragOverlay copy: the lifted header, tracking the pointer. */
+.overlay {
+  box-shadow: var(--shadow-lifted);
+}
+
+.overlay .header {
+  cursor: grabbing;
 }
 
 .title {
@@ -81,4 +105,18 @@
 
 .composerSlot {
   margin-top: var(--space-2);
+}
+
+.emptyDropZone {
+  min-height: 48px;
+  border: 1px dashed transparent;
+  border-radius: var(--radius-md);
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard);
+}
+
+.emptyDropZoneOver {
+  background: var(--surface-hover);
+  border-color: var(--border-strong);
 }

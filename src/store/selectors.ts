@@ -95,3 +95,11 @@ export function useDeleteCard() {
 export function useReorderCardsWithinList() {
   return useBoardStore((state) => state.reorderCardsWithinList);
 }
+
+export function useMoveCardBetweenLists() {
+  return useBoardStore((state) => state.moveCardBetweenLists);
+}
+
+export function useReorderLists() {
+  return useBoardStore((state) => state.reorderLists);
+}

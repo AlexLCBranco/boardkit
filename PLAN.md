@@ -39,7 +39,7 @@ Rules for every session:
 | 2 | Domain model and store | Complete |
 | 3 | Mutations and instant editing | Complete |
 | 4 | Drag and drop within a list | Complete |
-| 5 | Drag across lists, reorder lists | Not started |
+| 5 | Drag across lists, reorder lists | Complete |
 | 6 | Motion and performance pass | Not started |
 | 7 | Customisation | Not started |
 | 8 | Persistence and undo/redo | Not started |
@@ -213,6 +213,8 @@ gap shows where it will land, and the store reflects the new order on drop.
 ---
 
 ## Milestone 5 — Drag across lists, reorder lists
+
+**Complete.**
 
 **Goal.** Cards move between lists, and whole lists reorder by dragging.
 

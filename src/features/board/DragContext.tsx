@@ -6,19 +6,51 @@ import {
   closestCenter,
   useSensor,
   useSensors,
+  type CollisionDetection,
   type DragEndEvent,
+  type DragOverEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { useState, type ReactNode } from "react";
 
 import type { CardId, ListId } from "../../domain/types";
-import { useCard, useReorderCardsWithinList } from "../../store/selectors";
-import styles from "./CardItem.module.css";
+import {
+  useCard,
+  useCardCount,
+  useList,
+  useMoveCardBetweenLists,
+  useReorderCardsWithinList,
+  useReorderLists,
+} from "../../store/selectors";
+import cardStyles from "./CardItem.module.css";
+import listStyles from "./ListColumn.module.css";
+
+/**
+ * The `data` every draggable and droppable in the board carries. It is how
+ * the handlers below tell a card drag from a list drag, and a card from an
+ * empty-list drop target, without caring what shape each id string happens
+ * to have.
+ */
+type DragData =
+  | { readonly type: "card"; readonly listId: ListId }
+  | { readonly type: "list" }
+  | { readonly type: "list-empty"; readonly listId: ListId };
+
+type ActiveDrag =
+  | { readonly kind: "card"; readonly id: CardId }
+  | { readonly kind: "list"; readonly id: ListId }
+  | null;
+
+function dragDataOf(entity: { data: { current?: unknown } }): DragData | undefined {
+  return entity.data.current as DragData | undefined;
+}
 
 /**
  * Owns the one `DndContext` the board uses, its sensors and its collision
- * strategy, so drag configuration never scatters across components.
+ * strategy, so drag configuration never scatters across components. It now
+ * carries two kinds of drag -- a card, or a whole list -- distinguished by
+ * the `data` each draggable registers, rather than by having two contexts.
  *
  * A pointer needs a few pixels of movement before a drag starts -- without
  * that constraint, `onClick` on a card (inline editing, delete) would never
@@ -27,47 +59,115 @@ import styles from "./CardItem.module.css";
  * sensor exists, and it is the only way to reorder a card without a mouse.
  */
 export function BoardDragContext({ children }: { readonly children: ReactNode }) {
-  const [activeCardId, setActiveCardId] = useState<CardId | null>(null);
+  const [activeDrag, setActiveDrag] = useState<ActiveDrag>(null);
   const reorderCardsWithinList = useReorderCardsWithinList();
+  const moveCardBetweenLists = useMoveCardBetweenLists();
+  const reorderLists = useReorderLists();
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
+  /**
+   * Restricts collision candidates to the active drag's own kind before
+   * measuring distance. Without this, a card lifted near a list's header
+   * (its drag handle) could resolve as "over" the list-reorder target
+   * instead of the card or empty-list drop zone underneath it, and a
+   * dragged list could snap to a card by mistake.
+   */
+  const collisionDetection: CollisionDetection = (args) => {
+    const activeIsList = dragDataOf(args.active)?.type === "list";
+    const compatible = args.droppableContainers.filter((container) => {
+      const containerType = dragDataOf(container)?.type;
+      return activeIsList ? containerType === "list" : containerType !== "list";
+    });
+    return closestCenter({ ...args, droppableContainers: compatible });
+  };
+
   function handleDragStart(event: DragStartEvent) {
-    setActiveCardId(event.active.id as CardId);
+    const data = dragDataOf(event.active);
+    setActiveDrag(
+      data?.type === "list"
+        ? { kind: "list", id: event.active.id as ListId }
+        : { kind: "card", id: event.active.id as CardId },
+    );
+  }
+
+  /**
+   * Fires continuously while dragging, not just on drop. A card is moved
+   * into the list it is currently hovering over as soon as it crosses the
+   * boundary, so that list visibly opens a gap for it -- the alternative,
+   * waiting for drop, would leave the card looking like it belongs to its
+   * old list right up until release. Reordering within the list the card
+   * already lives in is left to the sortable preview and committed only in
+   * `handleDragEnd`, exactly as milestone 4 already does it.
+   */
+  function handleDragOver(event: DragOverEvent) {
+    const { active, over } = event;
+    if (!over) {
+      return;
+    }
+
+    const activeData = dragDataOf(active);
+    if (activeData?.type !== "card") {
+      return;
+    }
+
+    const overData = dragDataOf(over);
+    if (overData?.type !== "card" && overData?.type !== "list-empty") {
+      return;
+    }
+
+    const toListId = overData.listId;
+    if (toListId === activeData.listId) {
+      return;
+    }
+
+    const overCardId = overData.type === "card" ? (over.id as CardId) : null;
+    moveCardBetweenLists(active.id as CardId, activeData.listId, toListId, overCardId);
   }
 
   function handleDragEnd(event: DragEndEvent) {
-    setActiveCardId(null);
+    setActiveDrag(null);
     const { active, over } = event;
-    if (!over || active.id === over.id) {
+    if (!over) {
       return;
     }
 
-    // Both cards must belong to the same list -- cross-list drops are out of
-    // scope for this milestone, so anything else is left alone and the card
-    // animates back to where it started.
-    const activeListId = active.data.current?.listId as ListId | undefined;
-    const overListId = over.data.current?.listId as ListId | undefined;
-    if (!activeListId || activeListId !== overListId) {
+    const activeData = dragDataOf(active);
+
+    if (activeData?.type === "list") {
+      if (active.id !== over.id) {
+        reorderLists(active.id as ListId, over.id as ListId);
+      }
       return;
     }
 
-    reorderCardsWithinList(activeListId, active.id as CardId, over.id as CardId);
+    if (activeData?.type === "card") {
+      const overData = dragDataOf(over);
+      // A drop on an empty list was already placed by handleDragOver above;
+      // only a drop on another card still needs its final position committed.
+      if (overData?.type === "card" && over.id !== active.id) {
+        reorderCardsWithinList(activeData.listId, active.id as CardId, over.id as CardId);
+      }
+    }
   }
 
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCenter}
+      collisionDetection={collisionDetection}
       onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
-      onDragCancel={() => setActiveCardId(null)}
+      onDragCancel={() => setActiveDrag(null)}
     >
       {children}
-      <DragOverlay>{activeCardId ? <CardOverlay cardId={activeCardId} /> : null}</DragOverlay>
+      <DragOverlay>
+        {activeDrag?.kind === "card" && <CardOverlay cardId={activeDrag.id} />}
+        {activeDrag?.kind === "list" && <ListOverlay listId={activeDrag.id} />}
+      </DragOverlay>
     </DndContext>
   );
 }
@@ -81,8 +181,28 @@ function CardOverlay({ cardId }: { readonly cardId: CardId }) {
   const card = useCard(cardId);
 
   return (
-    <article className={`${styles.card} ${styles.overlay}`}>
-      <p className={styles.title}>{card.title}</p>
+    <article className={`${cardStyles.card} ${cardStyles.overlay}`}>
+      <p className={cardStyles.title}>{card.title}</p>
     </article>
+  );
+}
+
+/**
+ * The lifted copy for a list drag. It shows only the header -- title and
+ * card count -- rather than re-rendering every card in the list under the
+ * pointer, which keeps picking up a list cheap even when it holds hundreds
+ * of cards.
+ */
+function ListOverlay({ listId }: { readonly listId: ListId }) {
+  const list = useList(listId);
+  const cardCount = useCardCount(listId);
+
+  return (
+    <div className={`${listStyles.column} ${listStyles.overlay}`}>
+      <div className={listStyles.header}>
+        <h2 className={listStyles.title}>{list.title}</h2>
+        <span className={listStyles.count}>{cardCount}</span>
+      </div>
+    </div>
   );
 }

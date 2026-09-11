@@ -1,7 +1,7 @@
 import { create } from "zustand";
 
 import { createCardId, createListId } from "../domain/ids";
-import { moveWithinList } from "../domain/ordering";
+import { moveBetweenLists, moveList, moveWithinList } from "../domain/ordering";
 import { createSeedBoard } from "../domain/seed";
 import type { BoardState, CardId, ListId } from "../domain/types";
 
@@ -26,6 +26,13 @@ export interface BoardActions {
   deleteList: (listId: ListId) => void;
   deleteCard: (listId: ListId, cardId: CardId) => void;
   reorderCardsWithinList: (listId: ListId, activeId: CardId, overId: CardId) => void;
+  moveCardBetweenLists: (
+    activeId: CardId,
+    fromListId: ListId,
+    toListId: ListId,
+    overId: CardId | null,
+  ) => void;
+  reorderLists: (activeId: ListId, overId: ListId) => void;
 }
 
 export type BoardStore = BoardState & BoardActions;
@@ -113,5 +120,19 @@ export const useBoardStore = create<BoardStore>((set) => ({
         ...state.cardOrder,
         [listId]: moveWithinList(state.cardOrder[listId], activeId, overId),
       },
+    })),
+
+  // Called continuously as a drag crosses into a different list, not just on
+  // drop -- see DragContext's onDragOver. That is what makes the destination
+  // list open a gap for the card while it is still being dragged, rather
+  // than the card only appearing there once the pointer is released.
+  moveCardBetweenLists: (activeId, fromListId, toListId, overId) =>
+    set((state) => ({
+      cardOrder: moveBetweenLists(state.cardOrder, activeId, fromListId, toListId, overId),
+    })),
+
+  reorderLists: (activeId, overId) =>
+    set((state) => ({
+      listOrder: moveList(state.listOrder, activeId, overId),
     })),
 }));

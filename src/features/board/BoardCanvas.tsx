@@ -1,3 +1,5 @@
+import { SortableContext, horizontalListSortingStrategy } from "@dnd-kit/sortable";
+
 import { Composer } from "../../components/Composer";
 import { useAddList, useListOrder } from "../../store/selectors";
 import styles from "./BoardCanvas.module.css";
@@ -24,9 +26,11 @@ export function BoardCanvas() {
     <div className={styles.canvas} data-board-canvas>
       <BoardDragContext>
         <div className={styles.rail}>
-          {listOrder.map((listId) => (
-            <ListColumn key={listId} listId={listId} />
-          ))}
+          <SortableContext items={[...listOrder]} strategy={horizontalListSortingStrategy}>
+            {listOrder.map((listId) => (
+              <ListColumn key={listId} listId={listId} />
+            ))}
+          </SortableContext>
           <div className={styles.addListSlot}>
             <Composer label="Add a list" placeholder="Enter list title…" onSubmit={addList} />
           </div>
