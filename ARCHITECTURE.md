@@ -88,8 +88,20 @@ application.
    `listOrder` -- with the column's `<header>` as the sole drag handle via
    split `listeners`/`setNodeRef`, so grabbing a card never grabs its list.
    dnd-kit's default auto-scroll needed no extra code.)*
-6. **Motion and performance pass** — animation choreography, memoisation,
-   measurement at thousands of cards.
+6. **Motion and performance pass.** *(Complete: `src/styles/motion.ts` mirrors
+   the duration/easing tokens as plain JS values for the one place a CSS
+   custom property can't reach -- dnd-kit's `useSortable({ transition })`
+   option -- and both `CardItem` and `ListColumn` now pass it, so every
+   sortable item settles with a slight `ease-spring` overshoot instead of
+   dnd-kit's unstyled default. The `DragOverlay` copy plays a one-shot
+   `ease-out` lift-off animation on mount, deliberately not sharing the
+   spring -- a pickup shouldn't overshoot, only a landing should. The
+   `Composer`'s expansion is a fade-and-rise entrance rather than a height
+   animation, since its final size is already correct the instant it
+   mounts. `CardItem` and `ListColumn` were already `memo`-wrapped with
+   narrow selectors from milestone 2 onward, so this milestone measured
+   rather than changed that: see `PERFORMANCE.md` for the 1,000-card
+   baseline and the reasoning for deferring virtualisation.)*
 7. **Customisation** — per-list colours, icons, card numbering.
 8. **Persistence and undo/redo.**
 

@@ -36,9 +36,22 @@
   cursor: grabbing;
 }
 
-/* The DragOverlay copy: the lifted header, tracking the pointer. */
+/* The DragOverlay copy: the lifted header, tracking the pointer. Same
+   lift-off treatment as a card's overlay, in CardItem.module.css. */
 .overlay {
   box-shadow: var(--shadow-lifted);
+  animation: list-lift-off var(--duration-fast) var(--ease-out) forwards;
+}
+
+@keyframes list-lift-off {
+  from {
+    transform: scale(1);
+    box-shadow: var(--shadow-md);
+  }
+  to {
+    transform: scale(1.02);
+    box-shadow: var(--shadow-lifted);
+  }
 }
 
 .overlay .header {

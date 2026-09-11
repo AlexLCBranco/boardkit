@@ -14,6 +14,7 @@ import {
   useList,
   useRenameList,
 } from "../../store/selectors";
+import { sortableTransition } from "../../styles/motion";
 import { CardItem } from "./CardItem";
 import styles from "./ListColumn.module.css";
 
@@ -52,6 +53,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: listId,
     data: { type: "list" },
+    transition: sortableTransition,
   });
 
   const style = {

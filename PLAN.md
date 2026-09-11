@@ -40,7 +40,7 @@ Rules for every session:
 | 3 | Mutations and instant editing | Complete |
 | 4 | Drag and drop within a list | Complete |
 | 5 | Drag across lists, reorder lists | Complete |
-| 6 | Motion and performance pass | Not started |
+| 6 | Motion and performance pass | Complete |
 | 7 | Customisation | Not started |
 | 8 | Persistence and undo/redo | Not started |
 
@@ -250,6 +250,8 @@ reorder, and the board auto-scrolls during an edge drag.
 ---
 
 ## Milestone 6 — Motion and performance pass
+
+**Complete.**
 
 **Goal.** The board feels fast and physical at a thousand cards.
 

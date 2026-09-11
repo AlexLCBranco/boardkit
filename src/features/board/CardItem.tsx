@@ -5,6 +5,7 @@ import { memo } from "react";
 import { InlineEditable } from "../../components/InlineEditable";
 import type { CardId, ListId } from "../../domain/types";
 import { useCard, useDeleteCard, useRenameCard } from "../../store/selectors";
+import { sortableTransition } from "../../styles/motion";
 import styles from "./CardItem.module.css";
 
 interface CardItemProps {
@@ -39,6 +40,7 @@ function CardItemImpl({ cardId, listId }: CardItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: cardId,
     data: { type: "card", listId },
+    transition: sortableTransition,
   });
 
   const style = {

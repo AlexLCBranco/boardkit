@@ -38,10 +38,25 @@
   transform: none;
 }
 
-/* The DragOverlay copy: the same card, elevated, tracking the pointer. */
+/* The DragOverlay copy: the same card, elevated, tracking the pointer. It
+   plays a one-shot lift-off on mount -- `ease-out` rather than the spring
+   used for settling, since a pickup shouldn't overshoot on the way up, only
+   on the way back down. */
 .overlay {
   box-shadow: var(--shadow-lifted);
   cursor: grabbing;
+  animation: card-lift-off var(--duration-fast) var(--ease-out) forwards;
+}
+
+@keyframes card-lift-off {
+  from {
+    transform: scale(1);
+    box-shadow: var(--shadow-sm);
+  }
+  to {
+    transform: scale(1.03);
+    box-shadow: var(--shadow-lifted);
+  }
 }
 
 .title {

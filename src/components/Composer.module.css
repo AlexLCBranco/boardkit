@@ -22,10 +22,25 @@
   outline-offset: 2px;
 }
 
+/* Entrance only, not layout: the composer's final height is already correct
+   the instant it mounts, so this animates opacity/transform on top of that
+   rather than growing height, which would force layout on every frame. */
 .composer {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  animation: composer-expand var(--duration-fast) var(--ease-out);
+}
+
+@keyframes composer-expand {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .autosize {
