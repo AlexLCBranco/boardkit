@@ -23,6 +23,7 @@ type Brand<T, TBrand extends string> = T & { readonly [brand]: TBrand };
 
 export type ListId = Brand<string, "ListId">;
 export type CardId = Brand<string, "CardId">;
+export type BoardId = Brand<string, "BoardId">;
 
 /**
  * The customisation vocabulary.
@@ -50,19 +51,18 @@ export type PaletteColor = (typeof PALETTE_COLORS)[number];
 export const ICON_KEYS = ["star", "flag", "bug", "rocket", "bolt", "fire", "heart", "tag"] as const;
 export type IconKey = (typeof ICON_KEYS)[number];
 
-/**
- * `off`: no numbers. `list`: each card numbered from 1 within its own list.
- * `board`: one sequence across the whole board, left list to right. A board
- * setting rather than a per-list one, since a mix of the two within one
- * board would make neither reading useful.
- */
-export type NumberingScope = "off" | "list" | "board";
-
 export interface Card {
   readonly id: CardId;
   readonly title: string;
+  /** A card's only customisation, now that its icon picker is gone --
+      colour turned out to be the one anyone actually used. */
   readonly color?: PaletteColor;
-  readonly icon?: IconKey;
+  /** Shown in the UI as "pregame thots". Kept as `description` -- rather
+      than renamed to match -- so boards saved before that label existed
+      keep their text; only the second, `postgameDescription`, is new. */
+  readonly description?: string;
+  /** Shown in the UI as "postgame thots". */
+  readonly postgameDescription?: string;
 }
 
 export interface List {
@@ -70,10 +70,6 @@ export interface List {
   readonly title: string;
   readonly color?: PaletteColor;
   readonly icon?: IconKey;
-}
-
-export interface BoardSettings {
-  readonly numbering: NumberingScope;
 }
 
 /**
@@ -100,5 +96,15 @@ export interface BoardState {
   readonly listOrder: readonly ListId[];
   /** Top-to-bottom order of cards, keyed by the list they belong to. */
   readonly cardOrder: Readonly<Record<ListId, readonly CardId[]>>;
-  readonly settings: BoardSettings;
+}
+
+/**
+ * One entry in the list of boards a user has created. Just enough to render
+ * a switcher -- the board's own content lives in a separate `BoardState`,
+ * persisted and loaded independently, so switching boards never has to pull
+ * every board's cards into memory at once.
+ */
+export interface BoardSummary {
+  readonly id: BoardId;
+  readonly name: string;
 }

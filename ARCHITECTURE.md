@@ -107,21 +107,18 @@ application.
    sets in `domain/types.ts` rather than free-form values. A list's colour is
    set as a `--list-accent` custom property on the column element, which
    ordinary CSS inheritance carries down to every card inside; a card's own
-   `--card-accent` overrides it when set, via
-   `border-left-color: var(--card-accent, var(--list-accent, transparent))`
-   in `CardItem.module.css`. `components/Popover.tsx` is a generic,
-   board-agnostic portal-based popover (portalled to `document.body` so it
-   escapes the column's own scroll clipping); `ColorSwatchPicker` and
-   `IconPicker` build on it, and `CustomizePanel` combines the two for both
-   `ListColumn` and `CardItem` to open. Icons are one inline `<symbol>`
-   sprite (`IconSprite`, mounted once in `main.tsx`) referenced via `<use>`,
-   not an icon library -- the set is fixed and small. Numbering is a board
-   setting (`state.settings.numbering`, `"off" | "list" | "board"`) rather
-   than a per-list one, and a card's number is never stored: `useCardNumber`
-   computes it from `domain/numbering.ts`'s pure `computeCardNumber` on every
-   read, returning `null` when numbering is off so a card's selector result
-   stays referentially identical -- and skips re-rendering -- on every reorder
-   until numbering is actually switched on.)*
+   `--card-accent` overrides it when set. `components/Popover.tsx` is a
+   generic, board-agnostic portal-based popover (portalled to
+   `document.body` so it escapes the column's own scroll clipping);
+   `ColorSwatchPicker` and `IconPicker` build on it, and `CustomizePanel`
+   combines the two for both `ListColumn` and `CardItem` to open. Icons are
+   one inline `<symbol>` sprite (`IconSprite`, mounted once in `main.tsx`)
+   referenced via `<use>`, not an icon library -- the set is fixed and
+   small. Numbering was a board setting, off/per-list/continuous, computed
+   rather than stored. Two parts of this milestone were later revised in
+   milestone 9, below: how a card's colour renders, and whether numbering
+   is a choice at all -- kept here as what milestone 7 actually built, not
+   silently rewritten.)*
 8. **Persistence and undo/redo.** *(Complete: `domain/persistence.ts` defines
    the versioned `PersistedBoardV1` shape and validates/migrates it back into
    a `BoardState`, returning `null` for anything unreadable rather than
@@ -147,6 +144,72 @@ application.
    target is a text field or `contenteditable` so a card or list title still
    being typed keeps the browser's native field-level undo instead of the
    board's.)*
+9. **shadcn/ui, card rework, and multi-board support.** A run of explicit
+   requests grouped into one milestone rather than one feature. *(Complete.)*
+   - *shadcn/ui:* Tailwind CSS v4 and all 62 shadcn/ui components
+     (Radix-based) now live in `src/components/ui/`, for future non-board UI
+     — the board engine itself still hand-writes CSS Modules against
+     `tokens.css`, unchanged. `global.css`'s `@theme inline` block maps
+     every shadcn semantic colour to an existing `tokens.css` variable
+     rather than the CLI's scaffolded second palette, which was deleted;
+     `--radius-sm/md/lg` stay owned by `tokens.css` too, since unlayered
+     rules cascade over Tailwind's and shadcn's `@theme` output regardless
+     of source order. No shadcn variable name was allowed to collide with
+     an existing `tokens.css` one -- `--accent` in particular means
+     different things in each system (our brand blue vs. shadcn's
+     hover-surface colour), so the bridge keeps them distinct.
+   - *Card colour:* `CardItem.module.css`'s `.card` now tints its whole
+     background -- `linear-gradient(var(--card-tint), var(--card-tint))`
+     layered over the opaque `--surface-raised` base, where `--card-tint` is
+     `color-mix(in oklab, var(--card-accent, var(--list-accent, transparent))
+     45%, transparent)` -- rather than the milestone 7 left border. The
+     layering (a translucent overlay, not a mix into the base colour
+     directly) matters because `--list-accent` is *always* defined, even to
+     `transparent`, on the column element (so `var(--list-accent)` never
+     needs a fallback elsewhere); mixing that straight into the background
+     would have shaved visible alpha off every uncoloured card. 45% is the
+     strongest wash that still clears WCAG AA (4.5:1) text contrast for
+     every palette colour, yellow (the brightest) included.
+   - *Card content:* `Card` carries `description` and `postgameDescription`
+     -- "pregame thots" / "postgame thots" in the UI -- each edited in place
+     on the card via `InlineEditable`'s new `multiline` mode, not through
+     `CustomizePanel`. A ⇄ button on the card flips which one is showing;
+     both are collapsed by default so neither inflates card height until
+     opened. `InlineEditable`'s multiline mode differs from its original
+     (title-only) behaviour in three ways: Enter inserts a newline instead
+     of committing, an empty commit is allowed (that's how a field is
+     cleared) instead of being rejected, and the textarea does not
+     select-all on open -- it places the caret at the end instead, since
+     select-all on a paragraph turns the next keystroke into a full replace
+     rather than a continuation.
+   - *Cards lost their icon:* `Card.icon` and `setCardIcon` are deleted;
+     `CustomizePanel`'s Icon section is now conditional on `onIconChange`
+     being passed, so `CardItem` (which stopped passing it) simply gets a
+     Colour-only popover while `ListColumn` is unaffected.
+   - *Numbering, simplified:* `NumberingScope` and `BoardSettings` are
+     deleted from `domain/types.ts`. `computeCardNumber` no longer takes a
+     scope -- every card is numbered within its own list, unconditionally.
+   - *Multiple boards:* a board's own content (`BoardState`) is now one of
+     several, tracked by a separate, much smaller registry document
+     (`BoardId` + `BoardSummary[]` + which one is active) persisted at its
+     own `localStorage` key, independent of any board's content key. The
+     store gained `boardId`/`boards` fields and `createBoard`/`switchBoard`/
+     `renameBoard` actions, none routed through `withHistory` -- switching
+     boards is not an undoable edit, and each resets the undo stack, since
+     history was already excluded from persistence and switching context
+     entirely makes an inherited stack meaningless. `BoardSwitcher.tsx`
+     (the board name via `InlineEditable`, a shadcn `DropdownMenu` to switch
+     or create) replaces the page header's old static title. A
+     pre-multi-board install's single board migrates into the registry as
+     board one on first load, written immediately (not through the normal
+     400ms debounce) so the id minted for it is stable across a reload
+     before any edit would otherwise trigger a save.
+   - *Drag-overlay parity:* the `DragOverlay` copy (milestone 4) had never
+     been updated for colour or the thots label, so picking up a card
+     visibly stripped both. It now receives the dragged card's `listId` (via
+     `activeDrag`) and sets `--card-accent`/`--list-accent` itself, since the
+     overlay is portalled outside the list's DOM subtree and can't inherit
+     `--list-accent` by CSS cascade the way the real card does.
 
 ## Decisions
 
@@ -157,6 +220,22 @@ application.
 - **dnd-kit over react-beautiful-dnd.** Actively maintained, sensor-based
   (pointer, keyboard, touch), and applies drag transforms outside React's
   render cycle.
-- **CSS Modules + CSS custom properties over Tailwind.** Drag choreography
-  and runtime-customisable colours are the two hardest things to express in
-  build-time utility classes; both are native to custom properties.
+- **The board engine stays CSS Modules + CSS custom properties.** Drag
+  choreography and runtime-customisable colours are the two hardest things
+  to express in build-time utility classes; both are native to custom
+  properties. This no longer rules Tailwind out project-wide (see below),
+  only for the board itself.
+- **Tailwind CSS v4 + shadcn/ui for everything else (milestone 9).** Added
+  once there was non-board UI worth not hand-rolling (menus, dialogs, form
+  controls). `tokens.css` stays the one source of visual truth: shadcn's
+  semantic colours are bridged to it via `@theme inline` in `global.css`
+  rather than living as a second, parallel palette.
+- **A board's content and the board registry are two separate persisted
+  documents (milestone 9).** Content can grow to hundreds of cards; the
+  registry is always just an id and a name per board. Keeping them apart
+  means listing boards for a switcher never has to load any board's
+  content, and switching boards is a matter of pointing at a different
+  content key, not restructuring one large document.
+- **A card kept colour but lost the icon picker (milestone 9).** Colour was
+  the customisation people actually reached for; the icon picker sat there
+  unused. Lists keep both -- nothing suggested the same was true there.

@@ -1,4 +1,9 @@
+@import "tailwindcss";
 @import "./tokens.css";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
 
 *,
 *::before,
@@ -69,5 +74,69 @@ textarea {
   *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/**
+ * shadcn/ui theme bridge.
+ *
+ * shadcn's components read the semantic `--color-*` names below (its own
+ * convention: background/foreground/primary/card/muted/accent/...). Rather
+ * than defining those as a second, parallel palette (the CLI's default
+ * scaffold, deleted here), every one is pointed straight at an existing
+ * tokens.css value, so tokens.css stays the single source of visual truth
+ * and a shadcn component and a hand-written one always match.
+ *
+ * Note: shadcn's "accent" means "the subtle hover surface for a menu item",
+ * not our brand accent -- that distinction is why it maps to
+ * `--surface-active`, not `--accent`. Deliberately no plain `:root { --accent
+ * }` / `--background` etc. block exists here: those names are already owned
+ * by tokens.css, and redeclaring them at `:root` would shadow it everywhere,
+ * not just for shadcn components.
+ */
+@theme inline {
+  --color-background: var(--surface-app);
+  --color-foreground: var(--text-primary);
+  --color-card: var(--surface-raised);
+  --color-card-foreground: var(--text-primary);
+  --color-popover: var(--surface-raised);
+  --color-popover-foreground: var(--text-primary);
+  --color-primary: var(--accent);
+  --color-primary-foreground: var(--text-inverted);
+  --color-secondary: var(--surface-hover);
+  --color-secondary-foreground: var(--text-primary);
+  --color-muted: var(--surface-sunken);
+  --color-muted-foreground: var(--text-secondary);
+  --color-accent: var(--surface-active);
+  --color-accent-foreground: var(--text-primary);
+  --color-destructive: var(--palette-red);
+  --color-border: var(--border-subtle);
+  --color-input: var(--border-subtle);
+  --color-ring: var(--focus-ring);
+  --radius: var(--radius-md);
+  --color-chart-1: var(--palette-blue);
+  --color-chart-2: var(--palette-teal);
+  --color-chart-3: var(--palette-green);
+  --color-chart-4: var(--palette-purple);
+  --color-chart-5: var(--palette-orange);
+  --color-sidebar: var(--surface-raised);
+  --color-sidebar-foreground: var(--text-primary);
+  --color-sidebar-primary: var(--accent);
+  --color-sidebar-primary-foreground: var(--text-inverted);
+  --color-sidebar-accent: var(--surface-active);
+  --color-sidebar-accent-foreground: var(--text-primary);
+  --color-sidebar-border: var(--border-subtle);
+  --color-sidebar-ring: var(--focus-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
   }
 }

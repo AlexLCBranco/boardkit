@@ -1,11 +1,18 @@
 import { create } from "zustand";
 
-import { createCardId, createListId } from "../domain/ids";
+import { createBoardId, createCardId, createListId } from "../domain/ids";
 import { EMPTY_HISTORY, pushEntry, stepRedo, stepUndo, type BoardPatch, type History } from "../domain/history";
 import { moveBetweenLists, moveList, moveWithinList } from "../domain/ordering";
-import { createSeedBoard } from "../domain/seed";
-import type { BoardState, CardId, IconKey, ListId, NumberingScope, PaletteColor } from "../domain/types";
-import { loadPersistedBoard, schedulePersist } from "./persistBoard";
+import { createEmptyBoard, createSeedBoard } from "../domain/seed";
+import type { BoardId, BoardState, BoardSummary, CardId, IconKey, ListId, PaletteColor } from "../domain/types";
+import {
+  flushPersist,
+  loadLegacyPersistedBoard,
+  loadPersistedBoard,
+  savePersistedBoardNow,
+  schedulePersist,
+} from "./persistBoard";
+import { loadPersistedRegistry, savePersistedRegistryNow, schedulePersistRegistry } from "./persistRegistry";
 
 /**
  * The board store.
@@ -38,13 +45,28 @@ export interface BoardActions {
   setListColor: (listId: ListId, color: PaletteColor | undefined) => void;
   setListIcon: (listId: ListId, icon: IconKey | undefined) => void;
   setCardColor: (cardId: CardId, color: PaletteColor | undefined) => void;
-  setCardIcon: (cardId: CardId, icon: IconKey | undefined) => void;
-  setNumberingScope: (scope: NumberingScope) => void;
+  setCardDescription: (cardId: CardId, description: string | undefined) => void;
+  setCardPostgameDescription: (cardId: CardId, description: string | undefined) => void;
   undo: () => void;
   redo: () => void;
+  createBoard: (name: string) => void;
+  switchBoard: (boardId: BoardId) => void;
+  renameBoard: (name: string) => void;
 }
 
-export type BoardStore = BoardState & { readonly history: History } & BoardActions;
+/**
+ * `boardId` and `boards` sit alongside `BoardState` rather than inside it:
+ * they describe which board this is and what else exists, not the board's
+ * own content, so they're excluded from `BoardPatch` (`Partial<BoardState>`)
+ * the same way `history` already is -- `createBoard`/`switchBoard`/
+ * `renameBoard` bypass `withHistory` entirely rather than becoming undoable
+ * "edits".
+ */
+export type BoardStore = BoardState & {
+  readonly history: History;
+  readonly boardId: BoardId;
+  readonly boards: readonly BoardSummary[];
+} & BoardActions;
 
 /**
  * Every mutating action produces a patch -- an object holding only the
@@ -62,10 +84,44 @@ function withHistory(state: BoardStore, patch: BoardPatch): Partial<BoardStore> 
   return { ...patch, history: pushEntry(state.history, before, patch) };
 }
 
-const initialBoard = loadPersistedBoard() ?? createSeedBoard();
+/**
+ * Where the very first `boardId`/`boards`/`board` come from. Three cases,
+ * checked in order:
+ *
+ *  1. A registry already exists (the common case after the first run) --
+ *     load whichever board it names as active.
+ *  2. No registry, but content at the old single-board storage key -- a
+ *     pre-multi-board install. That content becomes board one, and the
+ *     registry plus its keyed copy are written immediately (not debounced;
+ *     see `savePersistedRegistryNow`/`savePersistedBoardNow`) so the random
+ *     id minted for it here is the same one found on the next load, rather
+ *     than a fresh one every time the tab reopens before any edit is made.
+ *  3. Neither -- a first-ever run, seeded with demo content the same way.
+ */
+function loadInitialState(): { boardId: BoardId; boards: readonly BoardSummary[]; board: BoardState } {
+  const registry = loadPersistedRegistry();
+  if (registry) {
+    const board = loadPersistedBoard(registry.activeBoardId) ?? createEmptyBoard();
+    return { boardId: registry.activeBoardId, boards: registry.boards, board };
+  }
+
+  const boardId = createBoardId();
+  const legacyBoard = loadLegacyPersistedBoard();
+  const board = legacyBoard ?? createSeedBoard();
+  const boards: BoardSummary[] = [{ id: boardId, name: "Untitled board" }];
+
+  savePersistedRegistryNow(boards, boardId);
+  savePersistedBoardNow(board, boardId);
+
+  return { boardId, boards, board };
+}
+
+const initial = loadInitialState();
 
 export const useBoardStore = create<BoardStore>((set) => ({
-  ...initialBoard,
+  ...initial.board,
+  boardId: initial.boardId,
+  boards: initial.boards,
   history: EMPTY_HISTORY,
 
   addList: (title) =>
@@ -199,17 +255,20 @@ export const useBoardStore = create<BoardStore>((set) => ({
       }),
     ),
 
-  setCardIcon: (cardId, icon) =>
+  setCardDescription: (cardId, description) =>
     set((state) =>
       withHistory(state, {
-        cards: { ...state.cards, [cardId]: { ...state.cards[cardId], icon } },
+        cards: { ...state.cards, [cardId]: { ...state.cards[cardId], description } },
       }),
     ),
 
-  setNumberingScope: (scope) =>
+  setCardPostgameDescription: (cardId, description) =>
     set((state) =>
       withHistory(state, {
-        settings: { ...state.settings, numbering: scope },
+        cards: {
+          ...state.cards,
+          [cardId]: { ...state.cards[cardId], postgameDescription: description },
+        },
       }),
     ),
 
@@ -227,21 +286,53 @@ export const useBoardStore = create<BoardStore>((set) => ({
       const step = stepRedo(state.history);
       return step ? { ...step.patch, history: step.history } : state;
     }),
+
+  // `flushPersist()` in both actions below: the debounce in `persistBoard.ts`
+  // is a single shared timer, so switching away within its 400ms window
+  // would otherwise cancel the outgoing board's pending save and silently
+  // drop whatever was just typed, rather than writing it under its own key
+  // before this board's content is replaced.
+  createBoard: (name) =>
+    set((state) => {
+      flushPersist();
+      const boardId = createBoardId();
+      return {
+        ...createEmptyBoard(),
+        boardId,
+        boards: [...state.boards, { id: boardId, name }],
+        history: EMPTY_HISTORY,
+      };
+    }),
+
+  switchBoard: (boardId) =>
+    set((state) => {
+      if (boardId === state.boardId) return state;
+      flushPersist();
+      const board = loadPersistedBoard(boardId) ?? createEmptyBoard();
+      return { ...board, boardId, history: EMPTY_HISTORY };
+    }),
+
+  renameBoard: (name) =>
+    set((state) => ({
+      boards: state.boards.map((board) => (board.id === state.boardId ? { ...board, name } : board)),
+    })),
 }));
 
-// The only subscriber that exists outside a component: persists whichever
-// board slices changed, debounced, to `localStorage`. `history` is
-// deliberately excluded from both the comparison and the write -- undo
-// stacks are a live-session convenience, not part of the board's saved
-// content, so a reload starts with a clean one.
+// The only subscribers that exist outside a component: persist whichever
+// slice changed, debounced, to `localStorage`. `history` is deliberately
+// excluded from both comparisons and both writes -- undo stacks are a
+// live-session convenience, not saved content, so a reload starts with a
+// clean one.
 useBoardStore.subscribe((state, previous) => {
   if (
     state.lists !== previous.lists ||
     state.cards !== previous.cards ||
     state.listOrder !== previous.listOrder ||
-    state.cardOrder !== previous.cardOrder ||
-    state.settings !== previous.settings
+    state.cardOrder !== previous.cardOrder
   ) {
-    schedulePersist(state);
+    schedulePersist(state, state.boardId);
+  }
+  if (state.boards !== previous.boards || state.boardId !== previous.boardId) {
+    schedulePersistRegistry(state.boards, state.boardId);
   }
 });

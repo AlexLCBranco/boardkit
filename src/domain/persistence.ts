@@ -1,4 +1,4 @@
-import type { BoardState } from "./types";
+import type { BoardId, BoardState, BoardSummary } from "./types";
 
 /**
  * The shape written to storage, and the migration path for it.
@@ -49,7 +49,7 @@ function isPersistedBoardV1(data: unknown): data is PersistedBoardV1 {
   if (typeof board !== "object" || board === null) {
     return false;
   }
-  const { lists, cards, listOrder, cardOrder, settings } = board as Record<string, unknown>;
+  const { lists, cards, listOrder, cardOrder } = board as Record<string, unknown>;
   return (
     typeof lists === "object" &&
     lists !== null &&
@@ -57,8 +57,55 @@ function isPersistedBoardV1(data: unknown): data is PersistedBoardV1 {
     cards !== null &&
     Array.isArray(listOrder) &&
     typeof cardOrder === "object" &&
-    cardOrder !== null &&
-    typeof settings === "object" &&
-    settings !== null
+    cardOrder !== null
+  );
+}
+
+/**
+ * The registry: which boards exist and which one is active. Deliberately a
+ * separate persisted document from any board's own content (`PersistedBoardV1`
+ * above) -- it stays tiny (an id and a name per board) regardless of how many
+ * cards a board holds, so listing boards in a switcher never has to load
+ * their content.
+ */
+export const REGISTRY_SCHEMA_VERSION = 1;
+
+export interface PersistedRegistryV1 {
+  readonly version: 1;
+  readonly boards: readonly BoardSummary[];
+  readonly activeBoardId: BoardId;
+}
+
+export function serializeRegistry(
+  boards: readonly BoardSummary[],
+  activeBoardId: BoardId,
+): PersistedRegistryV1 {
+  return { version: REGISTRY_SCHEMA_VERSION, boards, activeBoardId };
+}
+
+export function deserializeRegistry(data: unknown): PersistedRegistryV1 | null {
+  if (!isPersistedRegistryV1(data)) {
+    return null;
+  }
+  return data;
+}
+
+function isPersistedRegistryV1(data: unknown): data is PersistedRegistryV1 {
+  if (typeof data !== "object" || data === null) {
+    return false;
+  }
+  const candidate = data as Record<string, unknown>;
+  if (candidate.version !== 1 || typeof candidate.activeBoardId !== "string") {
+    return false;
+  }
+  return (
+    Array.isArray(candidate.boards) &&
+    candidate.boards.every(
+      (entry) =>
+        typeof entry === "object" &&
+        entry !== null &&
+        typeof (entry as Record<string, unknown>).id === "string" &&
+        typeof (entry as Record<string, unknown>).name === "string",
+    )
   );
 }

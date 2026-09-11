@@ -1,5 +1,5 @@
 import { computeCardNumber } from "../domain/numbering";
-import type { Card, CardId, List, ListId, NumberingScope } from "../domain/types";
+import type { BoardId, BoardSummary, Card, CardId, List, ListId } from "../domain/types";
 import { useBoardStore } from "./boardStore";
 
 /**
@@ -105,28 +105,17 @@ export function useReorderLists() {
   return useBoardStore((state) => state.reorderLists);
 }
 
-/** The board's numbering setting. A plain string, so `Object.is` is exact. */
-export function useNumberingScope(): NumberingScope {
-  return useBoardStore((state) => state.settings.numbering);
-}
-
 /**
- * A card's display number, or `null` when numbering is off.
+ * A card's display number (its 1-based position within its own list).
  *
  * This is the one selector in this file that returns a value computed fresh
  * on every call rather than read straight from the store -- a number is a
  * primitive, so rule 1 still holds: `Object.is` compares it by value, not by
- * reference. That is what makes the early `return null` load-bearing rather
- * than cosmetic. With numbering off, this selector returns the same `null`
- * on every store update regardless of what changed, so a card subscribed to
- * it never re-renders for it. Only once numbering is switched on does it
- * start returning real numbers that change when a card's position does --
- * the cost of the feature is paid only by boards that use it.
+ * reference, so a card only re-renders for this when its actual position
+ * changes.
  */
 export function useCardNumber(listId: ListId, cardId: CardId): number | null {
-  return useBoardStore((state) =>
-    computeCardNumber(state.settings.numbering, state.listOrder, state.cardOrder, listId, cardId),
-  );
+  return useBoardStore((state) => computeCardNumber(state.cardOrder, listId, cardId));
 }
 
 export function useSetListColor() {
@@ -141,12 +130,12 @@ export function useSetCardColor() {
   return useBoardStore((state) => state.setCardColor);
 }
 
-export function useSetCardIcon() {
-  return useBoardStore((state) => state.setCardIcon);
+export function useSetCardDescription() {
+  return useBoardStore((state) => state.setCardDescription);
 }
 
-export function useSetNumberingScope() {
-  return useBoardStore((state) => state.setNumberingScope);
+export function useSetCardPostgameDescription() {
+  return useBoardStore((state) => state.setCardPostgameDescription);
 }
 
 export function useUndo() {
@@ -166,4 +155,36 @@ export function useCanUndo(): boolean {
 
 export function useCanRedo(): boolean {
   return useBoardStore((state) => state.history.future.length > 0);
+}
+
+/** The active board's id. Changes only when the user switches or creates a
+    board, never on an ordinary edit. */
+export function useBoardId(): BoardId {
+  return useBoardStore((state) => state.boardId);
+}
+
+/** Every board's id and name, for a switcher to list. Stable array
+    reference -- it only changes on create, switch or rename. */
+export function useBoards(): readonly BoardSummary[] {
+  return useBoardStore((state) => state.boards);
+}
+
+/** The active board's own name, derived from `boards` rather than stored
+    twice. A plain string, so `Object.is` still holds (rule 1 above). */
+export function useActiveBoardName(): string {
+  return useBoardStore(
+    (state) => state.boards.find((board) => board.id === state.boardId)?.name ?? "Untitled board",
+  );
+}
+
+export function useCreateBoard() {
+  return useBoardStore((state) => state.createBoard);
+}
+
+export function useSwitchBoard() {
+  return useBoardStore((state) => state.switchBoard);
+}
+
+export function useRenameBoard() {
+  return useBoardStore((state) => state.renameBoard);
 }

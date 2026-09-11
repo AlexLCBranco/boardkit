@@ -43,6 +43,7 @@ Rules for every session:
 | 6 | Motion and performance pass | Complete |
 | 7 | Customisation | Complete |
 | 8 | Persistence and undo/redo | Complete |
+| 9 | shadcn/ui, card rework, and multi-board support | Complete |
 
 ---
 
@@ -362,9 +363,106 @@ undone and redone.
 
 ---
 
-## Beyond milestone 8
+## Milestone 9 — shadcn/ui, card rework, and multi-board support
+
+**Complete.**
+
+**Goal.** Started as one explicit request (Tailwind + shadcn/ui, for future
+non-board UI) and grew into a session-long run of further explicit requests
+on top of it: cards gained a second visual language (whole-card colour, two
+free-text fields with a flip control, colour-only customisation), numbering
+lost its now-pointless off/per-list/continuous choice, and the board itself
+stopped being singular — the user can name, create and switch between
+several, each persisted independently.
+
+**Why now.** Every piece here was asked for directly, out of sequence with
+the roadmap above, rather than planned. Grouped into one milestone (and one
+commit) because the user asked for that grouping, not because the pieces are
+one feature — see the per-area notes below for why each one shipped the way
+it did.
+
+**Build.**
+
+- **shadcn/ui infrastructure.** Tailwind CSS v4 (`@tailwindcss/vite`), the
+  `@/*` path alias, `npx shadcn@latest init -t vite -b radix` plus
+  `add --all` (62 components in `src/components/ui/`). `global.css`'s
+  `@theme inline` block maps every shadcn semantic colour straight to an
+  existing `tokens.css` variable rather than the CLI's scaffolded second
+  palette (deleted) — `tokens.css` stays the one source of visual truth. The
+  board engine itself is untouched: still hand-written CSS Modules, per
+  `CLAUDE.md`'s revised (not repealed) styling rule.
+- **Whole-card colour.** A card's colour now tints its entire background
+  (`color-mix`, layered over `--surface-raised` so an uncoloured card is a
+  pixel-exact no-op) instead of a 3px left border. 45% is the strongest wash
+  that still clears WCAG AA text contrast against the brightest palette
+  colour (yellow) — calibrated by computing contrast ratios at several
+  strengths, not eyeballed.
+- **"Pregame thots" / "postgame thots".** Two independent free-text fields
+  per card (`description`, `postgameDescription`), collapsed by default,
+  expanded and edited in place on the card itself — no popover — via
+  `InlineEditable`'s new `multiline` mode. A ⇄ button flips which of the two
+  is shown/edited; the field label reads as a small-caps field name
+  (matching `CustomizePanel`'s "Colour"/"Icon" vocabulary) rather than a
+  second line of card content, and the text sits in its own recessed block.
+- **Numbering, simplified.** The Off/Per list/Continuous toggle is gone;
+  every card is numbered within its own list, always. `NumberingScope` and
+  `BoardSettings` are deleted from the domain model, not just hidden.
+- **Cards lost their icon.** Colour turned out to be the only customisation
+  anyone reached for on a card, so the Icon section and everything behind it
+  (`Card.icon`, `setCardIcon`) are gone for cards specifically. Lists keep
+  colour and icon both, unchanged.
+- **Multiple boards.** `BoardId` / `BoardSummary`, a `boards` + `boardId`
+  registry alongside the board store, and `BoardSwitcher.tsx` (the board
+  name via the same `InlineEditable`, plus a shadcn `DropdownMenu` to switch
+  or create). Each board's content persists under its own `localStorage`
+  key; a small separately-persisted registry document tracks which boards
+  exist and which is active. A pre-multi-board install's single board is
+  migrated into the registry as board one, on first load, written
+  immediately rather than through the normal debounce — see the "Decisions"
+  note below for why that matters.
+- **Drag-overlay parity fix.** The lifted copy that follows the pointer
+  during a drag had never been updated for colour or the thots label since
+  it was written back in milestone 4, so it visibly lost both the moment a
+  card was picked up. It now carries the same `--card-accent`/`--list-accent`
+  the real card does.
+
+**Decisions to explain.**
+
+- Why shadcn's semantic colours are bridged to `tokens.css` rather than
+  living as their own palette, and specifically why `--accent` (brand blue)
+  and shadcn's `--accent` (a hover-surface colour) are kept as distinct
+  variables instead of merged, even though they share a name.
+- Why the debounced board-save timer had to become flush-before-switch: it
+  is a single shared timer, so switching boards inside its 400ms window
+  would otherwise cancel the outgoing board's pending write and silently
+  drop the last edit rather than save it under that board's own key.
+- Why a freshly-created board starts from `createEmptyBoard()`, not
+  `createSeedBoard()` — the demo content is a first-run onboarding aid, not
+  something a second, third, or explicitly-requested new board should carry.
+- Why `InlineEditable`'s multiline mode disables select-all-on-focus (a
+  title benefits from it; a paragraph does not, since it turns the very next
+  keystroke into a full replace) and why the caret is explicitly placed at
+  the end of the text on open rather than left at the browser's default
+  (position 0 for a plain `focus()`, which would insert new text before the
+  old instead of after it).
+
+**Done when.** `npm run build` passes, a pre-existing single board migrates
+its content and colours intact into the registry on first load, a new board
+starts genuinely empty, switching between boards never mixes their content,
+and the drag overlay matches the card it's lifted from.
+
+**Starter prompt.**
+> Milestone 9 from PLAN.md: shadcn/ui installed and bridged to tokens.css;
+> whole-card colour; pregame/postgame thots edited in place with a flip
+> control; numbering simplified to always-on per-list; cards lose their icon
+> picker; multiple named, independently-persisted boards with a switcher.
+
+---
+
+## Beyond milestone 9
 
 Not planned, and not to be started without an explicit request. Listed only
-so the architecture stays open to them: export and import as JSON, multiple
-boards, card descriptions, search and filter, board-level themes, a command
-palette, touch refinement.
+so the architecture stays open to them: export and import as JSON, search
+and filter, board-level themes, a command palette, touch refinement, board
+rename/delete beyond what milestone 9 already covers (deleting a board
+outright, reordering the board list).

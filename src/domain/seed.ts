@@ -35,7 +35,14 @@ export function createBoard(blueprints: readonly ListBlueprint[]): BoardState {
     }
   }
 
-  return { lists, cards, listOrder, cardOrder, settings: { numbering: "off" } };
+  return { lists, cards, listOrder, cardOrder };
+}
+
+/** A board with no lists at all -- what a deliberately-created new board
+    starts as, as opposed to `createSeedBoard`'s demo content, which only
+    the very first board a user ever sees should have. */
+export function createEmptyBoard(): BoardState {
+  return createBoard([]);
 }
 
 /** The board a first-time user sees. */

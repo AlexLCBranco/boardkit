@@ -9,24 +9,32 @@ import { Popover } from "./Popover";
 interface CustomizePanelProps {
   readonly anchorRef: RefObject<HTMLElement | null>;
   readonly color: PaletteColor | undefined;
-  readonly icon: IconKey | undefined;
   readonly onColorChange: (color: PaletteColor | undefined) => void;
-  readonly onIconChange: (icon: IconKey | undefined) => void;
   readonly onClose: () => void;
+  /** Lists only -- a card carries no icon of its own any more, so a caller
+      that omits both of these simply gets no Icon section. */
+  readonly icon?: IconKey;
+  readonly onIconChange?: (icon: IconKey | undefined) => void;
 }
 
 /**
- * The colour-and-icon popover used for both a list and a card. It knows
- * nothing about which: the caller supplies the current values and the two
- * setters, so this is the same component either way.
+ * The colour (and, for a list, icon) popover. Cards and lists used to share
+ * an identical Icon section here; a card's has been dropped, since colour
+ * turned out to be the only customisation anyone actually reached for on a
+ * card, so the picker for the other is gone rather than left unused.
+ *
+ * A card's description used to live here too, but editing it meant opening
+ * this popover -- which sits over part of the board -- just to change a few
+ * words. It's now edited in place on the card itself (see CardItem.tsx),
+ * where the rest of the board stays visible.
  */
 export function CustomizePanel({
   anchorRef,
   color,
-  icon,
   onColorChange,
-  onIconChange,
   onClose,
+  icon,
+  onIconChange,
 }: CustomizePanelProps) {
   return (
     <Popover anchorRef={anchorRef} onClose={onClose}>
@@ -34,10 +42,12 @@ export function CustomizePanel({
         <span className={styles.label}>Colour</span>
         <ColorSwatchPicker value={color} onChange={onColorChange} />
       </div>
-      <div className={styles.section}>
-        <span className={styles.label}>Icon</span>
-        <IconPicker value={icon} onChange={onIconChange} />
-      </div>
+      {onIconChange && (
+        <div className={styles.section}>
+          <span className={styles.label}>Icon</span>
+          <IconPicker value={icon} onChange={onIconChange} />
+        </div>
+      )}
     </Popover>
   );
 }

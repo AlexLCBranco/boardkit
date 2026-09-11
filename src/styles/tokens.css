@@ -38,29 +38,29 @@
   --weight-medium: 500;
   --weight-bold: 600;
 
-  /* ---- Neutral palette (light) ---- */
-  --surface-app: #f7f8fa;
-  --surface-raised: #ffffff;
-  --surface-sunken: #edeff3;
-  --surface-hover: rgba(15, 20, 30, 0.05);
-  --surface-active: rgba(15, 20, 30, 0.09);
+  /* ---- Neutral palette (black) ---- */
+  --surface-app: #14161b;
+  --surface-raised: #1d2026;
+  --surface-sunken: #0f1115;
+  --surface-hover: rgba(255, 255, 255, 0.06);
+  --surface-active: rgba(255, 255, 255, 0.1);
 
-  --border-subtle: rgba(15, 20, 30, 0.08);
-  --border-strong: rgba(15, 20, 30, 0.16);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.16);
 
-  --text-primary: #14181f;
-  --text-secondary: #5a6473;
-  --text-muted: #8b95a5;
-  --text-inverted: #ffffff;
+  --text-primary: #e8eaee;
+  --text-secondary: #a3abb9;
+  --text-muted: #737d8c;
+  --text-inverted: #14181f;
 
-  --accent: #4c6ef5;
-  --accent-hover: #3b5bdb;
-  --focus-ring: rgba(76, 110, 245, 0.45);
+  --accent: #748ffc;
+  --accent-hover: #91a7ff;
+  --focus-ring: rgba(116, 143, 252, 0.5);
 
   /* ---- Elevation ---- */
-  --shadow-sm: 0 1px 2px rgba(15, 20, 30, 0.08);
-  --shadow-md: 0 2px 6px rgba(15, 20, 30, 0.1);
-  --shadow-lifted: 0 12px 28px rgba(15, 20, 30, 0.22);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 2px 6px rgba(0, 0, 0, 0.45);
+  --shadow-lifted: 0 12px 28px rgba(0, 0, 0, 0.6);
 
   /* ---- Motion ----
      Durations stay short: anything above ~200ms reads as sluggish during drag. */
@@ -96,28 +96,4 @@
   --palette-teal: #0ca678;
   --palette-blue: #4c6ef5;
   --palette-purple: #9c36b5;
-}
-
-:root[data-theme="dark"] {
-  --surface-app: #14161b;
-  --surface-raised: #1d2026;
-  --surface-sunken: #0f1115;
-  --surface-hover: rgba(255, 255, 255, 0.06);
-  --surface-active: rgba(255, 255, 255, 0.1);
-
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.16);
-
-  --text-primary: #e8eaee;
-  --text-secondary: #a3abb9;
-  --text-muted: #737d8c;
-  --text-inverted: #14181f;
-
-  --accent: #748ffc;
-  --accent-hover: #91a7ff;
-  --focus-ring: rgba(116, 143, 252, 0.5);
-
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 2px 6px rgba(0, 0, 0, 0.45);
-  --shadow-lifted: 0 12px 28px rgba(0, 0, 0, 0.6);
 }

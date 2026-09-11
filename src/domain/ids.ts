@@ -1,6 +1,6 @@
 import { nanoid } from "nanoid";
 
-import type { CardId, ListId } from "./types";
+import type { BoardId, CardId, ListId } from "./types";
 
 /**
  * Id generation, wrapped in one place.
@@ -20,6 +20,10 @@ export function createListId(): ListId {
 
 export function createCardId(): CardId {
   return nanoid(ID_LENGTH) as CardId;
+}
+
+export function createBoardId(): BoardId {
+  return nanoid(ID_LENGTH) as BoardId;
 }
 
 /**

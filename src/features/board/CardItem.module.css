@@ -1,11 +1,22 @@
 .card {
   position: relative;
-  background: var(--surface-raised);
+  /* Tints the whole card, not just an edge: a translucent wash of the
+     accent (card's own, falling back to the list's cascaded
+     `--list-accent`) layered as a second `background-image` over the
+     opaque `--surface-raised` base, rather than mixed into it directly --
+     `--list-accent` is always defined as `transparent` even when unset
+     (ListColumn.module.css), so mixing it straight into the background
+     would have shaved visible alpha off every uncoloured card. Layering
+     means an uncoloured card's top layer is simply a transparent no-op and
+     the base shows through exactly as before. */
+  /* 45% is the strongest wash that still clears WCAG AA (4.5:1) text
+     contrast against `--text-primary` for every colour in the palette,
+     yellow included -- the brightest swatch is the binding constraint. */
+  --card-tint: color-mix(in oklab, var(--card-accent, var(--list-accent, transparent)) 45%, transparent);
+  background:
+    linear-gradient(var(--card-tint), var(--card-tint)),
+    var(--surface-raised);
   border: 1px solid var(--border-subtle);
-  /* Falls back to the list's cascaded accent when the card has none of its
-     own -- see ListColumn.module.css's `--list-accent` and CardItem.tsx's
-     `--card-accent`, which the card sets inline only when it overrides it. */
-  border-left: 3px solid var(--card-accent, var(--list-accent, transparent));
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
   padding: var(--space-2) var(--space-3);
@@ -74,16 +85,96 @@
   overflow-wrap: anywhere;
 }
 
-.cardIcon {
-  flex: 0 0 auto;
-  align-self: center;
-  color: var(--text-secondary);
-}
-
 .number {
   flex: 0 0 auto;
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
+}
+
+.descriptionRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+}
+
+/* Styled as a field label (uppercase, letter-spaced, muted) rather than
+   plain text -- the same vocabulary CustomizePanel.module.css's `.label`
+   uses for "Colour" / "Icon" -- specifically so this reads as a UI control
+   naming what's below it, not as a second line of card content sitting next
+   to the title. */
+.descriptionToggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: var(--weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+
+.descriptionToggle:hover {
+  color: var(--text-secondary);
+}
+
+/* Swaps which of the two fields `.descriptionToggle` names and the block
+   below shows -- separate from expanding/collapsing that block, so flipping
+   while collapsed still gives feedback (the label changes) without forcing
+   the card open. */
+.descriptionFlip {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--font-size-xs);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.descriptionFlip:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+/* A distinct, recessed block -- background + padding, no border -- rather
+   than a plain line of text continuing the card's flow, so a description
+   reads as an attached note and can't be mistaken for the title. Entrance
+   only, not layout: the block is already at its final height the instant it
+   mounts, so this animates opacity/transform on top of that rather than
+   growing height, which would force layout on every frame -- see
+   Composer.module.css's `.composer` for the same trick. */
+.description {
+  margin-top: var(--space-1);
+  padding: var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-normal);
+  animation: description-reveal var(--duration-fast) var(--ease-out);
+}
+
+@keyframes description-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .customizeButton,

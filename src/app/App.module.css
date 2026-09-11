@@ -15,12 +15,6 @@
   background: var(--surface-raised);
 }
 
-.title {
-  font-size: var(--font-size-lg);
-  font-weight: var(--weight-bold);
-  line-height: var(--line-tight);
-}
-
 .main {
   min-height: 0; /* lets the grid row shrink so the child can scroll */
 }

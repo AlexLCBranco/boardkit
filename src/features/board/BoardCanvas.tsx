@@ -5,7 +5,6 @@ import { useAddList, useListOrder } from "../../store/selectors";
 import styles from "./BoardCanvas.module.css";
 import { BoardDragContext } from "./DragContext";
 import { ListColumn } from "./ListColumn";
-import { NumberingControl } from "./NumberingControl";
 import { UndoRedoControls } from "./UndoRedoControls";
 import { useUndoRedoShortcuts } from "./useUndoRedoShortcuts";
 
@@ -20,8 +19,8 @@ import { useUndoRedoShortcuts } from "./useUndoRedoShortcuts";
  * The scroll container is deliberately the rail below the toolbar, and it is
  * marked with `data-board-canvas` so drag auto-scrolling can find it later
  * without a ref being threaded through the tree. The toolbar sits outside
- * that container, in its own fixed-height row, so board-level settings
- * (numbering) never scroll out of view with the lists.
+ * that container, in its own fixed-height row, so it never scrolls out of
+ * view with the lists.
  */
 export function BoardCanvas() {
   const listOrder = useListOrder();
@@ -32,7 +31,6 @@ export function BoardCanvas() {
     <div className={styles.canvas}>
       <div className={styles.toolbar}>
         <UndoRedoControls />
-        <NumberingControl />
       </div>
       <div className={styles.scrollArea} data-board-canvas>
         <BoardDragContext>

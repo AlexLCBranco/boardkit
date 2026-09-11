@@ -12,7 +12,7 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
-import { useState, type ReactNode } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
 
 import type { CardId, ListId } from "../../domain/types";
 import {
@@ -38,7 +38,7 @@ type DragData =
   | { readonly type: "list-empty"; readonly listId: ListId };
 
 type ActiveDrag =
-  | { readonly kind: "card"; readonly id: CardId }
+  | { readonly kind: "card"; readonly id: CardId; readonly listId: ListId }
   | { readonly kind: "list"; readonly id: ListId }
   | null;
 
@@ -87,11 +87,11 @@ export function BoardDragContext({ children }: { readonly children: ReactNode })
 
   function handleDragStart(event: DragStartEvent) {
     const data = dragDataOf(event.active);
-    setActiveDrag(
-      data?.type === "list"
-        ? { kind: "list", id: event.active.id as ListId }
-        : { kind: "card", id: event.active.id as CardId },
-    );
+    if (data?.type === "list") {
+      setActiveDrag({ kind: "list", id: event.active.id as ListId });
+    } else if (data?.type === "card") {
+      setActiveDrag({ kind: "card", id: event.active.id as CardId, listId: data.listId });
+    }
   }
 
   /**
@@ -165,7 +165,9 @@ export function BoardDragContext({ children }: { readonly children: ReactNode })
     >
       {children}
       <DragOverlay>
-        {activeDrag?.kind === "card" && <CardOverlay cardId={activeDrag.id} />}
+        {activeDrag?.kind === "card" && (
+          <CardOverlay cardId={activeDrag.id} listId={activeDrag.listId} />
+        )}
         {activeDrag?.kind === "list" && <ListOverlay listId={activeDrag.id} />}
       </DragOverlay>
     </DndContext>
@@ -176,13 +178,31 @@ export function BoardDragContext({ children }: { readonly children: ReactNode })
  * The lifted copy dnd-kit renders under the pointer. It is a plain read of
  * the card's title -- no editing, no delete button -- since it exists purely
  * as a drag affordance, not an interactive element.
+ *
+ * It still needs to look like the card it's a copy of, though: colour and
+ * the pregame/postgame-thots label. The overlay is portalled outside the
+ * list's own DOM subtree (dnd-kit renders it at the document root), so it
+ * can't pick up `--list-accent` by CSS inheritance the way the real card
+ * does -- both `--card-accent` and `--list-accent` are set here explicitly
+ * instead, from `listId` (carried on `activeDrag` for exactly this), so the
+ * same `cardStyles.card` background rule resolves to the same colour either
+ * way.
  */
-function CardOverlay({ cardId }: { readonly cardId: CardId }) {
+function CardOverlay({ cardId, listId }: { readonly cardId: CardId; readonly listId: ListId }) {
   const card = useCard(cardId);
+  const list = useList(listId);
+
+  const style: CSSProperties = {
+    ...(card.color ? ({ "--card-accent": `var(--palette-${card.color})` } as CSSProperties) : {}),
+    ...(list.color ? ({ "--list-accent": `var(--palette-${list.color})` } as CSSProperties) : {}),
+  };
 
   return (
-    <article className={`${cardStyles.card} ${cardStyles.overlay}`}>
+    <article className={`${cardStyles.card} ${cardStyles.overlay}`} style={style}>
       <p className={cardStyles.title}>{card.title}</p>
+      {(card.description || card.postgameDescription) && (
+        <div className={cardStyles.descriptionToggle}>▸ pregame thots</div>
+      )}
     </article>
   );
 }

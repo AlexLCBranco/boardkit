@@ -58,13 +58,24 @@ If one of these seems necessary to finish a task, stop and ask instead.
   `width`, `height` or `margin` — they force layout on every frame.
 - **No hardcoded visual constants.** Every colour, spacing, radius, duration
   and easing curve comes from `src/styles/tokens.css`.
-- **Styling is CSS Modules + CSS custom properties.** Not Tailwind. This was
-  decided deliberately: drag choreography and runtime-customisable colours
-  are both awkward in build-time utility classes.
+- **The board engine stays CSS Modules + CSS custom properties.** Lists,
+  cards, drag choreography and the customisation popovers are hand-written
+  against `tokens.css`, not Tailwind utility classes — those are the parts
+  where runtime-set colours and drag-frame performance are hardest to get
+  right through build-time classes, and that reasoning hasn't changed.
+- **Everything else may use Tailwind + shadcn/ui.** shadcn/ui (Radix
+  primitives) is installed for supporting chrome — dialogs, menus, tooltips,
+  form controls, and anything else not on the drag-and-drop critical path.
+  `tokens.css` is still the single source of visual truth either way:
+  shadcn's semantic colours (`background`, `primary`, `border`, ...) are
+  bridged to it in `src/styles/global.css`'s `@theme inline` block, never
+  redefined as a second palette. Adding a shadcn component must not
+  reintroduce a colour, radius or duration that bypasses that bridge.
 
 ## Stack
 
-Vite, React 19, TypeScript (strict), Zustand, dnd-kit, CSS Modules, nanoid.
+Vite, React 19, TypeScript (strict), Zustand, dnd-kit, CSS Modules, Tailwind
+CSS v4 + shadcn/ui (supporting UI only), nanoid.
 
 ## Git
 

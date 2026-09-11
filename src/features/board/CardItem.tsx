@@ -3,7 +3,6 @@ import { CSS } from "@dnd-kit/utilities";
 import { memo, useRef, useState, type CSSProperties } from "react";
 
 import { CustomizePanel } from "../../components/CustomizePanel";
-import { Icon } from "../../components/Icon";
 import { InlineEditable } from "../../components/InlineEditable";
 import type { CardId, ListId } from "../../domain/types";
 import {
@@ -12,7 +11,8 @@ import {
   useDeleteCard,
   useRenameCard,
   useSetCardColor,
-  useSetCardIcon,
+  useSetCardDescription,
+  useSetCardPostgameDescription,
 } from "../../store/selectors";
 import { sortableTransition } from "../../styles/motion";
 import styles from "./CardItem.module.css";
@@ -43,11 +43,24 @@ function CardItemImpl({ cardId, listId }: CardItemProps) {
   const renameCard = useRenameCard();
   const deleteCard = useDeleteCard();
   const setCardColor = useSetCardColor();
-  const setCardIcon = useSetCardIcon();
+  const setCardDescription = useSetCardDescription();
+  const setCardPostgameDescription = useSetCardPostgameDescription();
   const number = useCardNumber(listId, cardId);
 
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
   const customizeTriggerRef = useRef<HTMLButtonElement>(null);
+  // Collapsed by default so a description doesn't inflate every card's
+  // height on a board with hundreds of them -- purely local, ephemeral
+  // display state, not worth persisting across a reload. `thotsSlot` is the
+  // same kind of state: which of the two fields is currently shown, not
+  // which ones exist -- that lives on the card itself.
+  const [isDescriptionOpen, setIsDescriptionOpen] = useState(false);
+  const [thotsSlot, setThotsSlot] = useState<"pregame" | "postgame">("pregame");
+
+  function flipThotsSlot() {
+    setThotsSlot((slot) => (slot === "pregame" ? "postgame" : "pregame"));
+    setIsDescriptionOpen(true);
+  }
 
   // `data: { listId }` is read back in DragContext's onDragEnd -- a card
   // carries no list back-reference in the store, so the drag data is the
@@ -60,7 +73,8 @@ function CardItemImpl({ cardId, listId }: CardItemProps) {
 
   // A card's own colour overrides the list's cascaded `--list-accent`; with
   // no colour of its own, `--card-accent` is simply left unset and the CSS
-  // fallback in CardItem.module.css reads the list's accent instead.
+  // fallback in CardItem.module.css tints the card with the list's accent
+  // instead.
   const style: CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -77,7 +91,6 @@ function CardItemImpl({ cardId, listId }: CardItemProps) {
       {...listeners}
     >
       <p className={styles.title}>
-        {card.icon && <Icon name={card.icon} className={styles.cardIcon} />}
         {number !== null && <span className={styles.number}>{number}</span>}
         <InlineEditable
           value={card.title}
@@ -85,6 +98,48 @@ function CardItemImpl({ cardId, listId }: CardItemProps) {
           ariaLabel="Card title"
         />
       </p>
+      <div className={styles.descriptionRow}>
+        <button
+          type="button"
+          className={styles.descriptionToggle}
+          onClick={() => setIsDescriptionOpen((open) => !open)}
+          aria-expanded={isDescriptionOpen}
+        >
+          {isDescriptionOpen ? "▾" : "▸"} {thotsSlot === "pregame" ? "pregame thots" : "postgame thots"}
+        </button>
+        <button
+          type="button"
+          className={styles.descriptionFlip}
+          onClick={flipThotsSlot}
+          aria-label="Switch between pregame and postgame thots"
+        >
+          ⇄
+        </button>
+      </div>
+      {isDescriptionOpen &&
+        (thotsSlot === "pregame" ? (
+          <div className={styles.description} key="pregame">
+            <InlineEditable
+              value={card.description ?? ""}
+              onCommit={(description) => setCardDescription(cardId, description || undefined)}
+              ariaLabel="Pregame thots"
+              placeholder="Add your pregame thots…"
+              multiline
+            />
+          </div>
+        ) : (
+          <div className={styles.description} key="postgame">
+            <InlineEditable
+              value={card.postgameDescription ?? ""}
+              onCommit={(description) =>
+                setCardPostgameDescription(cardId, description || undefined)
+              }
+              ariaLabel="Postgame thots"
+              placeholder="Add your postgame thots…"
+              multiline
+            />
+          </div>
+        ))}
       <button
         ref={customizeTriggerRef}
         type="button"
@@ -107,9 +162,7 @@ function CardItemImpl({ cardId, listId }: CardItemProps) {
         <CustomizePanel
           anchorRef={customizeTriggerRef}
           color={card.color}
-          icon={card.icon}
           onColorChange={(color) => setCardColor(cardId, color)}
-          onIconChange={(icon) => setCardIcon(cardId, icon)}
           onClose={() => setIsCustomizeOpen(false)}
         />
       )}
