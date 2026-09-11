@@ -1,0 +1,62 @@
+.display {
+  display: block;
+  width: 100%;
+  padding: var(--space-1);
+  margin: calc(var(--space-1) * -1);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: text;
+  overflow-wrap: anywhere;
+}
+
+.display:hover {
+  background: var(--surface-hover);
+}
+
+.display:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* The autosize trick: both the textarea and this wrapper's `::after` occupy
+   the same grid cell, so the invisible mirrored text drives the row height
+   and the textarea stretches to match it. */
+.autosize {
+  display: grid;
+  width: 100%;
+  margin: calc(var(--space-1) * -1);
+}
+
+.autosize::after {
+  content: attr(data-value) " ";
+  grid-area: 1 / 1 / 2 / 2;
+  visibility: hidden;
+  padding: var(--space-1);
+  font: inherit;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.textarea {
+  grid-area: 1 / 1 / 2 / 2;
+  width: 100%;
+  padding: var(--space-1);
+  border: none;
+  border-radius: var(--radius-sm);
+  resize: none;
+  overflow: hidden;
+  background: var(--surface-raised);
+  color: inherit;
+  font: inherit;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  box-shadow: 0 0 0 2px var(--focus-ring);
+}
+
+.textarea:focus {
+  outline: none;
+}

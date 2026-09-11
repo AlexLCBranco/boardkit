@@ -1,11 +1,13 @@
 import { memo } from "react";
 
-import type { CardId } from "../../domain/types";
-import { useCard } from "../../store/selectors";
+import { InlineEditable } from "../../components/InlineEditable";
+import type { CardId, ListId } from "../../domain/types";
+import { useCard, useDeleteCard, useRenameCard } from "../../store/selectors";
 import styles from "./CardItem.module.css";
 
 interface CardItemProps {
   readonly cardId: CardId;
+  readonly listId: ListId;
 }
 
 /**
@@ -16,16 +18,36 @@ interface CardItemProps {
  * list of ids it already has, so adding a card re-renders the column but not
  * its existing siblings, and editing a card re-renders only that card.
  *
- * `memo` completes the picture. The only prop is a string id, so when the
- * column re-renders for an unrelated reason every untouched card bails out on
- * a single reference comparison.
+ * `listId` is a second prop because deletion needs it -- a card's own record
+ * has no back-reference to its list, so `deleteCard` needs to be told which
+ * `cardOrder` array to splice it out of.
+ *
+ * `memo` completes the picture. The only props are two string ids, so when
+ * the column re-renders for an unrelated reason every untouched card bails
+ * out on a shallow prop comparison.
  */
-function CardItemImpl({ cardId }: CardItemProps) {
+function CardItemImpl({ cardId, listId }: CardItemProps) {
   const card = useCard(cardId);
+  const renameCard = useRenameCard();
+  const deleteCard = useDeleteCard();
 
   return (
     <article className={styles.card} data-card-id={cardId}>
-      <p className={styles.title}>{card.title}</p>
+      <p className={styles.title}>
+        <InlineEditable
+          value={card.title}
+          onCommit={(title) => renameCard(cardId, title)}
+          ariaLabel="Card title"
+        />
+      </p>
+      <button
+        type="button"
+        className={styles.deleteButton}
+        onClick={() => deleteCard(listId, cardId)}
+        aria-label="Delete card"
+      >
+        ×
+      </button>
     </article>
   );
 }

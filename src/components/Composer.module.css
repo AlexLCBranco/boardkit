@@ -1,0 +1,108 @@
+.trigger {
+  display: block;
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-weight: var(--weight-medium);
+  text-align: left;
+  cursor: pointer;
+}
+
+.trigger:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.trigger:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.composer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.autosize {
+  display: grid;
+  width: 100%;
+}
+
+.autosize::after {
+  content: attr(data-value) " ";
+  grid-area: 1 / 1 / 2 / 2;
+  visibility: hidden;
+  padding: var(--space-2) var(--space-3);
+  font: inherit;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.textarea {
+  grid-area: 1 / 1 / 2 / 2;
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  resize: none;
+  overflow: hidden;
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  font: inherit;
+  line-height: var(--line-normal);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--focus-ring);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.submit {
+  padding: var(--space-1) var(--space-3);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: var(--text-inverted);
+  font-size: var(--font-size-sm);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+}
+
+.submit:hover {
+  background: var(--accent-hover);
+}
+
+.cancel {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--font-size-lg);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.cancel:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}

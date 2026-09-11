@@ -37,7 +37,7 @@ Rules for every session:
 |---|-----------|-------|
 | 1 | Foundation | Complete |
 | 2 | Domain model and store | Complete |
-| 3 | Mutations and instant editing | Not started |
+| 3 | Mutations and instant editing | Complete |
 | 4 | Drag and drop within a list | Not started |
 | 5 | Drag across lists, reorder lists | Not started |
 | 6 | Motion and performance pass | Not started |
@@ -124,6 +124,8 @@ check passes, and no component reads more of the store than it needs.
 ---
 
 ## Milestone 3 — Mutations and instant editing
+
+**Complete.**
 
 **Goal.** Add, rename and delete lists and cards, with editing that feels
 immediate.

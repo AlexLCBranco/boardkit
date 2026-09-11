@@ -19,7 +19,9 @@
   min-width: 100%;
 }
 
-.placeholder {
-  color: var(--text-muted);
-  font-size: var(--font-size-sm);
+.addListSlot {
+  flex: 0 0 var(--list-width);
+  width: var(--list-width);
+  padding: var(--space-2);
+  border-radius: var(--radius-lg);
 }

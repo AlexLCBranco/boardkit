@@ -57,3 +57,37 @@ export function useCard(cardId: CardId): Card {
 export function useCardCount(listId: ListId): number {
   return useBoardStore((state) => state.cardOrder[listId].length);
 }
+
+/**
+ * Action selectors.
+ *
+ * Each one returns a single function, not an object of functions. Zustand
+ * actions keep the same reference for the store's whole lifetime, so
+ * `Object.is` sees no change and a component wiring up `useRenameCard` never
+ * re-renders because of it. Bundling several actions into one selector would
+ * return a fresh object on every call and defeat that -- rule 1 above, applied
+ * to functions instead of data.
+ */
+export function useAddList() {
+  return useBoardStore((state) => state.addList);
+}
+
+export function useAddCard() {
+  return useBoardStore((state) => state.addCard);
+}
+
+export function useRenameList() {
+  return useBoardStore((state) => state.renameList);
+}
+
+export function useRenameCard() {
+  return useBoardStore((state) => state.renameCard);
+}
+
+export function useDeleteList() {
+  return useBoardStore((state) => state.deleteList);
+}
+
+export function useDeleteCard() {
+  return useBoardStore((state) => state.deleteCard);
+}

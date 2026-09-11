@@ -62,7 +62,9 @@ application.
 2. **Domain model + store** — entities, normalised store, static seed data
    rendering as real lists and cards.
 3. **Mutations** — add, rename and delete lists and cards; instant inline
-   editing.
+   editing. *(Complete: `InlineEditable` and `Composer` live in
+   `components/`, board-agnostic; store actions each copy only the slice
+   they touch, so a rename never re-renders an unrelated list or card.)*
 4. **Drag within a list** — dnd-kit sortable, drag overlay, reorder cards.
 5. **Drag across lists and drag lists themselves.**
 6. **Motion and performance pass** — animation choreography, memoisation,
