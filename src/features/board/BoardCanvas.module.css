@@ -1,0 +1,25 @@
+.canvas {
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  /* Promote to its own layer so scrolling a large board does not repaint
+     the header alongside it. */
+  will-change: scroll-position;
+}
+
+.rail {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--board-gutter);
+  height: 100%;
+  padding: var(--space-4);
+  /* `width: max-content` makes the rail as wide as its children, which is what
+     lets the parent scroll horizontally instead of squashing the lists. */
+  width: max-content;
+  min-width: 100%;
+}
+
+.placeholder {
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+}

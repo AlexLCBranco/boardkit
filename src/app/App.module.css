@@ -1,0 +1,26 @@
+.app {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  height: 100%;
+  /* The app shell never scrolls; only the board canvas inside it does. */
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface-raised);
+}
+
+.title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--weight-bold);
+  line-height: var(--line-tight);
+}
+
+.main {
+  min-height: 0; /* lets the grid row shrink so the child can scroll */
+}

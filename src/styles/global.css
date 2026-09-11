@@ -1,0 +1,73 @@
+@import "./tokens.css";
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-md);
+  line-height: var(--line-normal);
+  color: var(--text-primary);
+  background: var(--surface-app);
+  -webkit-font-smoothing: antialiased;
+
+  /* The board is a drag surface: never let a drag select text or
+     trigger the browser's native pull-to-refresh / rubber-banding. */
+  -webkit-user-select: none;
+  user-select: none;
+  overscroll-behavior: none;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+input,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+/* One focus style for the whole app. `:focus-visible` keeps the ring off
+   mouse clicks, which matters on a board full of clickable surfaces. */
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Respect the OS setting. Everything animated in this app must degrade
+   to an instant state change rather than a slow one. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
