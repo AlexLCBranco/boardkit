@@ -1,18 +1,29 @@
+import { useListOrder } from "../../store/selectors";
 import styles from "./BoardCanvas.module.css";
+import { ListColumn } from "./ListColumn";
 
 /**
  * The board canvas: a horizontally scrolling rail that lists are laid out in.
  *
- * Milestone 1 renders the empty surface only. It exists now so that the
- * scroll container, its padding and its overflow behaviour are settled before
- * any drag logic is built on top of them -- drag-and-drop maths depends on the
- * scroll container being a known, stable element.
+ * It subscribes to `listOrder` alone -- an array of ids. Nothing that happens
+ * inside a column can change that array, so the canvas re-renders only when
+ * lists are added, removed or reordered, never when a card changes.
+ *
+ * The scroll container is deliberately this element, and it is marked with
+ * `data-board-canvas` so drag auto-scrolling can find it later without a ref
+ * being threaded through the tree.
  */
 export function BoardCanvas() {
+  const listOrder = useListOrder();
+
   return (
     <div className={styles.canvas} data-board-canvas>
       <div className={styles.rail}>
-        <p className={styles.placeholder}>No lists yet.</p>
+        {listOrder.length === 0 ? (
+          <p className={styles.placeholder}>No lists yet.</p>
+        ) : (
+          listOrder.map((listId) => <ListColumn key={listId} listId={listId} />)
+        )}
       </div>
     </div>
   );

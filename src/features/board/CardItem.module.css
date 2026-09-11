@@ -1,0 +1,25 @@
+.card {
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-2) var(--space-3);
+
+  /* Only transform and box-shadow animate. Both are compositor-friendly,
+     which is what keeps a list of hundreds of cards smooth. */
+  transition:
+    transform var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.title {
+  font-size: var(--font-size-md);
+  line-height: var(--line-normal);
+  /* Long words and pasted URLs must wrap rather than widen the column. */
+  overflow-wrap: anywhere;
+}

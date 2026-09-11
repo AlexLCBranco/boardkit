@@ -22,7 +22,7 @@ Rules for every session:
 | # | Milestone | State |
 |---|-----------|-------|
 | 1 | Foundation | Complete |
-| 2 | Domain model and store | Not started |
+| 2 | Domain model and store | Complete |
 | 3 | Mutations and instant editing | Not started |
 | 4 | Drag and drop within a list | Not started |
 | 5 | Drag across lists, reorder lists | Not started |
@@ -51,6 +51,8 @@ expensive to retrofit and nearly free to settle up front.
 
 ## Milestone 2 — Domain model and store
 
+**Complete.**
+
 **Goal.** Real lists and cards appear on screen, rendered from a store,
 using seed data. Still no interaction.
 
@@ -71,7 +73,7 @@ shape works before any mutation or drag logic depends on it.
   these rather than writing inline selectors, so subscription granularity is
   reviewable in one file.
 - `src/features/board/ListColumn.tsx` plus module CSS — renders one list.
-- `src/features/board/Card.tsx` plus module CSS — renders one card.
+- `src/features/board/CardItem.tsx` plus module CSS — renders one card.
 - Wire `BoardCanvas` to render lists from the store.
 
 **State shape.**

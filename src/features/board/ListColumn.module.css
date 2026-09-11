@@ -1,0 +1,64 @@
+.column {
+  display: flex;
+  flex-direction: column;
+  /* Fixed width from a token: every column is identical, which makes the
+     drag maths in later milestones predictable. */
+  width: var(--list-width);
+  flex: 0 0 var(--list-width);
+  /* Never taller than the board, so the column scrolls rather than the page. */
+  max-height: 100%;
+
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  flex: 0 0 auto;
+}
+
+.title {
+  flex: 1 1 auto;
+  font-size: var(--font-size-md);
+  font-weight: var(--weight-bold);
+  line-height: var(--line-tight);
+  overflow-wrap: anywhere;
+}
+
+.count {
+  flex: 0 0 auto;
+  min-width: 22px;
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-full);
+  background: var(--surface-hover);
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.scroller {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 var(--space-2) var(--space-2);
+  min-height: 0;
+}
+
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.empty {
+  padding: var(--space-3) var(--space-1);
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+}
