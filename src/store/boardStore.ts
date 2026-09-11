@@ -1,6 +1,7 @@
 import { create } from "zustand";
 
 import { createCardId, createListId } from "../domain/ids";
+import { moveWithinList } from "../domain/ordering";
 import { createSeedBoard } from "../domain/seed";
 import type { BoardState, CardId, ListId } from "../domain/types";
 
@@ -24,6 +25,7 @@ export interface BoardActions {
   renameCard: (cardId: CardId, title: string) => void;
   deleteList: (listId: ListId) => void;
   deleteCard: (listId: ListId, cardId: CardId) => void;
+  reorderCardsWithinList: (listId: ListId, activeId: CardId, overId: CardId) => void;
 }
 
 export type BoardStore = BoardState & BoardActions;
@@ -102,4 +104,14 @@ export const useBoardStore = create<BoardStore>((set) => ({
         },
       };
     }),
+
+  // A thin wrapper over the pure domain function: the store's only job is to
+  // put the result back into the normalised shape.
+  reorderCardsWithinList: (listId, activeId, overId) =>
+    set((state) => ({
+      cardOrder: {
+        ...state.cardOrder,
+        [listId]: moveWithinList(state.cardOrder[listId], activeId, overId),
+      },
+    })),
 }));

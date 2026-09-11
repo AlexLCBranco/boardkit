@@ -91,3 +91,7 @@ export function useDeleteList() {
 export function useDeleteCard() {
   return useBoardStore((state) => state.deleteCard);
 }
+
+export function useReorderCardsWithinList() {
+  return useBoardStore((state) => state.reorderCardsWithinList);
+}

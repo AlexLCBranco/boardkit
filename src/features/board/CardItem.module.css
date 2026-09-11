@@ -5,17 +5,43 @@
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
   padding: var(--space-2) var(--space-3);
+  cursor: grab;
+  /* Required by dnd-kit's pointer sensor: without it, a touch drag scrolls
+     the page instead of picking the card up. */
+  touch-action: none;
 
   /* Only transform and box-shadow animate. Both are compositor-friendly,
-     which is what keeps a list of hundreds of cards smooth. */
+     which is what keeps a list of hundreds of cards smooth. dnd-kit sets its
+     own inline `transition` while a drag is resolving, which overrides this
+     one for the duration of the drag. */
   transition:
     transform var(--duration-fast) var(--ease-standard),
-    box-shadow var(--duration-fast) var(--ease-standard);
+    box-shadow var(--duration-fast) var(--ease-standard),
+    opacity var(--duration-fast) var(--ease-standard);
 }
 
 .card:hover {
   box-shadow: var(--shadow-md);
   transform: translateY(-1px);
+}
+
+/* The original card while it is the one being dragged: left in place as a
+   placeholder (so the list doesn't collapse) but faded, since the lifted
+   copy in the DragOverlay is the one the user is actually looking at. */
+.dragging {
+  opacity: 0.4;
+  cursor: grabbing;
+}
+
+.dragging:hover {
+  box-shadow: var(--shadow-sm);
+  transform: none;
+}
+
+/* The DragOverlay copy: the same card, elevated, tracking the pointer. */
+.overlay {
+  box-shadow: var(--shadow-lifted);
+  cursor: grabbing;
 }
 
 .title {

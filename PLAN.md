@@ -38,7 +38,7 @@ Rules for every session:
 | 1 | Foundation | Complete |
 | 2 | Domain model and store | Complete |
 | 3 | Mutations and instant editing | Complete |
-| 4 | Drag and drop within a list | Not started |
+| 4 | Drag and drop within a list | Complete |
 | 5 | Drag across lists, reorder lists | Not started |
 | 6 | Motion and performance pass | Not started |
 | 7 | Customisation | Not started |
@@ -168,6 +168,8 @@ by keyboard, with no visible lag and no lost focus.
 ---
 
 ## Milestone 4 — Drag and drop within a list
+
+**Complete.**
 
 **Goal.** Cards reorder by dragging inside their own list.
 

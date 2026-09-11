@@ -66,6 +66,14 @@ application.
    `components/`, board-agnostic; store actions each copy only the slice
    they touch, so a rename never re-renders an unrelated list or card.)*
 4. **Drag within a list** — dnd-kit sortable, drag overlay, reorder cards.
+   *(Complete: `DragContext.tsx` owns the one `DndContext`, its sensors and
+   `closestCenter` collision detection; `domain/ordering.ts` holds the pure
+   `moveWithinList` splice, unit-testable with no dnd-kit import; the store
+   action is a thin wrapper over it. Each card is a `useSortable` item inside
+   its list's `SortableContext`; the original stays in place at reduced
+   opacity as a placeholder while a `DragOverlay` copy tracks the pointer.
+   Cross-list drops are recognised — via `listId` carried in each sortable
+   item's `data` — and deliberately ignored, since that is milestone 5.)*
 5. **Drag across lists and drag lists themselves.**
 6. **Motion and performance pass** — animation choreography, memoisation,
    measurement at thousands of cards.

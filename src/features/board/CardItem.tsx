@@ -1,3 +1,5 @@
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { memo } from "react";
 
 import { InlineEditable } from "../../components/InlineEditable";
@@ -31,8 +33,28 @@ function CardItemImpl({ cardId, listId }: CardItemProps) {
   const renameCard = useRenameCard();
   const deleteCard = useDeleteCard();
 
+  // `data: { listId }` is read back in DragContext's onDragEnd -- a card
+  // carries no list back-reference in the store, so the drag data is the
+  // only place that membership is available at drop time.
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: cardId,
+    data: { listId },
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
   return (
-    <article className={styles.card} data-card-id={cardId}>
+    <article
+      ref={setNodeRef}
+      style={style}
+      className={`${styles.card} ${isDragging ? styles.dragging : ""}`}
+      data-card-id={cardId}
+      {...attributes}
+      {...listeners}
+    >
       <p className={styles.title}>
         <InlineEditable
           value={card.title}

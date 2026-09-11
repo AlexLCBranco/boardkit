@@ -1,3 +1,4 @@
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { memo } from "react";
 
 import { Composer } from "../../components/Composer";
@@ -62,13 +63,15 @@ function ListColumnImpl({ listId }: ListColumnProps) {
 
       <div className={styles.scroller}>
         {cardIds.length > 0 && (
-          <ul className={styles.cards}>
-            {cardIds.map((cardId) => (
-              <li key={cardId}>
-                <CardItem cardId={cardId} listId={listId} />
-              </li>
-            ))}
-          </ul>
+          <SortableContext items={[...cardIds]} strategy={verticalListSortingStrategy}>
+            <ul className={styles.cards}>
+              {cardIds.map((cardId) => (
+                <li key={cardId}>
+                  <CardItem cardId={cardId} listId={listId} />
+                </li>
+              ))}
+            </ul>
+          </SortableContext>
         )}
         <div className={styles.composerSlot}>
           <Composer

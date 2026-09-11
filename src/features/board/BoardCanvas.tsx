@@ -1,6 +1,7 @@
 import { Composer } from "../../components/Composer";
 import { useAddList, useListOrder } from "../../store/selectors";
 import styles from "./BoardCanvas.module.css";
+import { BoardDragContext } from "./DragContext";
 import { ListColumn } from "./ListColumn";
 
 /**
@@ -21,14 +22,16 @@ export function BoardCanvas() {
 
   return (
     <div className={styles.canvas} data-board-canvas>
-      <div className={styles.rail}>
-        {listOrder.map((listId) => (
-          <ListColumn key={listId} listId={listId} />
-        ))}
-        <div className={styles.addListSlot}>
-          <Composer label="Add a list" placeholder="Enter list title…" onSubmit={addList} />
+      <BoardDragContext>
+        <div className={styles.rail}>
+          {listOrder.map((listId) => (
+            <ListColumn key={listId} listId={listId} />
+          ))}
+          <div className={styles.addListSlot}>
+            <Composer label="Add a list" placeholder="Enter list title…" onSubmit={addList} />
+          </div>
         </div>
-      </div>
+      </BoardDragContext>
     </div>
   );
 }
