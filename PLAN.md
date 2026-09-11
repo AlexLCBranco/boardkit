@@ -9,6 +9,20 @@ folder and paste that milestone's **Starter prompt**. `CLAUDE.md` loads
 automatically and carries the scope rules and architecture constraints, so
 you do not need to re-explain the project.
 
+### Opening a new session
+
+Open the session on this folder, then send one message in this shape:
+
+> Read CLAUDE.md and PLAN.md. Confirm which milestone is next, then start it.
+> Explain what you are building and why before you write code.
+
+That is the whole ritual. Everything else the session needs is in the two
+files it was just pointed at.
+
+If the previous session ended badly, add one sentence saying what happened,
+for example "the last session left the board blank, check what it changed
+against the last commit".
+
 Rules for every session:
 
 - Only build the current milestone. Do not run ahead.
