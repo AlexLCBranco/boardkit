@@ -122,7 +122,31 @@ application.
    read, returning `null` when numbering is off so a card's selector result
    stays referentially identical -- and skips re-rendering -- on every reorder
    until numbering is actually switched on.)*
-8. **Persistence and undo/redo.**
+8. **Persistence and undo/redo.** *(Complete: `domain/persistence.ts` defines
+   the versioned `PersistedBoardV1` shape and validates/migrates it back into
+   a `BoardState`, returning `null` for anything unreadable rather than
+   throwing; `store/persistBoard.ts` is the only place that touches
+   `localStorage`, reading it once at store creation and writing it back
+   debounced (400ms) through a subscriber outside the component tree.
+   Undo/redo reuses a fact the store already had: every action's `set` call
+   already returns a *patch* -- only the slices it touched, with every other
+   slice at its old reference, per the normalisation rule above. `domain/
+   history.ts`'s `pushEntry` captures the same slices' prior values as
+   `before` at zero extra cost (they're the references already sitting in
+   state) and stores `{ before, after }` on a bounded stack, so undo/redo
+   needed no per-action-type inverse logic, no snapshot of the whole board,
+   and no import of anything beyond `BoardState`. `boardStore.ts`'s
+   `withHistory` wraps every mutating action in this; `undo`/`redo`
+   themselves bypass it, applying a stored patch directly, or undoing would
+   recursively push a fresh "undo of the undo" entry. The `history` field
+   lives on the store but outside `BoardState`, and is excluded from both the
+   persistence subscriber's change check and the serialized payload -- it is
+   a live-session convenience, not saved content, so a reload starts with a
+   clean stack on top of the restored board. Ctrl/Cmd+Z and Ctrl/Cmd+Shift+Z
+   are wired in `useUndoRedoShortcuts`, which steps aside when the event
+   target is a text field or `contenteditable` so a card or list title still
+   being typed keeps the browser's native field-level undo instead of the
+   board's.)*
 
 ## Decisions
 

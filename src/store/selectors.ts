@@ -148,3 +148,22 @@ export function useSetCardIcon() {
 export function useSetNumberingScope() {
   return useBoardStore((state) => state.setNumberingScope);
 }
+
+export function useUndo() {
+  return useBoardStore((state) => state.undo);
+}
+
+export function useRedo() {
+  return useBoardStore((state) => state.redo);
+}
+
+/** Booleans, not the stacks themselves -- a component that only needs to
+ * know whether a button should be enabled must not re-render on every
+ * change to a stack it never reads the contents of. */
+export function useCanUndo(): boolean {
+  return useBoardStore((state) => state.history.past.length > 0);
+}
+
+export function useCanRedo(): boolean {
+  return useBoardStore((state) => state.history.future.length > 0);
+}

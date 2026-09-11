@@ -6,6 +6,8 @@ import styles from "./BoardCanvas.module.css";
 import { BoardDragContext } from "./DragContext";
 import { ListColumn } from "./ListColumn";
 import { NumberingControl } from "./NumberingControl";
+import { UndoRedoControls } from "./UndoRedoControls";
+import { useUndoRedoShortcuts } from "./useUndoRedoShortcuts";
 
 /**
  * The board canvas: a horizontally scrolling rail that lists are laid out in.
@@ -24,10 +26,12 @@ import { NumberingControl } from "./NumberingControl";
 export function BoardCanvas() {
   const listOrder = useListOrder();
   const addList = useAddList();
+  useUndoRedoShortcuts();
 
   return (
     <div className={styles.canvas}>
       <div className={styles.toolbar}>
+        <UndoRedoControls />
         <NumberingControl />
       </div>
       <div className={styles.scrollArea} data-board-canvas>

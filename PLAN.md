@@ -42,7 +42,7 @@ Rules for every session:
 | 5 | Drag across lists, reorder lists | Complete |
 | 6 | Motion and performance pass | Complete |
 | 7 | Customisation | Complete |
-| 8 | Persistence and undo/redo | Not started |
+| 8 | Persistence and undo/redo | Complete |
 
 ---
 
@@ -329,6 +329,8 @@ card is moved.
 ---
 
 ## Milestone 8 — Persistence and undo/redo
+
+**Complete.**
 
 **Goal.** The board survives a reload, and mistakes are reversible.
 
