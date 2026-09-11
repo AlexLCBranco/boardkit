@@ -1,9 +1,11 @@
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { memo } from "react";
+import { memo, useRef, useState, type CSSProperties } from "react";
 
 import { Composer } from "../../components/Composer";
+import { CustomizePanel } from "../../components/CustomizePanel";
+import { Icon } from "../../components/Icon";
 import { InlineEditable } from "../../components/InlineEditable";
 import type { ListId } from "../../domain/types";
 import {
@@ -13,6 +15,8 @@ import {
   useDeleteList,
   useList,
   useRenameList,
+  useSetListColor,
+  useSetListIcon,
 } from "../../store/selectors";
 import { sortableTransition } from "../../styles/motion";
 import { CardItem } from "./CardItem";
@@ -49,6 +53,11 @@ function ListColumnImpl({ listId }: ListColumnProps) {
   const renameList = useRenameList();
   const deleteList = useDeleteList();
   const addCard = useAddCard();
+  const setListColor = useSetListColor();
+  const setListIcon = useSetListIcon();
+
+  const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
+  const customizeTriggerRef = useRef<HTMLButtonElement>(null);
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: listId,
@@ -56,9 +65,15 @@ function ListColumnImpl({ listId }: ListColumnProps) {
     transition: sortableTransition,
   });
 
-  const style = {
+  // `--list-accent` is set here, on the column itself, so it cascades as an
+  // ordinary inherited custom property to every card inside -- one value,
+  // read back in CardItem.module.css, rather than threading a colour prop
+  // through the card tree.
+  const accent = list.color ? `var(--palette-${list.color})` : undefined;
+  const style: CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
+    ...(accent ? ({ "--list-accent": accent } as CSSProperties) : {}),
   };
 
   return (
@@ -69,6 +84,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
       data-list-id={listId}
     >
       <header className={styles.header} {...attributes} {...listeners}>
+        {list.icon && <Icon name={list.icon} className={styles.headerIcon} />}
         <h2 className={styles.title}>
           <InlineEditable
             value={list.title}
@@ -78,6 +94,15 @@ function ListColumnImpl({ listId }: ListColumnProps) {
         </h2>
         <span className={styles.count}>{cardCount}</span>
         <button
+          ref={customizeTriggerRef}
+          type="button"
+          className={styles.customizeButton}
+          onClick={() => setIsCustomizeOpen((open) => !open)}
+          aria-label="Customise list"
+        >
+          <span className={styles.customizeSwatch} style={accent ? { background: accent } : undefined} />
+        </button>
+        <button
           type="button"
           className={styles.deleteButton}
           onClick={() => deleteList(listId)}
@@ -86,6 +111,17 @@ function ListColumnImpl({ listId }: ListColumnProps) {
           ×
         </button>
       </header>
+
+      {isCustomizeOpen && (
+        <CustomizePanel
+          anchorRef={customizeTriggerRef}
+          color={list.color}
+          icon={list.icon}
+          onColorChange={(color) => setListColor(listId, color)}
+          onIconChange={(icon) => setListIcon(listId, icon)}
+          onClose={() => setIsCustomizeOpen(false)}
+        />
+      )}
 
       <div className={styles.scroller}>
         {cardIds.length > 0 ? (

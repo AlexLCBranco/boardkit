@@ -41,7 +41,7 @@ Rules for every session:
 | 4 | Drag and drop within a list | Complete |
 | 5 | Drag across lists, reorder lists | Complete |
 | 6 | Motion and performance pass | Complete |
-| 7 | Customisation | Not started |
+| 7 | Customisation | Complete |
 | 8 | Persistence and undo/redo | Not started |
 
 ---
@@ -289,6 +289,8 @@ the profiler shows that a card edit re-renders one card.
 ---
 
 ## Milestone 7 — Customisation
+
+**Complete.**
 
 **Goal.** Lists and cards carry a colour, an icon and optional numbering.
 

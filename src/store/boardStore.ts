@@ -3,7 +3,7 @@ import { create } from "zustand";
 import { createCardId, createListId } from "../domain/ids";
 import { moveBetweenLists, moveList, moveWithinList } from "../domain/ordering";
 import { createSeedBoard } from "../domain/seed";
-import type { BoardState, CardId, ListId } from "../domain/types";
+import type { BoardState, CardId, IconKey, ListId, NumberingScope, PaletteColor } from "../domain/types";
 
 /**
  * The board store.
@@ -33,6 +33,11 @@ export interface BoardActions {
     overId: CardId | null,
   ) => void;
   reorderLists: (activeId: ListId, overId: ListId) => void;
+  setListColor: (listId: ListId, color: PaletteColor | undefined) => void;
+  setListIcon: (listId: ListId, icon: IconKey | undefined) => void;
+  setCardColor: (cardId: CardId, color: PaletteColor | undefined) => void;
+  setCardIcon: (cardId: CardId, icon: IconKey | undefined) => void;
+  setNumberingScope: (scope: NumberingScope) => void;
 }
 
 export type BoardStore = BoardState & BoardActions;
@@ -134,5 +139,30 @@ export const useBoardStore = create<BoardStore>((set) => ({
   reorderLists: (activeId, overId) =>
     set((state) => ({
       listOrder: moveList(state.listOrder, activeId, overId),
+    })),
+
+  setListColor: (listId, color) =>
+    set((state) => ({
+      lists: { ...state.lists, [listId]: { ...state.lists[listId], color } },
+    })),
+
+  setListIcon: (listId, icon) =>
+    set((state) => ({
+      lists: { ...state.lists, [listId]: { ...state.lists[listId], icon } },
+    })),
+
+  setCardColor: (cardId, color) =>
+    set((state) => ({
+      cards: { ...state.cards, [cardId]: { ...state.cards[cardId], color } },
+    })),
+
+  setCardIcon: (cardId, icon) =>
+    set((state) => ({
+      cards: { ...state.cards, [cardId]: { ...state.cards[cardId], icon } },
+    })),
+
+  setNumberingScope: (scope) =>
+    set((state) => ({
+      settings: { ...state.settings, numbering: scope },
     })),
 }));

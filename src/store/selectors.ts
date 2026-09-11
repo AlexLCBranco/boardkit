@@ -1,4 +1,5 @@
-import type { Card, CardId, List, ListId } from "../domain/types";
+import { computeCardNumber } from "../domain/numbering";
+import type { Card, CardId, List, ListId, NumberingScope } from "../domain/types";
 import { useBoardStore } from "./boardStore";
 
 /**
@@ -102,4 +103,48 @@ export function useMoveCardBetweenLists() {
 
 export function useReorderLists() {
   return useBoardStore((state) => state.reorderLists);
+}
+
+/** The board's numbering setting. A plain string, so `Object.is` is exact. */
+export function useNumberingScope(): NumberingScope {
+  return useBoardStore((state) => state.settings.numbering);
+}
+
+/**
+ * A card's display number, or `null` when numbering is off.
+ *
+ * This is the one selector in this file that returns a value computed fresh
+ * on every call rather than read straight from the store -- a number is a
+ * primitive, so rule 1 still holds: `Object.is` compares it by value, not by
+ * reference. That is what makes the early `return null` load-bearing rather
+ * than cosmetic. With numbering off, this selector returns the same `null`
+ * on every store update regardless of what changed, so a card subscribed to
+ * it never re-renders for it. Only once numbering is switched on does it
+ * start returning real numbers that change when a card's position does --
+ * the cost of the feature is paid only by boards that use it.
+ */
+export function useCardNumber(listId: ListId, cardId: CardId): number | null {
+  return useBoardStore((state) =>
+    computeCardNumber(state.settings.numbering, state.listOrder, state.cardOrder, listId, cardId),
+  );
+}
+
+export function useSetListColor() {
+  return useBoardStore((state) => state.setListColor);
+}
+
+export function useSetListIcon() {
+  return useBoardStore((state) => state.setListIcon);
+}
+
+export function useSetCardColor() {
+  return useBoardStore((state) => state.setCardColor);
+}
+
+export function useSetCardIcon() {
+  return useBoardStore((state) => state.setCardIcon);
+}
+
+export function useSetNumberingScope() {
+  return useBoardStore((state) => state.setNumberingScope);
 }

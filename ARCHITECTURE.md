@@ -102,7 +102,26 @@ application.
    narrow selectors from milestone 2 onward, so this milestone measured
    rather than changed that: see `PERFORMANCE.md` for the 1,000-card
    baseline and the reasoning for deferring virtualisation.)*
-7. **Customisation** — per-list colours, icons, card numbering.
+7. **Customisation.** *(Complete: `List` and `Card` each gained optional
+   `color`/`icon` fields, drawn from the closed `PALETTE_COLORS`/`ICON_KEYS`
+   sets in `domain/types.ts` rather than free-form values. A list's colour is
+   set as a `--list-accent` custom property on the column element, which
+   ordinary CSS inheritance carries down to every card inside; a card's own
+   `--card-accent` overrides it when set, via
+   `border-left-color: var(--card-accent, var(--list-accent, transparent))`
+   in `CardItem.module.css`. `components/Popover.tsx` is a generic,
+   board-agnostic portal-based popover (portalled to `document.body` so it
+   escapes the column's own scroll clipping); `ColorSwatchPicker` and
+   `IconPicker` build on it, and `CustomizePanel` combines the two for both
+   `ListColumn` and `CardItem` to open. Icons are one inline `<symbol>`
+   sprite (`IconSprite`, mounted once in `main.tsx`) referenced via `<use>`,
+   not an icon library -- the set is fixed and small. Numbering is a board
+   setting (`state.settings.numbering`, `"off" | "list" | "board"`) rather
+   than a per-list one, and a card's number is never stored: `useCardNumber`
+   computes it from `domain/numbering.ts`'s pure `computeCardNumber` on every
+   read, returning `null` when numbering is off so a card's selector result
+   stays referentially identical -- and skips re-rendering -- on every reorder
+   until numbering is actually switched on.)*
 8. **Persistence and undo/redo.**
 
 ## Decisions

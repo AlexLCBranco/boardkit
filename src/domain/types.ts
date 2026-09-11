@@ -24,14 +24,56 @@ type Brand<T, TBrand extends string> = T & { readonly [brand]: TBrand };
 export type ListId = Brand<string, "ListId">;
 export type CardId = Brand<string, "CardId">;
 
+/**
+ * The customisation vocabulary.
+ *
+ * Both are closed sets rather than free-form strings (a hex value, an
+ * uploaded icon): a fixed palette is what makes a runtime colour a single
+ * CSS custom property swap instead of a colour-picker widget with its own
+ * validation, and a fixed icon set is what makes `IconSprite` a handful of
+ * inline paths instead of a bundled icon library. The `as const` array is
+ * the runtime companion to the type -- pickers iterate `PALETTE_COLORS` and
+ * `ICON_KEYS` rather than each inventing their own copy of the list.
+ */
+export const PALETTE_COLORS = [
+  "slate",
+  "red",
+  "orange",
+  "yellow",
+  "green",
+  "teal",
+  "blue",
+  "purple",
+] as const;
+export type PaletteColor = (typeof PALETTE_COLORS)[number];
+
+export const ICON_KEYS = ["star", "flag", "bug", "rocket", "bolt", "fire", "heart", "tag"] as const;
+export type IconKey = (typeof ICON_KEYS)[number];
+
+/**
+ * `off`: no numbers. `list`: each card numbered from 1 within its own list.
+ * `board`: one sequence across the whole board, left list to right. A board
+ * setting rather than a per-list one, since a mix of the two within one
+ * board would make neither reading useful.
+ */
+export type NumberingScope = "off" | "list" | "board";
+
 export interface Card {
   readonly id: CardId;
   readonly title: string;
+  readonly color?: PaletteColor;
+  readonly icon?: IconKey;
 }
 
 export interface List {
   readonly id: ListId;
   readonly title: string;
+  readonly color?: PaletteColor;
+  readonly icon?: IconKey;
+}
+
+export interface BoardSettings {
+  readonly numbering: NumberingScope;
 }
 
 /**
@@ -58,4 +100,5 @@ export interface BoardState {
   readonly listOrder: readonly ListId[];
   /** Top-to-bottom order of cards, keyed by the list they belong to. */
   readonly cardOrder: Readonly<Record<ListId, readonly CardId[]>>;
+  readonly settings: BoardSettings;
 }

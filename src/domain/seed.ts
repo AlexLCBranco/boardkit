@@ -35,7 +35,7 @@ export function createBoard(blueprints: readonly ListBlueprint[]): BoardState {
     }
   }
 
-  return { lists, cards, listOrder, cardOrder };
+  return { lists, cards, listOrder, cardOrder, settings: { numbering: "off" } };
 }
 
 /** The board a first-time user sees. */
