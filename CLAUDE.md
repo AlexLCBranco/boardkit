@@ -66,6 +66,16 @@ If one of these seems necessary to finish a task, stop and ask instead.
 
 Vite, React 19, TypeScript (strict), Zustand, dnd-kit, CSS Modules, nanoid.
 
+## Git
+
+One commit per milestone, on `main`, made only after `npm run build` passes.
+
+Subject line: `Milestone N: short description`. Body: a short bullet list of
+what changed and why, not a file listing. Do not commit work in progress and
+do not commit a milestone that is not finished.
+
+If a session goes wrong, the previous milestone commit is the recovery point.
+
 ## Commands
 
 ```bash
