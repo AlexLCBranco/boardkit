@@ -12,7 +12,12 @@ import {
   savePersistedBoardNow,
   schedulePersist,
 } from "./persistBoard";
-import { loadPersistedRegistry, savePersistedRegistryNow, schedulePersistRegistry } from "./persistRegistry";
+import {
+  flushPersistRegistry,
+  loadPersistedRegistry,
+  savePersistedRegistryNow,
+  schedulePersistRegistry,
+} from "./persistRegistry";
 
 /**
  * The board store.
@@ -336,3 +341,20 @@ useBoardStore.subscribe((state, previous) => {
     schedulePersistRegistry(state.boards, state.boardId);
   }
 });
+
+// A 400ms debounce means a reload (or a dev-server HMR reload, which tears
+// down and re-runs this module) that lands inside that window would
+// otherwise cancel the pending timer and drop whatever was just typed.
+// `visibilitychange` catches a tab switch or reload on every browser;
+// `pagehide` catches the final unload -- mobile Safari never fires
+// `beforeunload`, so that one is deliberately not used here.
+function flushAllPersistence(): void {
+  flushPersist();
+  flushPersistRegistry();
+}
+if (typeof document !== "undefined") {
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") flushAllPersistence();
+  });
+  window.addEventListener("pagehide", flushAllPersistence);
+}

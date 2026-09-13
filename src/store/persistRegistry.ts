@@ -42,8 +42,20 @@ export function savePersistedRegistryNow(boards: readonly BoardSummary[], active
 const SAVE_DELAY_MS = 400;
 
 let saveTimer: ReturnType<typeof setTimeout> | undefined;
+let pending: { boards: readonly BoardSummary[]; activeBoardId: BoardId } | undefined;
 
 export function schedulePersistRegistry(boards: readonly BoardSummary[], activeBoardId: BoardId): void {
+  pending = { boards, activeBoardId };
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => writeRegistry(boards, activeBoardId), SAVE_DELAY_MS);
+  saveTimer = setTimeout(flushPersistRegistry, SAVE_DELAY_MS);
+}
+
+/** Writes a still-pending scheduled save immediately, then clears it. See
+    `persistBoard.ts`'s `flushPersist` -- same reasoning, called alongside it
+    so a fast reload never catches only one of the two documents mid-debounce. */
+export function flushPersistRegistry(): void {
+  if (!pending) return;
+  clearTimeout(saveTimer);
+  writeRegistry(pending.boards, pending.activeBoardId);
+  pending = undefined;
 }
