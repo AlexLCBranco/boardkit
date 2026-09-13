@@ -239,12 +239,27 @@ export const useBoardStore = create<BoardStore>((set) => ({
       }),
     ),
 
+  // Setting a colour on the list clears any colour its cards picked
+  // individually, so the button reads as "override" rather than "the ones
+  // that haven't been touched yet": pressing it after customising a card
+  // still wins. Clearing the list back to no colour leaves card colours
+  // alone -- that action isn't asking those cards to give anything up.
   setListColor: (listId, color) =>
-    set((state) =>
-      withHistory(state, {
+    set((state) => {
+      if (color === undefined) {
+        return withHistory(state, {
+          lists: { ...state.lists, [listId]: { ...state.lists[listId], color } },
+        });
+      }
+      const cards = { ...state.cards };
+      for (const cardId of state.cardOrder[listId]) {
+        cards[cardId] = { ...cards[cardId], color: undefined };
+      }
+      return withHistory(state, {
         lists: { ...state.lists, [listId]: { ...state.lists[listId], color } },
-      }),
-    ),
+        cards,
+      });
+    }),
 
   setListIcon: (listId, icon) =>
     set((state) =>

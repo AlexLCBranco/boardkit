@@ -217,8 +217,15 @@ function ListOverlay({ listId }: { readonly listId: ListId }) {
   const list = useList(listId);
   const cardCount = useCardCount(listId);
 
+  // Same reasoning as CardOverlay above: portalled outside the column's own
+  // DOM subtree, so it can't inherit `--list-accent` by cascade and needs it
+  // set explicitly to keep the same tint while the list is being dragged.
+  const style: CSSProperties = {
+    ...(list.color ? ({ "--list-accent": `var(--palette-${list.color})` } as CSSProperties) : {}),
+  };
+
   return (
-    <div className={`${listStyles.column} ${listStyles.overlay}`}>
+    <div className={`${listStyles.column} ${listStyles.overlay}`} style={style}>
       <div className={listStyles.header}>
         <h2 className={listStyles.title}>{list.title}</h2>
         <span className={listStyles.count}>{cardCount}</span>

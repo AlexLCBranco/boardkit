@@ -13,7 +13,16 @@
      has a colour set. */
   --list-accent: transparent;
 
-  background: var(--surface-sunken);
+  /* Tints the whole column, not just the header stripe: same layered-gradient
+     trick as a card's `--card-tint` (CardItem.module.css), so an unset accent
+     (transparent) is a no-op over the base rather than shaving alpha off it.
+     25% -- enough to read as "this column is red/blue/..." at a glance
+     against the dark surface, while cards (opaque, 45% of their own) still
+     sit clearly on top of it rather than blending in. */
+  --list-tint: color-mix(in oklab, var(--list-accent) 25%, transparent);
+  background:
+    linear-gradient(var(--list-tint), var(--list-tint)),
+    var(--surface-sunken);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
 }
