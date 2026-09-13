@@ -5,6 +5,7 @@ import { useAddList, useListOrder } from "../../store/selectors";
 import styles from "./BoardCanvas.module.css";
 import { BoardDragContext } from "./DragContext";
 import { ListColumn } from "./ListColumn";
+import { ShortcutsDialog } from "./ShortcutsDialog";
 import { UndoRedoControls } from "./UndoRedoControls";
 import { useUndoRedoShortcuts } from "./useUndoRedoShortcuts";
 
@@ -31,6 +32,7 @@ export function BoardCanvas() {
     <div className={styles.canvas}>
       <div className={styles.toolbar}>
         <UndoRedoControls />
+        <ShortcutsDialog />
       </div>
       <div className={styles.scrollArea} data-board-canvas>
         <BoardDragContext>
