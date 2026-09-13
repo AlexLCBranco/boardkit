@@ -7,6 +7,16 @@ import { Composer } from "../../components/Composer";
 import { CustomizePanel } from "../../components/CustomizePanel";
 import { Icon } from "../../components/Icon";
 import { InlineEditable } from "../../components/InlineEditable";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../../components/ui/alert-dialog";
 import type { ListId } from "../../domain/types";
 import {
   useAddCard,
@@ -57,6 +67,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
   const setListIcon = useSetListIcon();
 
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const customizeTriggerRef = useRef<HTMLButtonElement>(null);
   // Drives every card's thots section at once: cycling hidden -> pregame ->
   // postgame -> hidden. Ephemeral UI state, not persisted, same as a card's
@@ -134,12 +145,30 @@ function ListColumnImpl({ listId }: ListColumnProps) {
         <button
           type="button"
           className={styles.deleteButton}
-          onClick={() => deleteList(listId)}
+          onClick={() => setIsDeleteConfirmOpen(true)}
           aria-label="Delete list"
         >
           ×
         </button>
       </header>
+
+      <AlertDialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete "{list.title}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This deletes the list and all {cardCount} card{cardCount === 1 ? "" : "s"} in it.
+              This can't be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={() => deleteList(listId)}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {isCustomizeOpen && (
         <CustomizePanel
