@@ -34,16 +34,19 @@ If one of these seems necessary to finish a task, stop and ask instead.
 
 ## How to work
 
-- Work one milestone at a time. `PLAN.md` is the roadmap and the source of
-  truth for what comes next. Never start a milestone before the previous one
-  is marked complete there.
-- Every milestone must end with a running application. No half-built states
-  left behind.
-- Before writing code, say what you are building and why it comes now.
-- Refactor when a milestone exposes a weak seam. Do not pre-build for
-  milestones that have not started.
-- After finishing a milestone, update the status table in `PLAN.md` and note
-  anything that changed in `ARCHITECTURE.md`.
+- `PLAN.md` lists what is queued, what is in flight, and what is deliberately
+  not being built. Read it before starting; update it when something lands.
+- Every change must end with a running application. No half-built states left
+  behind.
+- Before writing code, say what you are building and why.
+- Refactor when a change exposes a weak seam. Do not pre-build for work
+  nobody has asked for.
+- After finishing a piece of work, record anything architecturally
+  significant in `ARCHITECTURE.md`.
+
+Two agents work in this repo: Claude and Codex. Before editing, check
+`git status` and `PLAN.md`. Claim an item in `PLAN.md` before starting it, so
+both agents do not land in the same files.
 
 ## Non-negotiable technical rules
 
@@ -79,13 +82,13 @@ CSS v4 + shadcn/ui (supporting UI only), nanoid.
 
 ## Git
 
-One commit per milestone, on `main`, made only after `npm run build` passes.
+One commit per coherent change, on `main`, made only after `npm run build`
+passes.
 
-Subject line: `Milestone N: short description`. Body: a short bullet list of
-what changed and why, not a file listing. Do not commit work in progress and
-do not commit a milestone that is not finished.
+Subject line: a short imperative description. Body: a short bullet list of
+what changed and why, not a file listing. Do not commit work in progress.
 
-If a session goes wrong, the previous milestone commit is the recovery point.
+If a session goes wrong, the previous commit is the recovery point.
 
 ## Commands
 

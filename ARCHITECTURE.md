@@ -52,11 +52,12 @@ Why not nest cards inside lists:
   the list component keeps a single scroll container so it can be dropped in
   without restructuring.
 
-## Milestones
+## Build history
 
-See [PLAN.md](./PLAN.md) for the detailed roadmap, acceptance criteria and
-per-milestone starter prompts. Each milestone ends with a running
-application.
+The project's first version was built as nine numbered milestones. That
+roadmap is retired — it was scaffolding for getting to a working base, and
+[PLAN.md](./PLAN.md) is now a live work queue instead. The numbering below is
+kept as the historical record of what was built, in what order, and why.
 
 1. **Foundation** — build tooling, layering, design tokens, empty board shell.
 2. **Domain model + store** — entities, normalised store, static seed data
