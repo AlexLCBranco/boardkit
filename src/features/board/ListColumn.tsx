@@ -58,6 +58,21 @@ function ListColumnImpl({ listId }: ListColumnProps) {
 
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
   const customizeTriggerRef = useRef<HTMLButtonElement>(null);
+  // Drives every card's thots section at once: cycling hidden -> pregame ->
+  // postgame -> hidden. Ephemeral UI state, not persisted, same as a card's
+  // own `isDescriptionOpen` -- it's just scoped to the whole list instead of
+  // one card. Handed down as a prop, so every `CardItem` in this list
+  // re-renders when it changes (the point of a bulk toggle) but nothing
+  // outside this list is touched.
+  const [columnThotsMode, setColumnThotsMode] = useState<"hidden" | "pregame" | "postgame">(
+    "hidden",
+  );
+
+  function cycleColumnThotsMode() {
+    setColumnThotsMode((mode) =>
+      mode === "hidden" ? "pregame" : mode === "pregame" ? "postgame" : "hidden",
+    );
+  }
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: listId,
@@ -94,6 +109,20 @@ function ListColumnImpl({ listId }: ListColumnProps) {
         </h2>
         <span className={styles.count}>{cardCount}</span>
         <button
+          type="button"
+          className={styles.thotsButton}
+          onClick={cycleColumnThotsMode}
+          aria-label={
+            columnThotsMode === "hidden"
+              ? "Show pregame thots on every card"
+              : columnThotsMode === "pregame"
+                ? "Show postgame thots on every card"
+                : "Hide thots on every card"
+          }
+        >
+          ▤
+        </button>
+        <button
           ref={customizeTriggerRef}
           type="button"
           className={styles.customizeButton}
@@ -129,7 +158,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
             <ul className={styles.cards}>
               {cardIds.map((cardId) => (
                 <li key={cardId}>
-                  <CardItem cardId={cardId} listId={listId} />
+                  <CardItem cardId={cardId} listId={listId} thotsMode={columnThotsMode} />
                 </li>
               ))}
             </ul>

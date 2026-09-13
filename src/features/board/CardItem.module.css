@@ -78,7 +78,7 @@
   display: flex;
   align-items: baseline;
   gap: var(--space-1);
-  padding-right: calc(2 * var(--space-5));
+  padding-right: calc(3 * var(--space-5));
   font-size: var(--font-size-md);
   line-height: var(--line-normal);
   /* Long words and pasted URLs must wrap rather than widen the column. */
@@ -91,11 +91,18 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Not in the DOM at all until opened (see CardItem.tsx's isDescriptionOpen
+   check) -- a collapsed card ends right after its title, no reserved gap
+   for a control most cards never use. Opened by right-clicking the card;
+   there's nothing to click while it's gone. Reveal is the same
+   opacity/transform entrance as .description below, not a height animation,
+   since the row is already at its final height the instant it mounts. */
 .descriptionRow {
   display: flex;
   align-items: center;
   gap: var(--space-1);
   margin-top: var(--space-2);
+  animation: description-reveal var(--duration-fast) var(--ease-out);
 }
 
 /* Styled as a field label (uppercase, letter-spaced, muted) rather than
@@ -131,16 +138,20 @@
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   padding: 0;
   border: none;
   border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text-muted);
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-md);
   line-height: 1;
   cursor: pointer;
+  /* The ⇄ glyph sits high in its own em-box, so centering the button on
+     .descriptionToggle's text (which reserves descender space below its
+     baseline) leaves it looking above the label. Nudge down to match. */
+  transform: translateY(2px);
 }
 
 .descriptionFlip:hover {
@@ -177,6 +188,7 @@
   }
 }
 
+.thotsButton,
 .customizeButton,
 .deleteButton {
   position: absolute;
@@ -197,6 +209,10 @@
   transition: opacity var(--duration-fast) var(--ease-standard);
 }
 
+.thotsButton {
+  right: calc(var(--space-1) + 44px);
+}
+
 .customizeButton {
   right: calc(var(--space-1) + 22px);
 }
@@ -205,6 +221,8 @@
   right: var(--space-1);
 }
 
+.card:hover .thotsButton,
+.thotsButton:focus-visible,
 .card:hover .customizeButton,
 .customizeButton:focus-visible,
 .card:hover .deleteButton,
@@ -212,6 +230,7 @@
   opacity: 1;
 }
 
+.thotsButton:hover,
 .customizeButton:hover,
 .deleteButton:hover {
   background: var(--surface-hover);

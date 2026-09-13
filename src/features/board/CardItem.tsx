@@ -1,6 +1,6 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { memo, useRef, useState, type CSSProperties } from "react";
+import { memo, useEffect, useRef, useState, type CSSProperties } from "react";
 
 import { CustomizePanel } from "../../components/CustomizePanel";
 import { InlineEditable } from "../../components/InlineEditable";
@@ -20,6 +20,11 @@ import styles from "./CardItem.module.css";
 interface CardItemProps {
   readonly cardId: CardId;
   readonly listId: ListId;
+  /** The list's bulk thots cycle (see ListColumn) -- applied here via
+      effect, below, so it overrides this card's own open/slot state
+      whenever the list-wide control changes, without taking away this
+      card's ability to be toggled individually the rest of the time. */
+  readonly thotsMode: "hidden" | "pregame" | "postgame";
 }
 
 /**
@@ -38,7 +43,7 @@ interface CardItemProps {
  * the column re-renders for an unrelated reason every untouched card bails
  * out on a shallow prop comparison.
  */
-function CardItemImpl({ cardId, listId }: CardItemProps) {
+function CardItemImpl({ cardId, listId, thotsMode }: CardItemProps) {
   const card = useCard(cardId);
   const renameCard = useRenameCard();
   const deleteCard = useDeleteCard();
@@ -59,6 +64,30 @@ function CardItemImpl({ cardId, listId }: CardItemProps) {
 
   function flipThotsSlot() {
     setThotsSlot((slot) => (slot === "pregame" ? "postgame" : "pregame"));
+    setIsDescriptionOpen(true);
+  }
+
+  // Reruns only when the list's bulk control (ListColumn's `columnThotsMode`)
+  // actually changes, forcing every card in the list to the same slot in
+  // one stroke. Between those changes, this card's own controls are free to
+  // diverge again -- the effect doesn't run just because local state does.
+  useEffect(() => {
+    if (thotsMode === "hidden") {
+      setIsDescriptionOpen(false);
+      return;
+    }
+    setThotsSlot(thotsMode);
+    setIsDescriptionOpen(true);
+  }, [thotsMode]);
+
+  // Right-click opens the thots section instead of the browser's context
+  // menu -- the only way in while it's collapsed, since the row below isn't
+  // in the DOM at all until then (no reserved space, nothing to hover or
+  // click). Left alone once already open, so the native menu still works
+  // for copying text out of an open field.
+  function handleCardContextMenu(event: React.MouseEvent<HTMLElement>) {
+    if (isDescriptionOpen) return;
+    event.preventDefault();
     setIsDescriptionOpen(true);
   }
 
@@ -87,6 +116,7 @@ function CardItemImpl({ cardId, listId }: CardItemProps) {
       style={style}
       className={`${styles.card} ${isDragging ? styles.dragging : ""}`}
       data-card-id={cardId}
+      onContextMenu={handleCardContextMenu}
       {...attributes}
       {...listeners}
     >
@@ -98,24 +128,26 @@ function CardItemImpl({ cardId, listId }: CardItemProps) {
           ariaLabel="Card title"
         />
       </p>
-      <div className={styles.descriptionRow}>
-        <button
-          type="button"
-          className={styles.descriptionToggle}
-          onClick={() => setIsDescriptionOpen((open) => !open)}
-          aria-expanded={isDescriptionOpen}
-        >
-          {isDescriptionOpen ? "▾" : "▸"} {thotsSlot === "pregame" ? "pregame thots" : "postgame thots"}
-        </button>
-        <button
-          type="button"
-          className={styles.descriptionFlip}
-          onClick={flipThotsSlot}
-          aria-label="Switch between pregame and postgame thots"
-        >
-          ⇄
-        </button>
-      </div>
+      {isDescriptionOpen && (
+        <div className={styles.descriptionRow}>
+          <button
+            type="button"
+            className={styles.descriptionToggle}
+            onClick={() => setIsDescriptionOpen(false)}
+            aria-expanded={isDescriptionOpen}
+          >
+            ▾ {thotsSlot === "pregame" ? "pregame thots" : "postgame thots"}
+          </button>
+          <button
+            type="button"
+            className={styles.descriptionFlip}
+            onClick={flipThotsSlot}
+            aria-label="Switch between pregame and postgame thots"
+          >
+            ⇄
+          </button>
+        </div>
+      )}
       {isDescriptionOpen &&
         (thotsSlot === "pregame" ? (
           <div className={styles.description} key="pregame">
@@ -140,6 +172,15 @@ function CardItemImpl({ cardId, listId }: CardItemProps) {
             />
           </div>
         ))}
+      <button
+        type="button"
+        className={styles.thotsButton}
+        onClick={() => setIsDescriptionOpen((open) => !open)}
+        aria-label={isDescriptionOpen ? "Hide pregame thots" : "Show pregame thots"}
+        aria-expanded={isDescriptionOpen}
+      >
+        ▤
+      </button>
       <button
         ref={customizeTriggerRef}
         type="button"
