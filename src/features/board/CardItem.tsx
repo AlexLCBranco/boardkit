@@ -80,15 +80,14 @@ function CardItemImpl({ cardId, listId, thotsMode }: CardItemProps) {
     setIsDescriptionOpen(true);
   }, [thotsMode]);
 
-  // Right-click opens the thots section instead of the browser's context
-  // menu -- the only way in while it's collapsed, since the row below isn't
-  // in the DOM at all until then (no reserved space, nothing to hover or
-  // click). Left alone once already open, so the native menu still works
-  // for copying text out of an open field.
+  // Right-click toggles the thots section instead of opening the browser's
+  // context menu -- the only way in while it's collapsed, since the row
+  // below isn't in the DOM at all until then (no reserved space, nothing to
+  // hover or click). Always intercepted, so the native menu never shows on
+  // a card.
   function handleCardContextMenu(event: React.MouseEvent<HTMLElement>) {
-    if (isDescriptionOpen) return;
     event.preventDefault();
-    setIsDescriptionOpen(true);
+    setIsDescriptionOpen((open) => !open);
   }
 
   // `data: { listId }` is read back in DragContext's onDragEnd -- a card
