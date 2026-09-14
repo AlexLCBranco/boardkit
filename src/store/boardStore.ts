@@ -5,11 +5,14 @@ import { EMPTY_HISTORY, pushEntry, stepRedo, stepUndo, type BoardPatch, type His
 import { moveBetweenLists, moveList, moveWithinList } from "../domain/ordering";
 import { createEmptyBoard, createSeedBoard } from "../domain/seed";
 import {
+  emptyListTrash as emptyListTrashState,
   emptyTrash as emptyTrashState,
   moveCardToTrash,
-  moveListCardsToTrash,
+  moveListToTrash,
   permanentlyDeleteCard as permanentlyDeleteCardState,
+  permanentlyDeleteList as permanentlyDeleteListState,
   restoreCardFromTrash,
+  restoreListFromTrash,
 } from "../domain/trash";
 import type { BoardId, BoardState, BoardSummary, CardId, IconKey, ListId, PaletteColor } from "../domain/types";
 import {
@@ -49,6 +52,9 @@ export interface BoardActions {
   restoreCard: (cardId: CardId) => void;
   permanentlyDeleteCard: (cardId: CardId) => void;
   emptyTrash: () => void;
+  restoreList: (listId: ListId) => void;
+  permanentlyDeleteList: (listId: ListId) => void;
+  emptyListTrash: () => void;
   reorderCardsWithinList: (listId: ListId, activeId: CardId, overId: CardId) => void;
   moveCardBetweenLists: (
     activeId: CardId,
@@ -175,28 +181,23 @@ export const useBoardStore = create<BoardStore>((set) => ({
       }),
     ),
 
-  // A list carries no back-reference to its cards elsewhere, so deleting one
-  // means cleaning up two places: its own entry and the cards that lived in
-  // its `cardOrder` array. Those cards go to the trash, same as a single
-  // card deleted from the × button -- restoring one afterward will find its
-  // original list gone and offer only a permanent delete, which is the
-  // existing, graceful `restoreCardFromTrash` behaviour, not new here.
+  // Unlike a trashed card, a trashed list keeps everything -- its own
+  // record, its `cardOrder` entry, every card in it -- untouched. Only
+  // `listOrder` loses the id, so restoring is a plain re-insertion with no
+  // separate bookkeeping for the cards that were in it.
   deleteList: (listId) =>
+    set((state) => withHistory(state, moveListToTrash(state, listId, Date.now()))),
+
+  restoreList: (listId) =>
     set((state) => {
-      const lists = { ...state.lists };
-      const cardOrder = { ...state.cardOrder };
-      const removedCardIds = cardOrder[listId];
-
-      delete lists[listId];
-      delete cardOrder[listId];
-
-      return withHistory(state, {
-        ...moveListCardsToTrash(state, listId, removedCardIds, Date.now()),
-        lists,
-        cardOrder,
-        listOrder: state.listOrder.filter((id) => id !== listId),
-      });
+      const patch = restoreListFromTrash(state, listId);
+      return patch ? withHistory(state, patch) : state;
     }),
+
+  permanentlyDeleteList: (listId) =>
+    set((state) => withHistory(state, permanentlyDeleteListState(state, listId))),
+
+  emptyListTrash: () => set((state) => withHistory(state, emptyListTrashState(state))),
 
   // `listId` is required here because a card does not store which list it
   // belongs to -- that membership lives only in `cardOrder`, so removing a
@@ -361,7 +362,8 @@ useBoardStore.subscribe((state, previous) => {
     state.cards !== previous.cards ||
     state.listOrder !== previous.listOrder ||
     state.cardOrder !== previous.cardOrder ||
-    state.trash !== previous.trash
+    state.trash !== previous.trash ||
+    state.trashedLists !== previous.trashedLists
   ) {
     schedulePersist(state, state.boardId);
   }

@@ -100,6 +100,12 @@ export interface BoardState {
       The card itself stays in `cards` -- only its `cardOrder` entry is
       removed -- so restoring is just putting the id back. */
   readonly trash: readonly TrashEntry[];
+  /** Lists deleted via the list delete button, most-recently-deleted last.
+      Unlike a trashed card, a trashed list's own record, its `cardOrder`
+      entry and every one of its cards are all left completely alone -- only
+      `listOrder` loses the id -- so restoring is just putting the id back,
+      list and cards intact, with no separate bookkeeping for the cards. */
+  readonly trashedLists: readonly TrashedListEntry[];
 }
 
 /** One card sitting in the trash: which list to put it back into, and when
@@ -107,6 +113,12 @@ export interface BoardState {
     entry once the trash is full). */
 export interface TrashEntry {
   readonly cardId: CardId;
+  readonly listId: ListId;
+  readonly deletedAt: number;
+}
+
+/** One list sitting in the trash, and when it landed there. */
+export interface TrashedListEntry {
   readonly listId: ListId;
   readonly deletedAt: number;
 }

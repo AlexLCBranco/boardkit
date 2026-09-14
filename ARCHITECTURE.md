@@ -229,15 +229,34 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   small, deliberately unobtrusive icon button in the header (opens a shadcn
   `Dialog`) -- supporting chrome, not the board engine, so it's Tailwind +
   shadcn/ui like the rest of the app's chrome rather than a CSS Module.
-  Deleting a *list* trashes its cards too (`moveListCardsToTrash`, sharing
-  the same eviction logic as the single-card path via a private `trashCards`
-  helper) -- but since the list itself is a hard delete, not trash,
-  `restoreCardFromTrash`'s existing "original list is gone" check already
-  covers the result: those entries show up in the trash panel with restore
-  disabled and only a permanent delete on offer, no new UI branch needed.
-  `domain/persistence.ts`'s `deserializeBoard` defaults a missing `trash` to
-  `[]` for boards saved before this shipped, rather than bumping
-  `SCHEMA_VERSION` over one additive, optional field.
+- **List trash.** Deleting a *list* moves it, as a whole, into a second,
+  independent trash -- `trashedLists: TrashedListEntry[]` on `BoardState`,
+  where `TrashedListEntry` is just `{ listId, deletedAt }`. Unlike a trashed
+  card, a trashed list's own `lists` record, its `cardOrder` entry and every
+  card in it are all left completely alone -- the only thing that changes is
+  `listOrder` losing the id -- so `restoreList` needs no reconstruction
+  either, and a restored list brings its cards back with zero extra
+  bookkeeping. This superseded an earlier version of list-delete that
+  cascaded each card into the *card* trash individually, restore disabled
+  since the list was a hard delete; that approach is gone now that the list
+  itself is soft-deletable and can carry its cards back whole. Capped
+  separately at `LIST_TRASH_LIMIT` (10, lower than the card trash's 20,
+  since one list can carry many cards with it), evicting the oldest for
+  real -- list, `cardOrder` entry and cards together -- via a shared
+  `forgetList` helper in `domain/trash.ts`. A card trashed individually
+  (via its own × button) while its list is still on the board is unaffected
+  by any of this; `restoreCardFromTrash` now checks `listOrder.includes`
+  rather than mere existence in `lists`, since a list's record can exist
+  while the list itself sits in the list trash -- restoring such a card is
+  correctly disabled until the list itself is restored (or forgotten, if
+  neither ever happens, since the card then sits in the card trash pointing
+  at a list that may later vanish for good with no cross-references to
+  clean up). `TrashPanel.tsx` renders both trashes as two sections --
+  "Lists" and "Cards" -- in the one dialog, with one "Empty trash" that
+  clears both. `domain/persistence.ts`'s `deserializeBoard` defaults a
+  missing `trash` or `trashedLists` to `[]` for boards saved before either
+  shipped, rather than bumping `SCHEMA_VERSION` over two additive, optional
+  fields.
 
 ## Decisions
 

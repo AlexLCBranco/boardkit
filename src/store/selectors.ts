@@ -1,5 +1,14 @@
 import { computeCardNumber } from "../domain/numbering";
-import type { BoardId, BoardSummary, Card, CardId, List, ListId, TrashEntry } from "../domain/types";
+import type {
+  BoardId,
+  BoardSummary,
+  Card,
+  CardId,
+  List,
+  ListId,
+  TrashEntry,
+  TrashedListEntry,
+} from "../domain/types";
 import { useBoardStore } from "./boardStore";
 
 /**
@@ -113,6 +122,36 @@ export function usePermanentlyDeleteCard() {
 
 export function useEmptyTrash() {
   return useBoardStore((state) => state.emptyTrash);
+}
+
+/** Whether a list is currently on the board, as opposed to sitting in the
+    list trash (or gone for good) -- its own record can exist in either
+    case, so this is what a trashed card's row checks before offering to
+    restore into it. */
+export function useListIsOnBoard(listId: ListId): boolean {
+  return useBoardStore((state) => state.listOrder.includes(listId));
+}
+
+/** Trashed lists, oldest first. Stable array reference -- only changes on
+    delete, restore, permanent delete or empty. */
+export function useTrashedLists(): readonly TrashedListEntry[] {
+  return useBoardStore((state) => state.trashedLists);
+}
+
+export function useTrashedListsCount(): number {
+  return useBoardStore((state) => state.trashedLists.length);
+}
+
+export function useRestoreList() {
+  return useBoardStore((state) => state.restoreList);
+}
+
+export function usePermanentlyDeleteList() {
+  return useBoardStore((state) => state.permanentlyDeleteList);
+}
+
+export function useEmptyListTrash() {
+  return useBoardStore((state) => state.emptyListTrash);
 }
 
 export function useReorderCardsWithinList() {
