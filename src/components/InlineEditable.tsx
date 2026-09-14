@@ -124,6 +124,13 @@ export function InlineEditable({
         onChange={(event) => setDraft(event.target.value)}
         onBlur={commit}
         onKeyDown={(event) => {
+          // The card article this sits inside spreads dnd-kit's drag
+          // listeners across itself, and dnd-kit's KeyboardSensor treats
+          // Space as a drag-activation key. Left alone, every space bubbles
+          // up from here and gets hijacked into starting a keyboard drag
+          // instead of typing -- stopping propagation keeps all keys local
+          // to the field being edited.
+          event.stopPropagation();
           if (event.key === "Enter" && !event.shiftKey && !multiline) {
             event.preventDefault();
             commit();
