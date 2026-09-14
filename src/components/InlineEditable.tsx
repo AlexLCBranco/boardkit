@@ -131,7 +131,7 @@ export function InlineEditable({
           // instead of typing -- stopping propagation keeps all keys local
           // to the field being edited.
           event.stopPropagation();
-          if (event.key === "Enter" && !event.shiftKey && !multiline) {
+          if (event.key === "Enter" && !event.shiftKey) {
             event.preventDefault();
             commit();
           } else if (event.key === "Escape") {
