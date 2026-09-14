@@ -1,6 +1,7 @@
 import { BoardCanvas } from "../features/board/BoardCanvas";
 import { BoardSwitcher } from "../features/board/BoardSwitcher";
 import styles from "./App.module.css";
+import { VersionBadge } from "./VersionBadge";
 
 /**
  * App owns the page chrome only: a header and the scroll container the board
@@ -18,6 +19,7 @@ export function App() {
       <main className={styles.main}>
         <BoardCanvas />
       </main>
+      <VersionBadge />
     </div>
   );
 }
