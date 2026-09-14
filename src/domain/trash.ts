@@ -9,7 +9,7 @@ import type { BoardState, CardId, ListId } from "./types";
     oldest one. A cap, not a time-based purge -- "recently deleted" needs a
     bound, but a background timer to age entries out is more machinery than
     this earns. */
-export const TRASH_LIMIT = 50;
+export const TRASH_LIMIT = 20;
 
 /**
  * Appends new entries to the trash and, if that pushes it past

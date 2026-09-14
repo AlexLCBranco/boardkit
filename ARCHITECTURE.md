@@ -221,7 +221,7 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   (`domain/trash.ts`), where `TrashEntry` is `{ cardId, listId, deletedAt }`.
   The card's own record stays in `cards`, untouched, so restoring
   (`restoreCard`) is just re-inserting the id at the end of `cardOrder[listId]`
-  -- no reconstruction. `trash` is capped at `TRASH_LIMIT` (50); past that the
+  -- no reconstruction. `trash` is capped at `TRASH_LIMIT` (20); past that the
   oldest entry is forgotten for real, `cards` record included. Both
   `deleteCard` and `restoreCard` go through the existing `withHistory` wrapper
   unchanged, so Ctrl+Z already covered this for free -- the only genuinely new
