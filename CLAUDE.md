@@ -88,6 +88,11 @@ passes.
 Subject line: a short imperative description. Body: a short bullet list of
 what changed and why, not a file listing. Do not commit work in progress.
 
+Bump `package.json`'s patch version (0.0.1 -> 0.0.2 -> ...) in every commit
+that ships a user-visible change. It's shown on screen (`VersionBadge`) so
+the deployed build can be checked against what's expected — skipping the
+bump breaks that.
+
 If a session goes wrong, the previous commit is the recovery point.
 
 ## Commands
