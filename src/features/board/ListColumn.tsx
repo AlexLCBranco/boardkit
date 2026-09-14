@@ -157,8 +157,8 @@ function ListColumnImpl({ listId }: ListColumnProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete "{list.title}"?</AlertDialogTitle>
             <AlertDialogDescription>
-              This deletes the list and all {cardCount} card{cardCount === 1 ? "" : "s"} in it.
-              This can't be undone.
+              This deletes the list. Its {cardCount} card{cardCount === 1 ? "" : "s"} move to the
+              trash, but can't be restored once the list itself is gone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -7,6 +7,7 @@ import { createEmptyBoard, createSeedBoard } from "../domain/seed";
 import {
   emptyTrash as emptyTrashState,
   moveCardToTrash,
+  moveListCardsToTrash,
   permanentlyDeleteCard as permanentlyDeleteCardState,
   restoreCardFromTrash,
 } from "../domain/trash";
@@ -176,23 +177,22 @@ export const useBoardStore = create<BoardStore>((set) => ({
 
   // A list carries no back-reference to its cards elsewhere, so deleting one
   // means cleaning up two places: its own entry and the cards that lived in
-  // its `cardOrder` array.
+  // its `cardOrder` array. Those cards go to the trash, same as a single
+  // card deleted from the × button -- restoring one afterward will find its
+  // original list gone and offer only a permanent delete, which is the
+  // existing, graceful `restoreCardFromTrash` behaviour, not new here.
   deleteList: (listId) =>
     set((state) => {
       const lists = { ...state.lists };
-      const cards = { ...state.cards };
       const cardOrder = { ...state.cardOrder };
       const removedCardIds = cardOrder[listId];
 
       delete lists[listId];
       delete cardOrder[listId];
-      for (const cardId of removedCardIds) {
-        delete cards[cardId];
-      }
 
       return withHistory(state, {
+        ...moveListCardsToTrash(state, listId, removedCardIds, Date.now()),
         lists,
-        cards,
         cardOrder,
         listOrder: state.listOrder.filter((id) => id !== listId),
       });

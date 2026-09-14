@@ -229,12 +229,15 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   small, deliberately unobtrusive icon button in the header (opens a shadcn
   `Dialog`) -- supporting chrome, not the board engine, so it's Tailwind +
   shadcn/ui like the rest of the app's chrome rather than a CSS Module.
-  Deleting a *list* still hard-deletes its cards, unchanged -- only the
-  single-card delete button feeds the trash, since that's the scope that was
-  asked for; cascading list-delete into the trash too is a possible later
-  extension, not an oversight. `domain/persistence.ts`'s `deserializeBoard`
-  defaults a missing `trash` to `[]` for boards saved before this shipped,
-  rather than bumping `SCHEMA_VERSION` over one additive, optional field.
+  Deleting a *list* trashes its cards too (`moveListCardsToTrash`, sharing
+  the same eviction logic as the single-card path via a private `trashCards`
+  helper) -- but since the list itself is a hard delete, not trash,
+  `restoreCardFromTrash`'s existing "original list is gone" check already
+  covers the result: those entries show up in the trash panel with restore
+  disabled and only a permanent delete on offer, no new UI branch needed.
+  `domain/persistence.ts`'s `deserializeBoard` defaults a missing `trash` to
+  `[]` for boards saved before this shipped, rather than bumping
+  `SCHEMA_VERSION` over one additive, optional field.
 
 ## Decisions
 
