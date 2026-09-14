@@ -96,6 +96,19 @@ export interface BoardState {
   readonly listOrder: readonly ListId[];
   /** Top-to-bottom order of cards, keyed by the list they belong to. */
   readonly cardOrder: Readonly<Record<ListId, readonly CardId[]>>;
+  /** Cards deleted via the card delete button, most-recently-deleted last.
+      The card itself stays in `cards` -- only its `cardOrder` entry is
+      removed -- so restoring is just putting the id back. */
+  readonly trash: readonly TrashEntry[];
+}
+
+/** One card sitting in the trash: which list to put it back into, and when
+    it landed there (shown in the trash panel, and used to evict the oldest
+    entry once the trash is full). */
+export interface TrashEntry {
+  readonly cardId: CardId;
+  readonly listId: ListId;
+  readonly deletedAt: number;
 }
 
 /**

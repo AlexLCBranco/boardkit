@@ -1,5 +1,5 @@
 import { computeCardNumber } from "../domain/numbering";
-import type { BoardId, BoardSummary, Card, CardId, List, ListId } from "../domain/types";
+import type { BoardId, BoardSummary, Card, CardId, List, ListId, TrashEntry } from "../domain/types";
 import { useBoardStore } from "./boardStore";
 
 /**
@@ -91,6 +91,28 @@ export function useDeleteList() {
 
 export function useDeleteCard() {
   return useBoardStore((state) => state.deleteCard);
+}
+
+/** Trashed cards, oldest first. Stable array reference -- only changes on
+    delete, restore, permanent delete or empty. */
+export function useTrash(): readonly TrashEntry[] {
+  return useBoardStore((state) => state.trash);
+}
+
+export function useTrashCount(): number {
+  return useBoardStore((state) => state.trash.length);
+}
+
+export function useRestoreCard() {
+  return useBoardStore((state) => state.restoreCard);
+}
+
+export function usePermanentlyDeleteCard() {
+  return useBoardStore((state) => state.permanentlyDeleteCard);
+}
+
+export function useEmptyTrash() {
+  return useBoardStore((state) => state.emptyTrash);
 }
 
 export function useReorderCardsWithinList() {

@@ -35,7 +35,7 @@ export function createBoard(blueprints: readonly ListBlueprint[]): BoardState {
     }
   }
 
-  return { lists, cards, listOrder, cardOrder };
+  return { lists, cards, listOrder, cardOrder, trash: [] };
 }
 
 /** A board with no lists at all -- what a deliberately-created new board

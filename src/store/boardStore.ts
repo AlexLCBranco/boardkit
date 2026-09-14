@@ -4,6 +4,12 @@ import { createBoardId, createCardId, createListId } from "../domain/ids";
 import { EMPTY_HISTORY, pushEntry, stepRedo, stepUndo, type BoardPatch, type History } from "../domain/history";
 import { moveBetweenLists, moveList, moveWithinList } from "../domain/ordering";
 import { createEmptyBoard, createSeedBoard } from "../domain/seed";
+import {
+  emptyTrash as emptyTrashState,
+  moveCardToTrash,
+  permanentlyDeleteCard as permanentlyDeleteCardState,
+  restoreCardFromTrash,
+} from "../domain/trash";
 import type { BoardId, BoardState, BoardSummary, CardId, IconKey, ListId, PaletteColor } from "../domain/types";
 import {
   flushPersist,
@@ -39,6 +45,9 @@ export interface BoardActions {
   renameCard: (cardId: CardId, title: string) => void;
   deleteList: (listId: ListId) => void;
   deleteCard: (listId: ListId, cardId: CardId) => void;
+  restoreCard: (cardId: CardId) => void;
+  permanentlyDeleteCard: (cardId: CardId) => void;
+  emptyTrash: () => void;
   reorderCardsWithinList: (listId: ListId, activeId: CardId, overId: CardId) => void;
   moveCardBetweenLists: (
     activeId: CardId,
@@ -191,19 +200,22 @@ export const useBoardStore = create<BoardStore>((set) => ({
 
   // `listId` is required here because a card does not store which list it
   // belongs to -- that membership lives only in `cardOrder`, so removing a
-  // card means splicing it out of its list's array.
+  // card means splicing it out of its list's array. The card is not erased:
+  // it moves into `trash`, restorable from there until it ages out or is
+  // deleted forever.
   deleteCard: (listId, cardId) =>
+    set((state) => withHistory(state, moveCardToTrash(state, listId, cardId, Date.now()))),
+
+  restoreCard: (cardId) =>
     set((state) => {
-      const cards = { ...state.cards };
-      delete cards[cardId];
-      return withHistory(state, {
-        cards,
-        cardOrder: {
-          ...state.cardOrder,
-          [listId]: state.cardOrder[listId].filter((id) => id !== cardId),
-        },
-      });
+      const patch = restoreCardFromTrash(state, cardId);
+      return patch ? withHistory(state, patch) : state;
     }),
+
+  permanentlyDeleteCard: (cardId) =>
+    set((state) => withHistory(state, permanentlyDeleteCardState(state, cardId))),
+
+  emptyTrash: () => set((state) => withHistory(state, emptyTrashState(state))),
 
   // A thin wrapper over the pure domain function: the store's only job is to
   // put the result back into the normalised shape.
@@ -348,7 +360,8 @@ useBoardStore.subscribe((state, previous) => {
     state.lists !== previous.lists ||
     state.cards !== previous.cards ||
     state.listOrder !== previous.listOrder ||
-    state.cardOrder !== previous.cardOrder
+    state.cardOrder !== previous.cardOrder ||
+    state.trash !== previous.trash
   ) {
     schedulePersist(state, state.boardId);
   }

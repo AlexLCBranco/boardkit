@@ -1,5 +1,6 @@
 import { BoardCanvas } from "../features/board/BoardCanvas";
 import { BoardSwitcher } from "../features/board/BoardSwitcher";
+import { TrashPanel } from "../features/board/TrashPanel";
 import styles from "./App.module.css";
 import { VersionBadge } from "./VersionBadge";
 
@@ -15,6 +16,7 @@ export function App() {
     <div className={styles.app}>
       <header className={styles.header}>
         <BoardSwitcher />
+        <TrashPanel />
       </header>
       <main className={styles.main}>
         <BoardCanvas />

@@ -34,7 +34,11 @@ export function deserializeBoard(data: unknown): BoardState | null {
   if (!isPersistedBoardV1(data)) {
     return null;
   }
-  return data.board;
+  // `trash` was added after v1 shipped, so a board saved before that has no
+  // such field on disk -- default it rather than bumping the schema version
+  // over one optional, backward-compatible array.
+  const trash = Array.isArray(data.board.trash) ? data.board.trash : [];
+  return { ...data.board, trash };
 }
 
 function isPersistedBoardV1(data: unknown): data is PersistedBoardV1 {

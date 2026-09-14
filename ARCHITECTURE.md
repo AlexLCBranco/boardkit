@@ -212,6 +212,30 @@ kept as the historical record of what was built, in what order, and why.
      overlay is portalled outside the list's DOM subtree and can't inherit
      `--list-accent` by CSS cascade the way the real card does.
 
+## Since milestone 9
+
+Un-numbered, smaller changes landed after the milestone-9 grouping above.
+
+- **Card trash.** `deleteCard` no longer erases a card -- it moves the card's
+  id out of `cardOrder` and into a new `trash: TrashEntry[]` on `BoardState`
+  (`domain/trash.ts`), where `TrashEntry` is `{ cardId, listId, deletedAt }`.
+  The card's own record stays in `cards`, untouched, so restoring
+  (`restoreCard`) is just re-inserting the id at the end of `cardOrder[listId]`
+  -- no reconstruction. `trash` is capped at `TRASH_LIMIT` (50); past that the
+  oldest entry is forgotten for real, `cards` record included. Both
+  `deleteCard` and `restoreCard` go through the existing `withHistory` wrapper
+  unchanged, so Ctrl+Z already covered this for free -- the only genuinely new
+  code is the trash itself and the panel that shows it. `TrashPanel.tsx` is a
+  small, deliberately unobtrusive icon button in the header (opens a shadcn
+  `Dialog`) -- supporting chrome, not the board engine, so it's Tailwind +
+  shadcn/ui like the rest of the app's chrome rather than a CSS Module.
+  Deleting a *list* still hard-deletes its cards, unchanged -- only the
+  single-card delete button feeds the trash, since that's the scope that was
+  asked for; cascading list-delete into the trash too is a possible later
+  extension, not an oversight. `domain/persistence.ts`'s `deserializeBoard`
+  defaults a missing `trash` to `[]` for boards saved before this shipped,
+  rather than bumping `SCHEMA_VERSION` over one additive, optional field.
+
 ## Decisions
 
 - **Vite + React + TypeScript.** Fast HMR matters when tuning drag feel.
