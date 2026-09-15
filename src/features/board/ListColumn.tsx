@@ -121,10 +121,14 @@ function ListColumnImpl({ listId }: ListColumnProps) {
   // exactly once, on release, so undo sees the whole gesture as a single
   // step, even when it touched every list on the board.
   //
-  // Holding Alt applies the same pixel delta to every column at once
-  // (`getAllColumns`), not just this one -- a plain DOM query rather than a
-  // registry of every column's ref, since every column already carries
-  // `data-list-id` for other reasons (drag data, this handle's own lookup).
+  // Two modifiers, both reaching every column via `getAllColumns` (a plain
+  // DOM query rather than a registry of every column's ref, since every
+  // column already carries `data-list-id` for other reasons):
+  //  - Alt keeps each column's own size, offsetting all of them by the same
+  //    pixel delta -- widths that were different stay different.
+  //  - Shift makes every column track *this* column's live width instead of
+  //    its own -- the way to get them all equal, since the fixed points
+  //    (the columns' own starting widths) are exactly what Alt preserves.
   function handleResizeStart(event: ReactPointerEvent<HTMLDivElement>) {
     const column = columnRef.current;
     if (!column) {
@@ -136,7 +140,9 @@ function ListColumnImpl({ listId }: ListColumnProps) {
     const handle = event.currentTarget;
     handle.setPointerCapture(event.pointerId);
 
-    const columns = event.altKey ? getAllColumns() : [column];
+    const grabbedColumn = column;
+    const matchThisColumn = event.shiftKey;
+    const columns = event.altKey || matchThisColumn ? getAllColumns() : [grabbedColumn];
     const startX = event.clientX;
     const startWidths = new Map(columns.map((col) => [col, col.getBoundingClientRect().width]));
     columns.forEach((col) => col.classList.add(styles.resizing));
@@ -144,6 +150,15 @@ function ListColumnImpl({ listId }: ListColumnProps) {
 
     function handlePointerMove(moveEvent: PointerEvent) {
       const dx = moveEvent.clientX - startX;
+      if (matchThisColumn) {
+        const sharedWidth = clamp(
+          startWidths.get(grabbedColumn)! + dx,
+          LIST_WIDTH_MIN,
+          LIST_WIDTH_MAX,
+        );
+        columns.forEach((col) => col.style.setProperty("--column-width", `${sharedWidth}px`));
+        return;
+      }
       columns.forEach((col) => {
         const nextWidth = clamp(startWidths.get(col)! + dx, LIST_WIDTH_MIN, LIST_WIDTH_MAX);
         col.style.setProperty("--column-width", `${nextWidth}px`);
@@ -177,11 +192,28 @@ function ListColumnImpl({ listId }: ListColumnProps) {
   // A double-click on the handle auto-fits the column to its widest card's
   // title, single-line -- the same "double-click a column border" gesture
   // spreadsheets use. Alt+double-click does it for every column on the
-  // board in one step, each fit to its own cards. With no cards to fit to,
-  // a column falls back to clearing its override instead.
+  // board in one step, each fit to its own cards (so they can still end up
+  // different widths). Shift+double-click instead copies *this* column's
+  // current width onto every other one, unmeasured -- the equal-widths case,
+  // same division of labour as the drag above. With no cards to fit to, a
+  // plain or Alt double-click falls back to clearing that column's override.
   function handleAutoFit(event: ReactMouseEvent<HTMLDivElement>) {
+    const column = columnRef.current;
+
+    if (event.shiftKey) {
+      if (!column) {
+        return;
+      }
+      const sharedWidth = Math.round(column.getBoundingClientRect().width);
+      const updates: Record<ListId, number> = {};
+      for (const col of getAllColumns()) {
+        updates[col.dataset.listId as ListId] = sharedWidth;
+      }
+      setListWidths(updates);
+      return;
+    }
+
     if (!event.altKey) {
-      const column = columnRef.current;
       const scroller = scrollerRef.current;
       if (!column || !scroller) {
         return;
@@ -322,7 +354,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
         role="separator"
         aria-orientation="vertical"
         aria-label="Resize list"
-        title="Drag to resize, double-click to fit&#10;Hold Alt for every list at once"
+        title="Drag to resize, double-click to fit&#10;Alt: every list at once&#10;Shift: match every list to this one"
       />
     </section>
   );

@@ -297,20 +297,33 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   `WidthPicker` in `CustomizePanel` (normal/wide/wider buttons) once it
   became clear direct manipulation was the actual ask -- a menu adds a step
   a drag handle doesn't need.
-- **Alt applies a resize or auto-fit to every list at once.** Holding Alt
-  while dragging or double-clicking any column's resize handle
-  (`ListColumn.tsx`) repeats that same gesture across every column on the
-  board, not just the one grabbed -- the same pixel delta for a drag, each
-  column's own auto-fit width for a double-click. `getAllColumns` finds them
-  with a plain `document.querySelectorAll("[data-list-id]")` rather than a
-  ref registry threaded between sibling `ListColumn` instances, since every
-  column already carries that attribute for other reasons. `setListWidths`
-  (plural) on the store applies every affected list's new width in one
-  `lists` patch, so an Alt-modified gesture touching ten columns is still one
-  undo step, matching the single-column case (a one-entry update when Alt
-  isn't held). It's the only list-width action now -- the previous commit's
-  singular `setListWidth` was folded into it once every call site needed the
-  plural form anyway.
+- **Alt and Shift apply a resize or auto-fit to every list at once, two
+  different ways.** Holding either while dragging or double-clicking any
+  column's resize handle (`ListColumn.tsx`) reaches every column via
+  `getAllColumns` -- a plain `document.querySelectorAll("[data-list-id]")`
+  rather than a ref registry threaded between sibling `ListColumn`
+  instances, since every column already carries that attribute for other
+  reasons -- but the two modifiers disagree about what "every column" should
+  end up at:
+  - **Alt** keeps each column's own size as the baseline: a drag offsets
+    every column by the same pixel delta (so columns that started at
+    different widths stay different, just all wider or narrower), and a
+    double-click auto-fits each to its own cards independently (so they can
+    still land on different widths, each tight to its own content).
+  - **Shift** makes every column match the *grabbed* column's width exactly,
+    unmeasured -- a drag sets every column's `--column-width` to the same
+    live value tracking the pointer (not each column's own start plus delta,
+    the one thing that would keep them apart), and a double-click just
+    copies that column's current rendered width onto every other one. This
+    is the "make them all the same size" case, and it needed its own branch
+    precisely because Alt's per-column-relative math can't produce it.
+
+  `setListWidths` (plural) on the store applies every affected list's new
+  width in one `lists` patch, so a modified gesture touching ten columns is
+  still one undo step, matching the single-column case (a one-entry update
+  when neither modifier is held). It's the only list-width action now -- an
+  earlier, singular `setListWidth` was folded into it once every call site
+  needed the plural form anyway.
 
 ## Decisions
 
