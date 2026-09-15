@@ -96,7 +96,6 @@ export function InlineEditable({
         type="button"
         className={[
           styles.display,
-          multiline && styles.multiline,
           isPlaceholder && styles.placeholder,
           className,
         ]

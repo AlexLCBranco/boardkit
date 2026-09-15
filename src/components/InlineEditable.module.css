@@ -10,6 +10,12 @@
   font: inherit;
   text-align: left;
   cursor: text;
+  /* Shift+Enter inserts a real newline while editing regardless of
+     `multiline` (see InlineEditable.tsx's keydown handler), so the display
+     view has to honour it too -- otherwise a manual break a user typed into
+     a title survives editing but silently vanishes the moment they click
+     away. */
+  white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 
@@ -20,10 +26,6 @@
 .display:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
-}
-
-.multiline {
-  white-space: pre-wrap;
 }
 
 .placeholder {
