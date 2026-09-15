@@ -1,10 +1,11 @@
 import type { RefObject } from "react";
 
-import type { IconKey, PaletteColor } from "../domain/types";
+import type { IconKey, ListWidth, PaletteColor } from "../domain/types";
 import { ColorSwatchPicker } from "./ColorSwatchPicker";
 import styles from "./CustomizePanel.module.css";
 import { IconPicker } from "./IconPicker";
 import { Popover } from "./Popover";
+import { WidthPicker } from "./WidthPicker";
 
 interface CustomizePanelProps {
   readonly anchorRef: RefObject<HTMLElement | null>;
@@ -15,6 +16,10 @@ interface CustomizePanelProps {
       that omits both of these simply gets no Icon section. */
   readonly icon?: IconKey;
   readonly onIconChange?: (icon: IconKey | undefined) => void;
+  /** Lists only, same reasoning as the icon pair above -- a card has no
+      width of its own to customise. */
+  readonly width?: ListWidth;
+  readonly onWidthChange?: (width: ListWidth | undefined) => void;
 }
 
 /**
@@ -35,6 +40,8 @@ export function CustomizePanel({
   onClose,
   icon,
   onIconChange,
+  width,
+  onWidthChange,
 }: CustomizePanelProps) {
   return (
     <Popover anchorRef={anchorRef} onClose={onClose}>
@@ -46,6 +53,12 @@ export function CustomizePanel({
         <div className={styles.section}>
           <span className={styles.label}>Icon</span>
           <IconPicker value={icon} onChange={onIconChange} />
+        </div>
+      )}
+      {onWidthChange && (
+        <div className={styles.section}>
+          <span className={styles.label}>Width</span>
+          <WidthPicker value={width} onChange={onWidthChange} />
         </div>
       )}
     </Popover>

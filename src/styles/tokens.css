@@ -72,7 +72,13 @@
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 
   /* ---- Layout constants the board engine depends on ---- */
-  --list-width: 288px;
+  --list-width-normal: 288px;
+  --list-width-wide: 380px;
+  --list-width-wider: 480px;
+  /* The base column width -- everything that doesn't care about per-list
+     customisation (the add-list slot, a column with no width set) reads
+     this one, rather than "normal" directly. */
+  --list-width: var(--list-width-normal);
   --board-gutter: var(--space-4);
 
   /* ---- Stacking order, declared once so layers never fight ---- */

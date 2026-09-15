@@ -1,10 +1,14 @@
 .column {
   display: flex;
   flex-direction: column;
-  /* Fixed width from a token: every column is identical, which makes the
-     drag maths in later milestones predictable. */
-  width: var(--list-width);
-  flex: 0 0 var(--list-width);
+  /* Width from a token, same as every other visual constant. Per-list
+     customisation (see `--list-accent` below) overrides `--column-width` on
+     the element itself; this fallback is what every column with no width
+     set -- the common case -- resolves to. Set once on mount/customise, never
+     transitioned, so it stays outside the "don't animate width" rule: a
+     column's size never changes mid-drag. */
+  width: var(--column-width, var(--list-width));
+  flex: 0 0 var(--column-width, var(--list-width));
   /* Never taller than the board, so the column scrolls rather than the page. */
   max-height: 100%;
 

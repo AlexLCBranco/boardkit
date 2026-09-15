@@ -51,6 +51,13 @@ export type PaletteColor = (typeof PALETTE_COLORS)[number];
 export const ICON_KEYS = ["star", "flag", "bug", "rocket", "bolt", "fire", "heart", "tag"] as const;
 export type IconKey = (typeof ICON_KEYS)[number];
 
+/** A closed set of column widths rather than a free-form pixel value, same
+    reasoning as the colour palette above: each maps to one token in
+    `tokens.css`, so the picker never produces a value the layout wasn't
+    built for. */
+export const LIST_WIDTHS = ["normal", "wide", "wider"] as const;
+export type ListWidth = (typeof LIST_WIDTHS)[number];
+
 export interface Card {
   readonly id: CardId;
   readonly title: string;
@@ -70,6 +77,9 @@ export interface List {
   readonly title: string;
   readonly color?: PaletteColor;
   readonly icon?: IconKey;
+  /** Column width, as a card-line-length control. Undefined means the
+      default `--list-width` from tokens.css. */
+  readonly width?: ListWidth;
 }
 
 /**

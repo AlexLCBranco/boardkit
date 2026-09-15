@@ -14,7 +14,16 @@ import {
   restoreCardFromTrash,
   restoreListFromTrash,
 } from "../domain/trash";
-import type { BoardId, BoardState, BoardSummary, CardId, IconKey, ListId, PaletteColor } from "../domain/types";
+import type {
+  BoardId,
+  BoardState,
+  BoardSummary,
+  CardId,
+  IconKey,
+  ListId,
+  ListWidth,
+  PaletteColor,
+} from "../domain/types";
 import {
   flushPersist,
   loadLegacyPersistedBoard,
@@ -65,6 +74,7 @@ export interface BoardActions {
   reorderLists: (activeId: ListId, overId: ListId) => void;
   setListColor: (listId: ListId, color: PaletteColor | undefined) => void;
   setListIcon: (listId: ListId, icon: IconKey | undefined) => void;
+  setListWidth: (listId: ListId, width: ListWidth | undefined) => void;
   setCardColor: (cardId: CardId, color: PaletteColor | undefined) => void;
   setCardDescription: (cardId: CardId, description: string | undefined) => void;
   setCardPostgameDescription: (cardId: CardId, description: string | undefined) => void;
@@ -278,6 +288,13 @@ export const useBoardStore = create<BoardStore>((set) => ({
     set((state) =>
       withHistory(state, {
         lists: { ...state.lists, [listId]: { ...state.lists[listId], icon } },
+      }),
+    ),
+
+  setListWidth: (listId, width) =>
+    set((state) =>
+      withHistory(state, {
+        lists: { ...state.lists, [listId]: { ...state.lists[listId], width } },
       }),
     ),
 

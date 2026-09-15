@@ -1,0 +1,24 @@
+.group {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.option {
+  flex: 1 1 0;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+}
+
+.option:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.selected {
+  background: var(--surface-active);
+  color: var(--text-primary);
+}

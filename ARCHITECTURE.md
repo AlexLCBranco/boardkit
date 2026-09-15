@@ -257,6 +257,23 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   missing `trash` or `trashedLists` to `[]` for boards saved before either
   shipped, rather than bumping `SCHEMA_VERSION` over two additive, optional
   fields.
+- **Per-list width.** A third customisation, alongside colour and icon: a
+  closed `ListWidth` set (`"normal" | "wide" | "wider"`, `domain/types.ts`)
+  mapping to three tokens in `tokens.css` (`--list-width-normal/wide/wider`).
+  `ListColumn.module.css`'s `.column` reads `width: var(--column-width,
+  var(--list-width))` -- a list with no width set resolves through the
+  existing fallback untouched; one with a width set gets `--column-width`
+  written directly on the element (same pattern as `--list-accent`), so
+  there's no per-render branch and nothing to animate -- the value is set
+  once, on customise, never transitioned, keeping it clear of the "don't
+  animate width" rule (that rule is about animating a *frame*, not setting a
+  static size). `ListOverlay` in `DragContext.tsx` sets both custom
+  properties explicitly for the same reason `CardOverlay` already did for
+  `--list-accent`: dnd-kit portals the drag overlay to the document root,
+  outside the column's DOM subtree, so neither property reaches it by
+  cascade. `WidthPicker.tsx` is a third picker alongside
+  `ColorSwatchPicker`/`IconPicker` in `CustomizePanel`, same "closed set, one
+  click" shape.
 
 ## Decisions
 

@@ -27,6 +27,7 @@ import {
   useRenameList,
   useSetListColor,
   useSetListIcon,
+  useSetListWidth,
 } from "../../store/selectors";
 import { sortableTransition } from "../../styles/motion";
 import { CardItem } from "./CardItem";
@@ -65,6 +66,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
   const addCard = useAddCard();
   const setListColor = useSetListColor();
   const setListIcon = useSetListIcon();
+  const setListWidth = useSetListWidth();
 
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
@@ -96,10 +98,12 @@ function ListColumnImpl({ listId }: ListColumnProps) {
   // read back in CardItem.module.css, rather than threading a colour prop
   // through the card tree.
   const accent = list.color ? `var(--palette-${list.color})` : undefined;
+  const columnWidth = list.width ? `var(--list-width-${list.width})` : undefined;
   const style: CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
     ...(accent ? ({ "--list-accent": accent } as CSSProperties) : {}),
+    ...(columnWidth ? ({ "--column-width": columnWidth } as CSSProperties) : {}),
   };
 
   return (
@@ -175,8 +179,10 @@ function ListColumnImpl({ listId }: ListColumnProps) {
           anchorRef={customizeTriggerRef}
           color={list.color}
           icon={list.icon}
+          width={list.width}
           onColorChange={(color) => setListColor(listId, color)}
           onIconChange={(icon) => setListIcon(listId, icon)}
+          onWidthChange={(width) => setListWidth(listId, width)}
           onClose={() => setIsCustomizeOpen(false)}
         />
       )}
