@@ -44,6 +44,17 @@ const SHORTCUT_GROUPS: ShortcutGroup[] = [
       { keys: ["←", "→", "↑", "↓"], description: "Move the picked-up card or list" },
     ],
   },
+  {
+    title: "Resizing lists (drag a list's right edge)",
+    entries: [
+      { keys: ["Drag"], description: "Resize this list" },
+      { keys: ["Double-click"], description: "Fit this list to its widest card" },
+      { keys: ["Alt", "Drag"], description: "Resize every list by the same amount" },
+      { keys: ["Alt", "Double-click"], description: "Fit every list to its own cards" },
+      { keys: ["Shift", "Drag"], description: "Resize every list to match this one" },
+      { keys: ["Shift", "Double-click"], description: "Match every list's width to this one" },
+    ],
+  },
 ];
 
 const CONTEXT_MENU_ENTRIES: ShortcutEntry[] = [
