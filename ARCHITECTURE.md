@@ -274,12 +274,21 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   its transforms -- rather than pushing every pixel through the store; a
   live per-pixel store write would both re-render the column every frame and
   push one history entry per pixel. `setListWidth` commits exactly once, on
-  pointer-up, so a resize is one undo step. A double-click on the handle
-  resets to the default (clears `width` back to `undefined`), the only way
-  back once a column has been dragged wide. Bounds (`--list-width-min/max`
+  pointer-up, so a resize is one undo step. Bounds (`--list-width-min/max`
   in `tokens.css`, mirrored as plain numbers in the new `styles/layout.ts`
   since the clamp runs in JS against a `clientX` delta) keep a resize from
-  producing a column the card layout wasn't built for. `ListOverlay` in
+  producing a column the card layout wasn't built for.
+  A double-click on the handle auto-fits instead of resetting -- spreadsheet
+  behaviour, and what was actually being asked for once the drag handle
+  itself landed: `computeAutoFitWidth` (`ListColumn.tsx`) forces every card
+  title (tagged `data-card-title` in `CardItem.tsx`) to `width: max-content`
+  in one batched pass (set on all, then read on all, so the batch costs one
+  forced layout rather than one per card), takes the widest, and adds the
+  card/scroller/column chrome around it -- read live via `getComputedStyle`
+  off one real card rather than reimplemented as literals that would drift
+  out of sync with `CardItem.module.css` and `ListColumn.module.css`. With no
+  cards to measure, it falls back to clearing `width` (the pre-auto-fit
+  behaviour, kept as the empty-list case). `ListOverlay` in
   `DragContext.tsx` sets `--column-width` explicitly for the same reason
   `CardOverlay` already did for `--list-accent`: dnd-kit portals the drag
   overlay to the document root, outside the column's DOM subtree, so neither

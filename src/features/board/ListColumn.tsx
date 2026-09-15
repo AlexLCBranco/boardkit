@@ -74,6 +74,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
   const [isResizing, setIsResizing] = useState(false);
   const customizeTriggerRef = useRef<HTMLButtonElement>(null);
   const columnRef = useRef<HTMLElement>(null);
+  const scrollerRef = useRef<HTMLDivElement>(null);
   // Drives every card's thots section at once: cycling hidden -> pregame ->
   // postgame -> hidden. Ephemeral UI state, not persisted, same as a card's
   // own `isDescriptionOpen` -- it's just scoped to the whole list instead of
@@ -149,14 +150,18 @@ function ListColumnImpl({ listId }: ListColumnProps) {
     handle.addEventListener("pointerup", handlePointerUp);
   }
 
-  // A double-click on the handle resets to the default width, same "click
-  // to clear an override" shape as picking "no colour" -- without it, a
-  // column dragged wide has no way back to the default short of dragging it
-  // there by eye.
-  function handleResizeReset() {
-    if (list.width !== undefined) {
-      setListWidth(listId, undefined);
+  // A double-click on the handle auto-fits the column to its widest card's
+  // title, single-line -- the same "double-click a column border" gesture
+  // spreadsheets use. With no cards to fit to, there's nothing to measure,
+  // so it falls back to clearing the override instead.
+  function handleAutoFit() {
+    const column = columnRef.current;
+    const scroller = scrollerRef.current;
+    if (!column || !scroller) {
+      return;
     }
+    const fitWidth = computeAutoFitWidth(column, scroller);
+    setListWidth(listId, fitWidth ?? undefined);
   }
 
   // `--list-accent` is set here, on the column itself, so it cascades as an
@@ -250,7 +255,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
         />
       )}
 
-      <div className={styles.scroller}>
+      <div className={styles.scroller} ref={scrollerRef}>
         {cardIds.length > 0 ? (
           <SortableContext items={[...cardIds]} strategy={verticalListSortingStrategy}>
             <ul className={styles.cards}>
@@ -276,7 +281,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
       <div
         className={styles.resizeHandle}
         onPointerDown={handleResizeStart}
-        onDoubleClick={handleResizeReset}
+        onDoubleClick={handleAutoFit}
         role="separator"
         aria-orientation="vertical"
         aria-label="Resize list"
@@ -309,4 +314,60 @@ function EmptyListDropZone({ listId }: { readonly listId: ListId }) {
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
+}
+
+/**
+ * The width that fits every card's title on one line, spreadsheet-style --
+ * or `null` with no cards to measure.
+ *
+ * Reads real layout rather than reimplementing it: each title (tagged
+ * `data-card-title` in CardItem.tsx) is briefly forced to `width:
+ * max-content`, which asks the browser for the width it would take with no
+ * wrapping -- the one number that would otherwise mean duplicating the
+ * title's font, padding and the number badge's width by hand, and then
+ * having it drift out of sync with CardItem.module.css. The two loops (set,
+ * then read) are split so every title is mutated before any is measured --
+ * one forced layout for the batch, not one per card. The gap between a
+ * title's own box and the column's outer edge (the card's padding and
+ * border, the scroller's padding) is likewise read live via
+ * `getComputedStyle` off one real card, rather than repeated as literals
+ * that would need to be kept in step with ListColumn.module.css and
+ * CardItem.module.css by hand.
+ */
+function computeAutoFitWidth(column: HTMLElement, scroller: HTMLElement): number | null {
+  const titles = column.querySelectorAll<HTMLElement>("[data-card-title]");
+  if (titles.length === 0) {
+    return null;
+  }
+
+  const previousWidths = Array.from(titles, (title) => title.style.width);
+  titles.forEach((title) => {
+    title.style.width = "max-content";
+  });
+  let maxTitleWidth = 0;
+  titles.forEach((title) => {
+    maxTitleWidth = Math.max(maxTitleWidth, title.getBoundingClientRect().width);
+  });
+  titles.forEach((title, index) => {
+    title.style.width = previousWidths[index];
+  });
+
+  const card = titles[0].closest<HTMLElement>("[data-card-id]");
+  if (!card) {
+    return null;
+  }
+  const cardStyle = getComputedStyle(card);
+  const scrollerStyle = getComputedStyle(scroller);
+  const columnStyle = getComputedStyle(column);
+  const chrome =
+    parseFloat(cardStyle.paddingLeft) +
+    parseFloat(cardStyle.paddingRight) +
+    parseFloat(cardStyle.borderLeftWidth) +
+    parseFloat(cardStyle.borderRightWidth) +
+    parseFloat(scrollerStyle.paddingLeft) +
+    parseFloat(scrollerStyle.paddingRight) +
+    parseFloat(columnStyle.borderLeftWidth) +
+    parseFloat(columnStyle.borderRightWidth);
+
+  return clamp(Math.ceil(maxTitleWidth + chrome), LIST_WIDTH_MIN, LIST_WIDTH_MAX);
 }

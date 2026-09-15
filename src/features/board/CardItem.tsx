@@ -119,7 +119,7 @@ function CardItemImpl({ cardId, listId, thotsMode }: CardItemProps) {
       {...attributes}
       {...listeners}
     >
-      <p className={styles.title}>
+      <p className={styles.title} data-card-title>
         {number !== null && <span className={styles.number}>{number}</span>}
         <InlineEditable
           value={card.title}
