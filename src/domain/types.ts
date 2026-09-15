@@ -51,12 +51,15 @@ export type PaletteColor = (typeof PALETTE_COLORS)[number];
 export const ICON_KEYS = ["star", "flag", "bug", "rocket", "bolt", "fire", "heart", "tag"] as const;
 export type IconKey = (typeof ICON_KEYS)[number];
 
-/** A closed set of column widths rather than a free-form pixel value, same
-    reasoning as the colour palette above: each maps to one token in
-    `tokens.css`, so the picker never produces a value the layout wasn't
-    built for. */
-export const LIST_WIDTHS = ["normal", "wide", "wider"] as const;
-export type ListWidth = (typeof LIST_WIDTHS)[number];
+/** A column's width, in pixels, dragged freehand from its right edge --
+    unlike colour and icon, width has no natural closed set to snap to, so
+    it stays a plain clamped number rather than a fixed vocabulary. `undefined`
+    means the column uses the default `--list-width` from tokens.css. The
+    clamp bounds themselves live in `styles/layout.ts`, mirroring
+    `tokens.css`'s `--list-width-min`/`-max` by hand -- same reasoning as
+    `styles/motion.ts`'s mirrors: the resize drag computes in JS, which can't
+    read a `var(...)`. */
+export type ListWidth = number;
 
 export interface Card {
   readonly id: CardId;

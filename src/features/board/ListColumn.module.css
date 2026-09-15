@@ -1,12 +1,13 @@
 .column {
+  position: relative;
   display: flex;
   flex-direction: column;
-  /* Width from a token, same as every other visual constant. Per-list
-     customisation (see `--list-accent` below) overrides `--column-width` on
-     the element itself; this fallback is what every column with no width
-     set -- the common case -- resolves to. Set once on mount/customise, never
-     transitioned, so it stays outside the "don't animate width" rule: a
-     column's size never changes mid-drag. */
+  /* Width from a token, same as every other visual constant. The resize
+     handle (`.resizeHandle` below) overrides `--column-width` directly on
+     the element -- during a drag by mutating the DOM outside React (same
+     trick dnd-kit itself uses for its own transforms), then once through
+     `setListWidth` on release; this fallback is what every column with no
+     width set -- the common case -- resolves to. */
   width: var(--column-width, var(--list-width));
   flex: 0 0 var(--column-width, var(--list-width));
   /* Never taller than the board, so the column scrolls rather than the page. */
@@ -213,4 +214,38 @@
 .emptyDropZoneOver {
   background: var(--surface-hover);
   border-color: var(--border-strong);
+}
+
+/* The drag-to-resize grip on the column's right edge. Wider than its own
+   visible line so it's easy to grab, centred on the border rather than
+   inset -- straddling two columns' gap reads as "this is the seam between
+   them", same affordance as a spreadsheet's column border. `touch-action:
+   none` for the same reason the header needs it: without it a touch drag
+   scrolls the page instead of resizing. */
+.resizeHandle {
+  position: absolute;
+  top: 0;
+  right: -4px;
+  width: 8px;
+  height: 100%;
+  cursor: col-resize;
+  touch-action: none;
+  z-index: 1;
+}
+
+.resizeHandle::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 3px;
+  width: 2px;
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: transparent;
+  transition: background-color var(--duration-fast) var(--ease-standard);
+}
+
+.resizeHandle:hover::after,
+.resizing .resizeHandle::after {
+  background: var(--border-strong);
 }

@@ -257,23 +257,36 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   missing `trash` or `trashedLists` to `[]` for boards saved before either
   shipped, rather than bumping `SCHEMA_VERSION` over two additive, optional
   fields.
-- **Per-list width.** A third customisation, alongside colour and icon: a
-  closed `ListWidth` set (`"normal" | "wide" | "wider"`, `domain/types.ts`)
-  mapping to three tokens in `tokens.css` (`--list-width-normal/wide/wider`).
+- **Per-list width, drag-resized from the column's own edge.** `List.width`
+  (`domain/types.ts`) is a plain pixel number, not a closed set like colour
+  and icon -- a continuous value has no natural vocabulary to snap to.
+  `undefined` means the default `--list-width` from `tokens.css`.
   `ListColumn.module.css`'s `.column` reads `width: var(--column-width,
-  var(--list-width))` -- a list with no width set resolves through the
-  existing fallback untouched; one with a width set gets `--column-width`
-  written directly on the element (same pattern as `--list-accent`), so
-  there's no per-render branch and nothing to animate -- the value is set
-  once, on customise, never transitioned, keeping it clear of the "don't
-  animate width" rule (that rule is about animating a *frame*, not setting a
-  static size). `ListOverlay` in `DragContext.tsx` sets both custom
-  properties explicitly for the same reason `CardOverlay` already did for
-  `--list-accent`: dnd-kit portals the drag overlay to the document root,
-  outside the column's DOM subtree, so neither property reaches it by
-  cascade. `WidthPicker.tsx` is a third picker alongside
-  `ColorSwatchPicker`/`IconPicker` in `CustomizePanel`, same "closed set, one
-  click" shape.
+  var(--list-width))`; a width-set list gets `--column-width` written
+  directly on the element (same pattern as `--list-accent`). The interaction
+  is a thin `.resizeHandle` straddling the column's right border
+  (`role="separator"`), grabbed with the Pointer Events API rather than
+  dnd-kit -- it's a different gesture (resize, not reorder) on a different
+  element (the column edge, not the header dnd-kit's sensors are bound to),
+  so the two never contend for the same pointer-down. During the drag, the
+  handle mutates `--column-width` on the DOM node directly (`ListColumn.tsx`)
+  -- the same "outside React's render cycle" trick dnd-kit itself uses for
+  its transforms -- rather than pushing every pixel through the store; a
+  live per-pixel store write would both re-render the column every frame and
+  push one history entry per pixel. `setListWidth` commits exactly once, on
+  pointer-up, so a resize is one undo step. A double-click on the handle
+  resets to the default (clears `width` back to `undefined`), the only way
+  back once a column has been dragged wide. Bounds (`--list-width-min/max`
+  in `tokens.css`, mirrored as plain numbers in the new `styles/layout.ts`
+  since the clamp runs in JS against a `clientX` delta) keep a resize from
+  producing a column the card layout wasn't built for. `ListOverlay` in
+  `DragContext.tsx` sets `--column-width` explicitly for the same reason
+  `CardOverlay` already did for `--list-accent`: dnd-kit portals the drag
+  overlay to the document root, outside the column's DOM subtree, so neither
+  property reaches it by cascade. This replaced an initial three-preset
+  `WidthPicker` in `CustomizePanel` (normal/wide/wider buttons) once it
+  became clear direct manipulation was the actual ask -- a menu adds a step
+  a drag handle doesn't need.
 
 ## Decisions
 

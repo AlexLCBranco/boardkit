@@ -223,9 +223,7 @@ function ListOverlay({ listId }: { readonly listId: ListId }) {
   // being dragged.
   const style: CSSProperties = {
     ...(list.color ? ({ "--list-accent": `var(--palette-${list.color})` } as CSSProperties) : {}),
-    ...(list.width
-      ? ({ "--column-width": `var(--list-width-${list.width})` } as CSSProperties)
-      : {}),
+    ...(list.width ? ({ "--column-width": `${list.width}px` } as CSSProperties) : {}),
   };
 
   return (

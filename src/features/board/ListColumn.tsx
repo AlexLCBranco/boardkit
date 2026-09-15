@@ -1,7 +1,7 @@
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { memo, useRef, useState, type CSSProperties } from "react";
+import { memo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 
 import { Composer } from "../../components/Composer";
 import { CustomizePanel } from "../../components/CustomizePanel";
@@ -29,6 +29,7 @@ import {
   useSetListIcon,
   useSetListWidth,
 } from "../../store/selectors";
+import { LIST_WIDTH_MAX, LIST_WIDTH_MIN } from "../../styles/layout";
 import { sortableTransition } from "../../styles/motion";
 import { CardItem } from "./CardItem";
 import styles from "./ListColumn.module.css";
@@ -70,7 +71,9 @@ function ListColumnImpl({ listId }: ListColumnProps) {
 
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
   const customizeTriggerRef = useRef<HTMLButtonElement>(null);
+  const columnRef = useRef<HTMLElement>(null);
   // Drives every card's thots section at once: cycling hidden -> pregame ->
   // postgame -> hidden. Ephemeral UI state, not persisted, same as a card's
   // own `isDescriptionOpen` -- it's just scoped to the whole list instead of
@@ -93,24 +96,86 @@ function ListColumnImpl({ listId }: ListColumnProps) {
     transition: sortableTransition,
   });
 
+  // Combines dnd-kit's own ref callback with the plain node ref the resize
+  // handle needs to read/write the column's live width. Both want the same
+  // DOM node; dnd-kit doesn't expose a way to also hand it a ref of ours.
+  function setColumnRefs(node: HTMLElement | null) {
+    setNodeRef(node);
+    columnRef.current = node;
+  }
+
+  // Drag-resizes the column from its right edge, Excalidraw-style. Mutates
+  // the DOM node's own style directly during the drag -- bypassing React,
+  // the same trick dnd-kit uses for its own transforms (see ARCHITECTURE.md)
+  // -- rather than pushing every pointer-move pixel through the store: that
+  // would re-render this column every frame and, worse, push one history
+  // entry per pixel. `setListWidth` is called exactly once, on release, so
+  // undo sees the whole resize as a single step.
+  function handleResizeStart(event: ReactPointerEvent<HTMLDivElement>) {
+    const column = columnRef.current;
+    if (!column) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+
+    const handle = event.currentTarget;
+    handle.setPointerCapture(event.pointerId);
+
+    const startX = event.clientX;
+    const startWidth = column.getBoundingClientRect().width;
+    setIsResizing(true);
+
+    function handlePointerMove(moveEvent: PointerEvent) {
+      const nextWidth = clamp(
+        startWidth + (moveEvent.clientX - startX),
+        LIST_WIDTH_MIN,
+        LIST_WIDTH_MAX,
+      );
+      column!.style.setProperty("--column-width", `${nextWidth}px`);
+    }
+
+    function handlePointerUp() {
+      handle.removeEventListener("pointermove", handlePointerMove);
+      handle.removeEventListener("pointerup", handlePointerUp);
+      setIsResizing(false);
+      const finalWidth = Math.round(column!.getBoundingClientRect().width);
+      if (finalWidth !== Math.round(startWidth)) {
+        setListWidth(listId, finalWidth);
+      }
+    }
+
+    handle.addEventListener("pointermove", handlePointerMove);
+    handle.addEventListener("pointerup", handlePointerUp);
+  }
+
+  // A double-click on the handle resets to the default width, same "click
+  // to clear an override" shape as picking "no colour" -- without it, a
+  // column dragged wide has no way back to the default short of dragging it
+  // there by eye.
+  function handleResizeReset() {
+    if (list.width !== undefined) {
+      setListWidth(listId, undefined);
+    }
+  }
+
   // `--list-accent` is set here, on the column itself, so it cascades as an
   // ordinary inherited custom property to every card inside -- one value,
   // read back in CardItem.module.css, rather than threading a colour prop
   // through the card tree.
   const accent = list.color ? `var(--palette-${list.color})` : undefined;
-  const columnWidth = list.width ? `var(--list-width-${list.width})` : undefined;
   const style: CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
     ...(accent ? ({ "--list-accent": accent } as CSSProperties) : {}),
-    ...(columnWidth ? ({ "--column-width": columnWidth } as CSSProperties) : {}),
+    ...(list.width ? ({ "--column-width": `${list.width}px` } as CSSProperties) : {}),
   };
 
   return (
     <section
-      ref={setNodeRef}
+      ref={setColumnRefs}
       style={style}
-      className={`${styles.column} ${isDragging ? styles.dragging : ""}`}
+      className={`${styles.column} ${isDragging ? styles.dragging : ""} ${isResizing ? styles.resizing : ""}`}
       data-list-id={listId}
     >
       <header className={styles.header} {...attributes} {...listeners}>
@@ -179,10 +244,8 @@ function ListColumnImpl({ listId }: ListColumnProps) {
           anchorRef={customizeTriggerRef}
           color={list.color}
           icon={list.icon}
-          width={list.width}
           onColorChange={(color) => setListColor(listId, color)}
           onIconChange={(icon) => setListIcon(listId, icon)}
-          onWidthChange={(width) => setListWidth(listId, width)}
           onClose={() => setIsCustomizeOpen(false)}
         />
       )}
@@ -209,6 +272,15 @@ function ListColumnImpl({ listId }: ListColumnProps) {
           />
         </div>
       </div>
+
+      <div
+        className={styles.resizeHandle}
+        onPointerDown={handleResizeStart}
+        onDoubleClick={handleResizeReset}
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="Resize list"
+      />
     </section>
   );
 }
@@ -233,4 +305,8 @@ function EmptyListDropZone({ listId }: { readonly listId: ListId }) {
       className={`${styles.emptyDropZone} ${isOver ? styles.emptyDropZoneOver : ""}`}
     />
   );
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max);
 }
