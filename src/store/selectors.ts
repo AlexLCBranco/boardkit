@@ -187,8 +187,8 @@ export function useSetListIcon() {
   return useBoardStore((state) => state.setListIcon);
 }
 
-export function useSetListWidth() {
-  return useBoardStore((state) => state.setListWidth);
+export function useSetListWidths() {
+  return useBoardStore((state) => state.setListWidths);
 }
 
 export function useSetCardColor() {

@@ -273,8 +273,9 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   -- the same "outside React's render cycle" trick dnd-kit itself uses for
   its transforms -- rather than pushing every pixel through the store; a
   live per-pixel store write would both re-render the column every frame and
-  push one history entry per pixel. `setListWidth` commits exactly once, on
-  pointer-up, so a resize is one undo step. Bounds (`--list-width-min/max`
+  push one history entry per pixel. `setListWidths` (plural -- see below)
+  commits exactly once, on pointer-up, so a resize is one undo step. Bounds
+  (`--list-width-min/max`
   in `tokens.css`, mirrored as plain numbers in the new `styles/layout.ts`
   since the clamp runs in JS against a `clientX` delta) keep a resize from
   producing a column the card layout wasn't built for.
@@ -296,6 +297,20 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   `WidthPicker` in `CustomizePanel` (normal/wide/wider buttons) once it
   became clear direct manipulation was the actual ask -- a menu adds a step
   a drag handle doesn't need.
+- **Alt applies a resize or auto-fit to every list at once.** Holding Alt
+  while dragging or double-clicking any column's resize handle
+  (`ListColumn.tsx`) repeats that same gesture across every column on the
+  board, not just the one grabbed -- the same pixel delta for a drag, each
+  column's own auto-fit width for a double-click. `getAllColumns` finds them
+  with a plain `document.querySelectorAll("[data-list-id]")` rather than a
+  ref registry threaded between sibling `ListColumn` instances, since every
+  column already carries that attribute for other reasons. `setListWidths`
+  (plural) on the store applies every affected list's new width in one
+  `lists` patch, so an Alt-modified gesture touching ten columns is still one
+  undo step, matching the single-column case (a one-entry update when Alt
+  isn't held). It's the only list-width action now -- the previous commit's
+  singular `setListWidth` was folded into it once every call site needed the
+  plural form anyway.
 
 ## Decisions
 

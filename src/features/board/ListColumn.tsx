@@ -1,7 +1,14 @@
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { memo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
+import {
+  memo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 
 import { Composer } from "../../components/Composer";
 import { CustomizePanel } from "../../components/CustomizePanel";
@@ -27,7 +34,7 @@ import {
   useRenameList,
   useSetListColor,
   useSetListIcon,
-  useSetListWidth,
+  useSetListWidths,
 } from "../../store/selectors";
 import { LIST_WIDTH_MAX, LIST_WIDTH_MIN } from "../../styles/layout";
 import { sortableTransition } from "../../styles/motion";
@@ -67,7 +74,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
   const addCard = useAddCard();
   const setListColor = useSetListColor();
   const setListIcon = useSetListIcon();
-  const setListWidth = useSetListWidth();
+  const setListWidths = useSetListWidths();
 
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
@@ -106,12 +113,18 @@ function ListColumnImpl({ listId }: ListColumnProps) {
   }
 
   // Drag-resizes the column from its right edge, Excalidraw-style. Mutates
-  // the DOM node's own style directly during the drag -- bypassing React,
-  // the same trick dnd-kit uses for its own transforms (see ARCHITECTURE.md)
-  // -- rather than pushing every pointer-move pixel through the store: that
-  // would re-render this column every frame and, worse, push one history
-  // entry per pixel. `setListWidth` is called exactly once, on release, so
-  // undo sees the whole resize as a single step.
+  // each affected DOM node's own style directly during the drag -- bypassing
+  // React, the same trick dnd-kit uses for its own transforms (see
+  // ARCHITECTURE.md) -- rather than pushing every pointer-move pixel through
+  // the store: that would re-render every affected column every frame and,
+  // worse, push one history entry per pixel. `setListWidths` is called
+  // exactly once, on release, so undo sees the whole gesture as a single
+  // step, even when it touched every list on the board.
+  //
+  // Holding Alt applies the same pixel delta to every column at once
+  // (`getAllColumns`), not just this one -- a plain DOM query rather than a
+  // registry of every column's ref, since every column already carries
+  // `data-list-id` for other reasons (drag data, this handle's own lookup).
   function handleResizeStart(event: ReactPointerEvent<HTMLDivElement>) {
     const column = columnRef.current;
     if (!column) {
@@ -123,26 +136,37 @@ function ListColumnImpl({ listId }: ListColumnProps) {
     const handle = event.currentTarget;
     handle.setPointerCapture(event.pointerId);
 
+    const columns = event.altKey ? getAllColumns() : [column];
     const startX = event.clientX;
-    const startWidth = column.getBoundingClientRect().width;
+    const startWidths = new Map(columns.map((col) => [col, col.getBoundingClientRect().width]));
+    columns.forEach((col) => col.classList.add(styles.resizing));
     setIsResizing(true);
 
     function handlePointerMove(moveEvent: PointerEvent) {
-      const nextWidth = clamp(
-        startWidth + (moveEvent.clientX - startX),
-        LIST_WIDTH_MIN,
-        LIST_WIDTH_MAX,
-      );
-      column!.style.setProperty("--column-width", `${nextWidth}px`);
+      const dx = moveEvent.clientX - startX;
+      columns.forEach((col) => {
+        const nextWidth = clamp(startWidths.get(col)! + dx, LIST_WIDTH_MIN, LIST_WIDTH_MAX);
+        col.style.setProperty("--column-width", `${nextWidth}px`);
+      });
     }
 
     function handlePointerUp() {
       handle.removeEventListener("pointermove", handlePointerMove);
       handle.removeEventListener("pointerup", handlePointerUp);
       setIsResizing(false);
-      const finalWidth = Math.round(column!.getBoundingClientRect().width);
-      if (finalWidth !== Math.round(startWidth)) {
-        setListWidth(listId, finalWidth);
+      columns.forEach((col) => col.classList.remove(styles.resizing));
+
+      const updates: Record<ListId, number> = {};
+      let changed = false;
+      columns.forEach((col) => {
+        const finalWidth = Math.round(col.getBoundingClientRect().width);
+        if (finalWidth !== Math.round(startWidths.get(col)!)) {
+          changed = true;
+        }
+        updates[col.dataset.listId as ListId] = finalWidth;
+      });
+      if (changed) {
+        setListWidths(updates);
       }
     }
 
@@ -152,16 +176,29 @@ function ListColumnImpl({ listId }: ListColumnProps) {
 
   // A double-click on the handle auto-fits the column to its widest card's
   // title, single-line -- the same "double-click a column border" gesture
-  // spreadsheets use. With no cards to fit to, there's nothing to measure,
-  // so it falls back to clearing the override instead.
-  function handleAutoFit() {
-    const column = columnRef.current;
-    const scroller = scrollerRef.current;
-    if (!column || !scroller) {
+  // spreadsheets use. Alt+double-click does it for every column on the
+  // board in one step, each fit to its own cards. With no cards to fit to,
+  // a column falls back to clearing its override instead.
+  function handleAutoFit(event: ReactMouseEvent<HTMLDivElement>) {
+    if (!event.altKey) {
+      const column = columnRef.current;
+      const scroller = scrollerRef.current;
+      if (!column || !scroller) {
+        return;
+      }
+      setListWidths({ [listId]: computeAutoFitWidth(column, scroller) ?? undefined });
       return;
     }
-    const fitWidth = computeAutoFitWidth(column, scroller);
-    setListWidth(listId, fitWidth ?? undefined);
+
+    const updates: Record<ListId, number | undefined> = {};
+    for (const col of getAllColumns()) {
+      const scroller = col.querySelector<HTMLElement>("[data-list-scroller]");
+      if (!scroller) {
+        continue;
+      }
+      updates[col.dataset.listId as ListId] = computeAutoFitWidth(col, scroller) ?? undefined;
+    }
+    setListWidths(updates);
   }
 
   // `--list-accent` is set here, on the column itself, so it cascades as an
@@ -255,7 +292,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
         />
       )}
 
-      <div className={styles.scroller} ref={scrollerRef}>
+      <div className={styles.scroller} ref={scrollerRef} data-list-scroller>
         {cardIds.length > 0 ? (
           <SortableContext items={[...cardIds]} strategy={verticalListSortingStrategy}>
             <ul className={styles.cards}>
@@ -285,6 +322,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
         role="separator"
         aria-orientation="vertical"
         aria-label="Resize list"
+        title="Drag to resize, double-click to fit&#10;Hold Alt for every list at once"
       />
     </section>
   );
@@ -314,6 +352,15 @@ function EmptyListDropZone({ listId }: { readonly listId: ListId }) {
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
+}
+
+/** Every column currently on the board, in DOM order. A plain query rather
+    than a ref registry: `data-list-id` already exists on each column
+    (drag data, this same handle's own lookup), so an Alt-modified resize or
+    auto-fit can reach every other column without any new plumbing between
+    sibling `ListColumn` instances. */
+function getAllColumns(): HTMLElement[] {
+  return Array.from(document.querySelectorAll<HTMLElement>("[data-list-id]"));
 }
 
 /**
