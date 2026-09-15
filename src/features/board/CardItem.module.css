@@ -170,7 +170,7 @@
   margin-top: var(--space-1);
   padding: var(--space-2);
   border-radius: var(--radius-sm);
-  background: var(--surface-sunken);
+  background: var(--surface-hover);
   color: var(--text-secondary);
   font-size: var(--font-size-sm);
   line-height: var(--line-normal);
