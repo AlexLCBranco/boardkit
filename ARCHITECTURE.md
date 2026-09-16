@@ -324,6 +324,19 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   when neither modifier is held). It's the only list-width action now -- an
   earlier, singular `setListWidth` was folded into it once every call site
   needed the plural form anyway.
+- **Board zoom.** `ZoomControls.tsx` is the Excalidraw-style `[- 100% +]`
+  pill in the toolbar; `BoardCanvas.tsx` owns the zoom level as local
+  `useState` (view state, not board data -- it doesn't belong in the
+  normalised store or in undo history) and applies it as `transform:
+  scale()` on `.rail`, the same node the lists lay out in. This is safe
+  with dnd-kit for a reason worth writing down: collision detection and the
+  `DragOverlay` both read real `getBoundingClientRect()` values, which
+  already reflect the ancestor's CSS transform, and the overlay itself is
+  portalled to `document.body`, outside `.rail`, so it tracks the pointer
+  in real screen pixels regardless of zoom. No dnd-kit modifier or
+  coordinate correction was needed. Range is clamped 50%-200% in 10%-steps
+  (`clampZoom` in `ZoomControls.tsx`); clicking the percentage resets to
+  100%, matching Excalidraw.
 
 ## Decisions
 

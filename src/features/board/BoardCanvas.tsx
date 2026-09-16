@@ -1,4 +1,5 @@
 import { SortableContext, horizontalListSortingStrategy } from "@dnd-kit/sortable";
+import { useState } from "react";
 
 import { Composer } from "../../components/Composer";
 import { useAddList, useListOrder } from "../../store/selectors";
@@ -8,6 +9,7 @@ import { ListColumn } from "./ListColumn";
 import { ShortcutsDialog } from "./ShortcutsDialog";
 import { UndoRedoControls } from "./UndoRedoControls";
 import { useUndoRedoShortcuts } from "./useUndoRedoShortcuts";
+import { ZoomControls } from "./ZoomControls";
 
 /**
  * The board canvas: a horizontally scrolling rail that lists are laid out in.
@@ -26,17 +28,19 @@ import { useUndoRedoShortcuts } from "./useUndoRedoShortcuts";
 export function BoardCanvas() {
   const listOrder = useListOrder();
   const addList = useAddList();
+  const [zoom, setZoom] = useState(1);
   useUndoRedoShortcuts();
 
   return (
     <div className={styles.canvas}>
       <div className={styles.toolbar}>
         <UndoRedoControls />
+        <ZoomControls zoom={zoom} onZoomChange={setZoom} />
         <ShortcutsDialog />
       </div>
       <div className={styles.scrollArea} data-board-canvas>
         <BoardDragContext>
-          <div className={styles.rail}>
+          <div className={styles.rail} style={{ transform: `scale(${zoom})` }}>
             <SortableContext items={[...listOrder]} strategy={horizontalListSortingStrategy}>
               {listOrder.map((listId) => (
                 <ListColumn key={listId} listId={listId} />
