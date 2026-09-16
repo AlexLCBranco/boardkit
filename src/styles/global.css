@@ -66,6 +66,34 @@ textarea {
   outline-offset: 2px;
 }
 
+/* Native scrollbars default to the OS light theme, which clashes with the
+   app's dark surfaces. Style them from the same tokens as everything else. */
+* {
+  scrollbar-color: var(--border-strong) transparent;
+  scrollbar-width: thin;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--border-strong);
+  border-radius: var(--radius-full);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--text-muted);
+  background-clip: padding-box;
+}
+
 /* Respect the OS setting. Everything animated in this app must degrade
    to an instant state change rather than a slow one. */
 @media (prefers-reduced-motion: reduce) {
