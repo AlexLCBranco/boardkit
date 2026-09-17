@@ -242,13 +242,33 @@ function ListColumnImpl({ listId }: ListColumnProps) {
   // `filter` skips every button and the resize handle (each tagged
   // `data-capture-exclude`) so the exported image is just the list's
   // content, not its interactive chrome.
+  //
+  // The live column clips its cards behind a scrollbar (`.scroller` is
+  // `overflow-y: auto`, sized to fit the board's viewport) -- exactly what
+  // the export shouldn't do, since the point is a single image of the
+  // *whole* list. So this renders an off-screen clone instead of the live
+  // node: the clone's scroller gets `overflow: visible` and the clone's own
+  // height limit is lifted, so it grows to its natural, unclipped height
+  // before `toBlob` measures it. The clone is detached and off-screen for
+  // its entire life, so none of this is visible in the real UI.
   async function handleCopyImage() {
     const column = columnRef.current;
     if (!column) {
       return;
     }
+    const clone = column.cloneNode(true) as HTMLElement;
+    clone.style.position = "fixed";
+    clone.style.top = "0";
+    clone.style.left = "-10000px";
+    clone.style.maxHeight = "none";
+    clone.style.width = `${column.getBoundingClientRect().width}px`;
+    const scrollerClone = clone.querySelector<HTMLElement>("[data-list-scroller]");
+    if (scrollerClone) {
+      scrollerClone.style.overflowY = "visible";
+    }
+    document.body.appendChild(clone);
     try {
-      const blob = await toBlob(column, {
+      const blob = await toBlob(clone, {
         pixelRatio: 4,
         filter: (node) => !(node instanceof HTMLElement && node.dataset.captureExclude === "true"),
       });
@@ -261,6 +281,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
       console.error("copy list as image failed", error);
       setCopyState("error");
     } finally {
+      clone.remove();
       setTimeout(() => setCopyState("idle"), 1500);
     }
   }

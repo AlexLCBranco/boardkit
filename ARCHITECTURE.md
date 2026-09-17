@@ -349,6 +349,13 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   list's content, not its own chrome. Per-card buttons need no such
   handling: they're already `opacity: 0` except on `:hover`, and the
   capture runs with the pointer over the list's header, not any card.
+  The live column clips its cards behind `.scroller`'s own scrollbar, sized
+  to the board's viewport -- exactly what the export shouldn't do. So the
+  handler clones the column, lifts the clone's height limit and sets its
+  scroller to `overflow: visible`, and renders *that* off-screen (`position:
+  fixed`, far off the left edge) instead of the live node -- it grows to its
+  full, unclipped height before `toBlob` measures it, and nothing about the
+  swap is visible in the real UI.
 
 ## Decisions
 
