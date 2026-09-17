@@ -40,7 +40,7 @@ export function BoardCanvas() {
       </div>
       <div className={styles.scrollArea} data-board-canvas>
         <BoardDragContext>
-          <div className={styles.rail} style={{ transform: `scale(${zoom})` }}>
+          <div className={styles.rail} style={{ zoom }}>
             <SortableContext items={[...listOrder]} strategy={horizontalListSortingStrategy}>
               {listOrder.map((listId) => (
                 <ListColumn key={listId} listId={listId} />

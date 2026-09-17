@@ -33,8 +33,6 @@
      lets the parent scroll horizontally instead of squashing the lists. */
   width: max-content;
   min-width: 100%;
-  transform-origin: top left;
-  transition: transform var(--duration-fast) var(--ease-standard);
 }
 
 .addListSlot {

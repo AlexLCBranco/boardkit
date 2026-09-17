@@ -19,8 +19,9 @@ export function zoomedOut(zoom: number): number {
 /**
  * The board's zoom control -- a pill of [-] [percentage] [+], matching the
  * one in Excalidraw. `zoom` and `onZoomChange` are owned by `BoardCanvas`,
- * which is the component actually applying the scale, so this stays a plain
- * display for it rather than holding its own state.
+ * which is the component actually applying it (as CSS `zoom`, not `transform:
+ * scale`, so the scroll area's overflow shrinks along with the cards), so
+ * this stays a plain display for it rather than holding its own state.
  */
 export function ZoomControls({
   zoom,
