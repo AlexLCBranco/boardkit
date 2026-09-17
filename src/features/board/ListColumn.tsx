@@ -1,6 +1,7 @@
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { toBlob } from "html-to-image";
 import {
   memo,
   useRef,
@@ -79,6 +80,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
+  const [copyState, setCopyState] = useState<"idle" | "copied" | "error">("idle");
   const customizeTriggerRef = useRef<HTMLButtonElement>(null);
   const columnRef = useRef<HTMLElement>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
@@ -233,6 +235,36 @@ function ListColumnImpl({ listId }: ListColumnProps) {
     setListWidths(updates);
   }
 
+  // Rasterises the column at a high pixel density -- well beyond the
+  // screen's own resolution -- so pasting into a tool like Excalidraw and
+  // resizing there still has real pixels to sample down from, instead of
+  // the soft, blocky result a normal screenshot gives once it's stretched.
+  // `filter` skips every button and the resize handle (each tagged
+  // `data-capture-exclude`) so the exported image is just the list's
+  // content, not its interactive chrome.
+  async function handleCopyImage() {
+    const column = columnRef.current;
+    if (!column) {
+      return;
+    }
+    try {
+      const blob = await toBlob(column, {
+        pixelRatio: 4,
+        filter: (node) => !(node instanceof HTMLElement && node.dataset.captureExclude === "true"),
+      });
+      if (!blob) {
+        throw new Error("toBlob returned null");
+      }
+      await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+      setCopyState("copied");
+    } catch (error) {
+      console.error("copy list as image failed", error);
+      setCopyState("error");
+    } finally {
+      setTimeout(() => setCopyState("idle"), 1500);
+    }
+  }
+
   // `--list-accent` is set here, on the column itself, so it cascades as an
   // ordinary inherited custom property to every card inside -- one value,
   // read back in CardItem.module.css, rather than threading a colour prop
@@ -266,6 +298,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
           type="button"
           className={styles.thotsButton}
           onClick={cycleColumnThotsMode}
+          data-capture-exclude="true"
           aria-label={
             columnThotsMode === "hidden"
               ? "Show pregame thots on every card"
@@ -277,10 +310,21 @@ function ListColumnImpl({ listId }: ListColumnProps) {
           ▤
         </button>
         <button
+          type="button"
+          className={styles.copyButton}
+          onClick={handleCopyImage}
+          data-capture-exclude="true"
+          aria-label="Copy list as image"
+          title="Copy list as image"
+        >
+          {copyState === "copied" ? "✓" : copyState === "error" ? "!" : "⧉"}
+        </button>
+        <button
           ref={customizeTriggerRef}
           type="button"
           className={styles.customizeButton}
           onClick={() => setIsCustomizeOpen((open) => !open)}
+          data-capture-exclude="true"
           aria-label="Customise list"
         >
           <span className={styles.customizeSwatch} style={accent ? { background: accent } : undefined} />
@@ -289,6 +333,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
           type="button"
           className={styles.deleteButton}
           onClick={() => setIsDeleteConfirmOpen(true)}
+          data-capture-exclude="true"
           aria-label="Delete list"
         >
           ×
@@ -351,6 +396,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
         className={styles.resizeHandle}
         onPointerDown={handleResizeStart}
         onDoubleClick={handleAutoFit}
+        data-capture-exclude="true"
         role="separator"
         aria-orientation="vertical"
         aria-label="Resize list"

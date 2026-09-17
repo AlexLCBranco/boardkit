@@ -137,6 +137,27 @@
   color: var(--text-primary);
 }
 
+.copyButton {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.copyButton:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
 .customizeButton {
   flex: 0 0 auto;
   display: inline-flex;

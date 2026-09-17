@@ -337,6 +337,18 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   coordinate correction was needed. Range is clamped 50%-200% in 10%-steps
   (`clampZoom` in `ZoomControls.tsx`); clicking the percentage resets to
   100%, matching Excalidraw.
+- **Copy a list as an image.** `ListColumn.tsx`'s "Copy list as image"
+  button rasterises the column with `html-to-image`'s `toBlob` at
+  `pixelRatio: 4` and writes it straight to the clipboard via
+  `navigator.clipboard.write`, for pasting into an external tool (the
+  motivating case: dropping a list into Excalidraw as reference and
+  resizing it there). The 4x oversampling is what keeps that resize from
+  looking soft -- a plain 1x screenshot has no spare pixels to lose. Every
+  button and the resize handle carry `data-capture-exclude="true"`, and
+  `toBlob`'s `filter` option skips them, so the exported image is the
+  list's content, not its own chrome. Per-card buttons need no such
+  handling: they're already `opacity: 0` except on `:hover`, and the
+  capture runs with the pointer over the list's header, not any card.
 
 ## Decisions
 
