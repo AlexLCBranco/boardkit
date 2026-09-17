@@ -1,7 +1,7 @@
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { toBlob } from "html-to-image";
+import { domToBlob } from "modern-screenshot";
 import {
   memo,
   useRef,
@@ -249,8 +249,8 @@ function ListColumnImpl({ listId }: ListColumnProps) {
   // *whole* list. So this renders an off-screen clone instead of the live
   // node: the clone's scroller gets `overflow: visible` and the clone's own
   // height limit is lifted, so it grows to its natural, unclipped height
-  // before `toBlob` measures it. The clone is detached and off-screen for
-  // its entire life, so none of this is visible in the real UI.
+  // before `domToBlob` measures it. The clone is detached and off-screen
+  // for its entire life, so none of this is visible in the real UI.
   async function handleCopyImage() {
     const column = columnRef.current;
     if (!column) {
@@ -268,12 +268,12 @@ function ListColumnImpl({ listId }: ListColumnProps) {
     }
     document.body.appendChild(clone);
     try {
-      const blob = await toBlob(clone, {
-        pixelRatio: 4,
+      const blob = await domToBlob(clone, {
+        scale: 4,
         filter: (node) => !(node instanceof HTMLElement && node.dataset.captureExclude === "true"),
       });
       if (!blob) {
-        throw new Error("toBlob returned null");
+        throw new Error("domToBlob returned null");
       }
       await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
       setCopyState("copied");
