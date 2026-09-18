@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { createBoardId, createCardId, createListId } from "../domain/ids";
 import { EMPTY_HISTORY, pushEntry, stepRedo, stepUndo, type BoardPatch, type History } from "../domain/history";
 import { moveBetweenLists, moveList, moveWithinList } from "../domain/ordering";
+import type { BackupBoard } from "../domain/persistence";
 import { createEmptyBoard, createSeedBoard } from "../domain/seed";
 import {
   emptyListTrash as emptyListTrashState,
@@ -82,6 +83,7 @@ export interface BoardActions {
   redo: () => void;
   createBoard: (name: string) => void;
   duplicateBoard: (name: string) => void;
+  addBoards: (entries: readonly BackupBoard[]) => void;
   switchBoard: (boardId: BoardId) => void;
   renameBoard: (name: string) => void;
 }
@@ -390,6 +392,22 @@ export const useBoardStore = create<BoardStore>((set) => ({
         boardId,
         boards: [...state.boards, { id: boardId, name }],
         history: EMPTY_HISTORY,
+      };
+    }),
+
+  // Adds boards to the registry without switching to any of them, so an
+  // import never disturbs what is on screen. Each board's content is written
+  // straight to storage -- it is not the active board, so the subscriber
+  // below (which only watches the active board's slices) would never save it.
+  // Callers pass only boards that are new; see `features/board/backup.ts`.
+  addBoards: (entries) =>
+    set((state) => {
+      if (entries.length === 0) return state;
+      for (const entry of entries) {
+        savePersistedBoardNow(entry.board, entry.id);
+      }
+      return {
+        boards: [...state.boards, ...entries.map(({ id, name }) => ({ id, name }))],
       };
     }),
 

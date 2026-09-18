@@ -1,3 +1,5 @@
+import { useRef, type ChangeEvent } from "react";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,6 +17,7 @@ import {
   useRenameBoard,
   useSwitchBoard,
 } from "../../store/selectors";
+import { exportBackup, importBackup } from "./backup";
 import styles from "./BoardSwitcher.module.css";
 
 /**
@@ -36,6 +39,23 @@ export function BoardSwitcher() {
   const switchBoard = useSwitchBoard();
   const createBoard = useCreateBoard();
   const duplicateBoard = useDuplicateBoard();
+  const fileInput = useRef<HTMLInputElement>(null);
+
+  async function handleImport(event: ChangeEvent<HTMLInputElement>) {
+    const input = event.currentTarget;
+    const file = input.files?.[0];
+    // Cleared so choosing the same file again still fires `change`.
+    input.value = "";
+    if (!file) return;
+    try {
+      const { added, skipped } = await importBackup(file);
+      const parts = [`Imported ${added} board${added === 1 ? "" : "s"}.`];
+      if (skipped > 0) parts.push(`${skipped} already existed and were left untouched.`);
+      window.alert(parts.join(" "));
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "Import failed.");
+    }
+  }
 
   return (
     <div className={styles.switcher}>
@@ -46,7 +66,7 @@ export function BoardSwitcher() {
             ▾
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start">
+        <DropdownMenuContent align="start" className="min-w-56">
           {boards.map((board) => (
             <DropdownMenuItem key={board.id} onSelect={() => switchBoard(board.id)}>
               {board.id === boardId ? "✓ " : ""}
@@ -60,8 +80,21 @@ export function BoardSwitcher() {
           <DropdownMenuItem onSelect={() => duplicateBoard(`${name} (copy)`)}>
             Duplicate this board
           </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onSelect={exportBackup}>Export all boards…</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => fileInput.current?.click()}>Import boards…</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      {/* Outside the menu on purpose: the menu unmounts as soon as an item
+          is chosen, and the file picker's change event needs an input that
+          is still in the page when the user comes back from it. */}
+      <input
+        ref={fileInput}
+        type="file"
+        accept="application/json,.json"
+        hidden
+        onChange={handleImport}
+      />
     </div>
   );
 }

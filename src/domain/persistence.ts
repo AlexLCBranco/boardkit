@@ -68,6 +68,66 @@ function isPersistedBoardV1(data: unknown): data is PersistedBoardV1 {
 }
 
 /**
+ * The backup file: every board's content in one document a person can keep,
+ * move between browsers, or restore after their storage is cleared. It is a
+ * different document from the two above -- those are what the app keeps for
+ * itself, this is what the user keeps -- so it carries a `format` tag as well
+ * as a version, letting an import reject a file that is not a backup at all
+ * with a clear reason rather than a shape mismatch.
+ */
+export const BACKUP_FORMAT = "boardkit-backup";
+
+export interface BackupBoard {
+  readonly id: BoardId;
+  readonly name: string;
+  readonly board: BoardState;
+}
+
+export interface BackupFileV1 {
+  readonly format: typeof BACKUP_FORMAT;
+  readonly version: 1;
+  readonly exportedAt: string;
+  readonly boards: readonly BackupBoard[];
+}
+
+export function serializeBackup(boards: readonly BackupBoard[], exportedAt: string): BackupFileV1 {
+  return { format: BACKUP_FORMAT, version: 1, exportedAt, boards };
+}
+
+/**
+ * Returns every board in the file, each validated by the same
+ * `deserializeBoard` a normal load goes through, or `null` if the file is not
+ * a backup or any board in it is unreadable. Rejecting the whole file is safe
+ * here in a way it is not for a stored board: nothing is replaced by an
+ * import, so a refused file costs the user nothing.
+ */
+export function deserializeBackup(data: unknown): BackupBoard[] | null {
+  if (typeof data !== "object" || data === null) {
+    return null;
+  }
+  const candidate = data as Record<string, unknown>;
+  if (candidate.format !== BACKUP_FORMAT || candidate.version !== 1 || !Array.isArray(candidate.boards)) {
+    return null;
+  }
+  const boards: BackupBoard[] = [];
+  for (const entry of candidate.boards as unknown[]) {
+    if (typeof entry !== "object" || entry === null) {
+      return null;
+    }
+    const { id, name, board } = entry as Record<string, unknown>;
+    if (typeof id !== "string" || typeof name !== "string") {
+      return null;
+    }
+    const validated = deserializeBoard({ version: SCHEMA_VERSION, board });
+    if (!validated) {
+      return null;
+    }
+    boards.push({ id, name, board: validated });
+  }
+  return boards;
+}
+
+/**
  * The registry: which boards exist and which one is active. Deliberately a
  * separate persisted document from any board's own content (`PersistedBoardV1`
  * above) -- it stays tiny (an id and a name per board) regardless of how many
