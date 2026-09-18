@@ -1,9 +1,10 @@
 import { SortableContext, horizontalListSortingStrategy } from "@dnd-kit/sortable";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { Composer } from "../../components/Composer";
 import { useAddList, useListOrder } from "../../store/selectors";
 import styles from "./BoardCanvas.module.css";
+import { CopyBoardButton } from "./CopyBoardButton";
 import { BoardDragContext } from "./DragContext";
 import { ListColumn } from "./ListColumn";
 import { ShortcutsDialog } from "./ShortcutsDialog";
@@ -29,6 +30,7 @@ export function BoardCanvas() {
   const listOrder = useListOrder();
   const addList = useAddList();
   const [zoom, setZoom] = useState(1);
+  const railRef = useRef<HTMLDivElement>(null);
   useUndoRedoShortcuts();
 
   return (
@@ -37,16 +39,17 @@ export function BoardCanvas() {
         <UndoRedoControls />
         <ZoomControls zoom={zoom} onZoomChange={setZoom} />
         <ShortcutsDialog />
+        <CopyBoardButton railRef={railRef} />
       </div>
       <div className={styles.scrollArea} data-board-canvas>
         <BoardDragContext>
-          <div className={styles.rail} style={{ zoom }}>
+          <div ref={railRef} className={styles.rail} style={{ zoom }}>
             <SortableContext items={[...listOrder]} strategy={horizontalListSortingStrategy}>
               {listOrder.map((listId) => (
                 <ListColumn key={listId} listId={listId} />
               ))}
             </SortableContext>
-            <div className={styles.addListSlot}>
+            <div className={styles.addListSlot} data-capture-exclude="true">
               <Composer label="Add a list" placeholder="Enter list title…" onSubmit={addList} />
             </div>
           </div>

@@ -349,6 +349,15 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   list's content, not its own chrome. Per-card buttons need no such
   handling: they're already `opacity: 0` except on `:hover`, and the
   capture runs with the pointer over the list's header, not any card.
+- **Copy the whole board as an image.** `CopyBoardButton.tsx` (toolbar,
+  beside Shortcuts) captures the rail -- every list side by side -- through
+  the same `copyAsImage` helper the list button uses (`copyAsImage.ts`), so
+  the two share one capture path and one exclude rule. Differences: the
+  rail is rendered at `zoom: 1` (via `toBlob`'s `style` override) so the
+  image doesn't depend on the current zoom, the add-list composer is tagged
+  `data-capture-exclude`, and `pixelRatio` drops below 4 for a very wide
+  board to stay under the browser's ~16k-pixel canvas limit rather than
+  produce a blank image.
 
 ## Decisions
 

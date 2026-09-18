@@ -1,7 +1,6 @@
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { toBlob } from "html-to-image";
 import {
   memo,
   useRef,
@@ -40,6 +39,7 @@ import {
 import { LIST_WIDTH_MAX, LIST_WIDTH_MIN } from "../../styles/layout";
 import { sortableTransition } from "../../styles/motion";
 import { CardItem } from "./CardItem";
+import { copyAsImage } from "./copyAsImage";
 import styles from "./ListColumn.module.css";
 
 interface ListColumnProps {
@@ -239,23 +239,15 @@ function ListColumnImpl({ listId }: ListColumnProps) {
   // screen's own resolution -- so pasting into a tool like Excalidraw and
   // resizing there still has real pixels to sample down from, instead of
   // the soft, blocky result a normal screenshot gives once it's stretched.
-  // `filter` skips every button and the resize handle (each tagged
-  // `data-capture-exclude`) so the exported image is just the list's
-  // content, not its interactive chrome.
+  // Buttons and the resize handle (each tagged `data-capture-exclude`) are
+  // left out, so the image is just the list's content.
   async function handleCopyImage() {
     const column = columnRef.current;
     if (!column) {
       return;
     }
     try {
-      const blob = await toBlob(column, {
-        pixelRatio: 4,
-        filter: (node) => !(node instanceof HTMLElement && node.dataset.captureExclude === "true"),
-      });
-      if (!blob) {
-        throw new Error("toBlob returned null");
-      }
-      await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+      await copyAsImage(column, { pixelRatio: 4 });
       setCopyState("copied");
     } catch (error) {
       console.error("copy list as image failed", error);
