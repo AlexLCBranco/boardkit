@@ -360,16 +360,20 @@ export const useBoardStore = create<BoardStore>((set) => ({
   // would otherwise cancel the outgoing board's pending save and silently
   // drop whatever was just typed, rather than writing it under its own key
   // before this board's content is replaced.
+  //
+  // A new board is also written to storage immediately, both its content and
+  // its registry entry, rather than left to the debounced subscriber below: a
+  // board the user explicitly created must survive a reload, a crash or a
+  // closed tab even if that happens inside the 400ms window.
   createBoard: (name) =>
     set((state) => {
       flushPersist();
       const boardId = createBoardId();
-      return {
-        ...createEmptyBoard(),
-        boardId,
-        boards: [...state.boards, { id: boardId, name }],
-        history: EMPTY_HISTORY,
-      };
+      const board = createEmptyBoard();
+      const boards = [...state.boards, { id: boardId, name }];
+      savePersistedBoardNow(board, boardId);
+      savePersistedRegistryNow(boards, boardId);
+      return { ...board, boardId, boards, history: EMPTY_HISTORY };
     }),
 
   // Starts next week's board from this week's: same lists, cards and
@@ -395,13 +399,10 @@ export const useBoardStore = create<BoardStore>((set) => ({
         trash: [],
         trashedLists: [],
       };
+      const boards = [...state.boards, { id: boardId, name }];
       savePersistedBoardNow(board, boardId);
-      return {
-        ...board,
-        boardId,
-        boards: [...state.boards, { id: boardId, name }],
-        history: EMPTY_HISTORY,
-      };
+      savePersistedRegistryNow(boards, boardId);
+      return { ...board, boardId, boards, history: EMPTY_HISTORY };
     }),
 
   // Adds boards to the registry without switching to any of them, so an
