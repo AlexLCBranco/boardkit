@@ -59,6 +59,7 @@ const SHORTCUT_GROUPS: ShortcutGroup[] = [
 
 const CONTEXT_MENU_ENTRIES: ShortcutEntry[] = [
   { keys: ["Right-click"], description: "Toggle a card's thots section open or closed" },
+  { keys: ["Right-click"], description: "Duplicate a list (right-click its header)" },
 ];
 
 /**

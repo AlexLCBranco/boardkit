@@ -98,6 +98,10 @@ export function useDeleteList() {
   return useBoardStore((state) => state.deleteList);
 }
 
+export function useDuplicateList() {
+  return useBoardStore((state) => state.duplicateList);
+}
+
 export function useDeleteCard() {
   return useBoardStore((state) => state.deleteCard);
 }

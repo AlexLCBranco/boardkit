@@ -24,12 +24,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "../../components/ui/alert-dialog";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "../../components/ui/context-menu";
 import type { ListId } from "../../domain/types";
 import {
   useAddCard,
   useCardCount,
   useCardIds,
   useDeleteList,
+  useDuplicateList,
   useList,
   useRenameList,
   useSetListColor,
@@ -72,6 +79,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
   const cardCount = useCardCount(listId);
   const renameList = useRenameList();
   const deleteList = useDeleteList();
+  const duplicateList = useDuplicateList();
   const addCard = useAddCard();
   const setListColor = useSetListColor();
   const setListIcon = useSetListIcon();
@@ -276,6 +284,10 @@ function ListColumnImpl({ listId }: ListColumnProps) {
       className={`${styles.column} ${isDragging ? styles.dragging : ""} ${isResizing ? styles.resizing : ""}`}
       data-list-id={listId}
     >
+      {/* The menu wraps the header only, and its content portals out, so
+          clicks inside it never bubble through the header's drag listeners. */}
+      <ContextMenu>
+        <ContextMenuTrigger asChild>
       <header className={styles.header} {...attributes} {...listeners}>
         {list.icon && <Icon name={list.icon} className={styles.headerIcon} />}
         <h2 className={styles.title}>
@@ -331,6 +343,11 @@ function ListColumnImpl({ listId }: ListColumnProps) {
           ×
         </button>
       </header>
+        </ContextMenuTrigger>
+        <ContextMenuContent>
+          <ContextMenuItem onSelect={() => duplicateList(listId)}>Duplicate list</ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
 
       <AlertDialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
         <AlertDialogContent>

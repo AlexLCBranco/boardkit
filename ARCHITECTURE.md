@@ -358,6 +358,14 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   `data-capture-exclude`, and `pixelRatio` drops below 4 for a very wide
   board to stay under the browser's ~16k-pixel canvas limit rather than
   produce a blank image.
+- **Duplicate list.** Reached by right-clicking a list's header, not a
+  button: the header was out of room, and duplication is occasional. The
+  pure `domain/duplicate.ts` copies the list and gives every card a fresh id
+  (unlike `duplicateBoard`, cards cannot be shared between lists, since
+  membership lives in `cardOrder`), inserting the copy right after the
+  original. It returns a normal patch, so one duplication is one undo step.
+  The `ContextMenu` wraps only the `<header>` and its content portals out,
+  so menu clicks never bubble through the header's drag listeners.
 
 ## Decisions
 

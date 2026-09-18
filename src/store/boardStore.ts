@@ -1,5 +1,6 @@
 import { create } from "zustand";
 
+import { duplicateList as duplicateListState } from "../domain/duplicate";
 import { createBoardId, createCardId, createListId } from "../domain/ids";
 import { EMPTY_HISTORY, pushEntry, stepRedo, stepUndo, type BoardPatch, type History } from "../domain/history";
 import { moveBetweenLists, moveList, moveWithinList } from "../domain/ordering";
@@ -59,6 +60,7 @@ export interface BoardActions {
   renameList: (listId: ListId, title: string) => void;
   renameCard: (cardId: CardId, title: string) => void;
   deleteList: (listId: ListId) => void;
+  duplicateList: (listId: ListId) => void;
   deleteCard: (listId: ListId, cardId: CardId) => void;
   restoreCard: (cardId: CardId) => void;
   permanentlyDeleteCard: (cardId: CardId) => void;
@@ -202,6 +204,11 @@ export const useBoardStore = create<BoardStore>((set) => ({
   // separate bookkeeping for the cards that were in it.
   deleteList: (listId) =>
     set((state) => withHistory(state, moveListToTrash(state, listId, Date.now()))),
+
+  duplicateList: (listId) =>
+    set((state) =>
+      withHistory(state, duplicateListState(state, listId, `${state.lists[listId].title} (copy)`)),
+    ),
 
   restoreList: (listId) =>
     set((state) => {
