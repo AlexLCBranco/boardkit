@@ -16,8 +16,20 @@ export interface PersistedBoardV1 {
   readonly board: BoardState;
 }
 
+/**
+ * Copies out exactly the six content fields. Callers pass the whole store
+ * state (which also carries `boardId`, `boards`, `history` and the actions),
+ * so anything not named here would leak into storage -- and, worse, be spread
+ * back over the live store on load, e.g. an old board list overwriting the
+ * current one when switching boards.
+ */
+function pickContent(board: BoardState): BoardState {
+  const { lists, cards, listOrder, cardOrder, trash, trashedLists } = board;
+  return { lists, cards, listOrder, cardOrder, trash, trashedLists };
+}
+
 export function serializeBoard(board: BoardState): PersistedBoardV1 {
-  return { version: SCHEMA_VERSION, board };
+  return { version: SCHEMA_VERSION, board: pickContent(board) };
 }
 
 /**
@@ -40,7 +52,9 @@ export function deserializeBoard(data: unknown): BoardState | null {
   // arrays.
   const trash = Array.isArray(data.board.trash) ? data.board.trash : [];
   const trashedLists = Array.isArray(data.board.trashedLists) ? data.board.trashedLists : [];
-  return { ...data.board, trash, trashedLists };
+  // Also strips any extra fields boards saved by earlier versions carry (a
+  // stale `boards` list, `boardId`, `history`) so they cannot reach the store.
+  return pickContent({ ...data.board, trash, trashedLists });
 }
 
 function isPersistedBoardV1(data: unknown): data is PersistedBoardV1 {
