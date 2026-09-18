@@ -7,6 +7,7 @@ import styles from "./BoardCanvas.module.css";
 import { CopyBoardButton } from "./CopyBoardButton";
 import { BoardDragContext } from "./DragContext";
 import { ListColumn } from "./ListColumn";
+import { SaveBoardButton } from "./SaveBoardButton";
 import { ShortcutsDialog } from "./ShortcutsDialog";
 import { UndoRedoControls } from "./UndoRedoControls";
 import { useUndoRedoShortcuts } from "./useUndoRedoShortcuts";
@@ -40,6 +41,7 @@ export function BoardCanvas() {
         <ZoomControls zoom={zoom} onZoomChange={setZoom} />
         <ShortcutsDialog />
         <CopyBoardButton railRef={railRef} />
+        <SaveBoardButton railRef={railRef} />
       </div>
       <div className={styles.scrollArea} data-board-canvas>
         <BoardDragContext>

@@ -358,6 +358,15 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   `data-capture-exclude`, and `pixelRatio` drops below 4 for a very wide
   board to stay under the browser's ~16k-pixel canvas limit rather than
   produce a blank image.
+- **Save the board as a PNG or PDF file.** `SaveBoardButton.tsx` (toolbar)
+  opens a "Save to…" dialog whose two cards download the same full-rail
+  capture as a file (`saveBoard.ts`). `copyAsImage.ts` was split so
+  `renderToCanvas` is shared by copy and save; save adds an opaque
+  `backgroundColor` (taken from the first opaque ancestor, since the rail is
+  transparent and JPEG would render black) and uses `pixelRatio` 2 rather than
+  4 -- a file is kept, not pasted. The PDF is one page holding one JPEG,
+  written by hand in `imagePdf.ts` (five objects and an xref table) instead of
+  adding a PDF library. It is a picture, not selectable text.
 - **Duplicate list.** Reached by right-clicking a list's header, not a
   button: the header was out of room, and duplication is occasional. The
   pure `domain/duplicate.ts` copies the list and gives every card a fresh id
