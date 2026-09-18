@@ -122,7 +122,7 @@ export function deserializeBackup(data: unknown): BackupBoard[] | null {
     if (!validated) {
       return null;
     }
-    boards.push({ id, name, board: validated });
+    boards.push({ id: id as BoardId, name, board: validated });
   }
   return boards;
 }
