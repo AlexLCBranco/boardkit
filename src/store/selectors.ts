@@ -246,6 +246,10 @@ export function useCreateBoard() {
   return useBoardStore((state) => state.createBoard);
 }
 
+export function useDuplicateBoard() {
+  return useBoardStore((state) => state.duplicateBoard);
+}
+
 export function useSwitchBoard() {
   return useBoardStore((state) => state.switchBoard);
 }

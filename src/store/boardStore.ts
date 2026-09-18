@@ -81,6 +81,7 @@ export interface BoardActions {
   undo: () => void;
   redo: () => void;
   createBoard: (name: string) => void;
+  duplicateBoard: (name: string) => void;
   switchBoard: (boardId: BoardId) => void;
   renameBoard: (name: string) => void;
 }
@@ -354,6 +355,38 @@ export const useBoardStore = create<BoardStore>((set) => ({
       const boardId = createBoardId();
       return {
         ...createEmptyBoard(),
+        boardId,
+        boards: [...state.boards, { id: boardId, name }],
+        history: EMPTY_HISTORY,
+      };
+    }),
+
+  // Starts next week's board from this week's: same lists, cards and
+  // customisation, under a new id, and becomes the active board. Ids are only
+  // ever looked up within one board, so the copy can keep them as-is -- and
+  // because the state is immutable, sharing the same `lists`/`cards`
+  // references with the original is safe: the first edit to either board
+  // copies the slice it touches. Trash is not carried over; a fresh week
+  // should not inherit last week's deleted cards.
+  //
+  // Written to storage immediately rather than left to the subscriber below:
+  // that only fires when a content slice's reference changes, and a straight
+  // copy changes none of the ones it compares except `trash`.
+  duplicateBoard: (name) =>
+    set((state) => {
+      flushPersist();
+      const boardId = createBoardId();
+      const board: BoardState = {
+        lists: state.lists,
+        cards: state.cards,
+        listOrder: state.listOrder,
+        cardOrder: state.cardOrder,
+        trash: [],
+        trashedLists: [],
+      };
+      savePersistedBoardNow(board, boardId);
+      return {
+        ...board,
         boardId,
         boards: [...state.boards, { id: boardId, name }],
         history: EMPTY_HISTORY,

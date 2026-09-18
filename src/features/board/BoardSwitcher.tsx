@@ -11,6 +11,7 @@ import {
   useBoardId,
   useBoards,
   useCreateBoard,
+  useDuplicateBoard,
   useRenameBoard,
   useSwitchBoard,
 } from "../../store/selectors";
@@ -34,6 +35,7 @@ export function BoardSwitcher() {
   const renameBoard = useRenameBoard();
   const switchBoard = useSwitchBoard();
   const createBoard = useCreateBoard();
+  const duplicateBoard = useDuplicateBoard();
 
   return (
     <div className={styles.switcher}>
@@ -54,6 +56,9 @@ export function BoardSwitcher() {
           <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={() => createBoard(`Untitled board ${boards.length + 1}`)}>
             + New board
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => duplicateBoard(`${name} (copy)`)}>
+            Duplicate this board
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

@@ -15,7 +15,7 @@ files.
 
 | Item | Owner |
 |------|-------|
-| _nothing_ | — |
+| Board rotation: duplicate board, export/import backup, delete board + newest-first list | Claude |
 
 ## Queued
 
