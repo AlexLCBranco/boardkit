@@ -1,5 +1,15 @@
-import { useRef, type ChangeEvent } from "react";
+import { useMemo, useRef, useState, type ChangeEvent } from "react";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../../components/ui/alert-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,6 +23,7 @@ import {
   useBoardId,
   useBoards,
   useCreateBoard,
+  useDeleteBoard,
   useDuplicateBoard,
   useRenameBoard,
   useSwitchBoard,
@@ -39,7 +50,12 @@ export function BoardSwitcher() {
   const switchBoard = useSwitchBoard();
   const createBoard = useCreateBoard();
   const duplicateBoard = useDuplicateBoard();
+  const deleteBoard = useDeleteBoard();
   const fileInput = useRef<HTMLInputElement>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  // Stored oldest-first (creation order); listed newest-first, so this
+  // week's board is always at the top however many have piled up.
+  const newestFirst = useMemo(() => [...boards].reverse(), [boards]);
 
   async function handleImport(event: ChangeEvent<HTMLInputElement>) {
     const input = event.currentTarget;
@@ -67,7 +83,7 @@ export function BoardSwitcher() {
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="min-w-56">
-          {boards.map((board) => (
+          {newestFirst.map((board) => (
             <DropdownMenuItem key={board.id} onSelect={() => switchBoard(board.id)}>
               {board.id === boardId ? "✓ " : ""}
               {board.name}
@@ -79,6 +95,9 @@ export function BoardSwitcher() {
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={() => duplicateBoard(`${name} (copy)`)}>
             Duplicate this board
+          </DropdownMenuItem>
+          <DropdownMenuItem disabled={boards.length <= 1} onSelect={() => setConfirmingDelete(true)}>
+            Delete this board…
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={exportBackup}>Export all boards…</DropdownMenuItem>
@@ -95,6 +114,23 @@ export function BoardSwitcher() {
         hidden
         onChange={handleImport}
       />
+      <AlertDialog open={confirmingDelete} onOpenChange={setConfirmingDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete “{name}”?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This removes the board and everything in it, including its trash. It cannot be undone —
+              export a backup first if you might want it back.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={deleteBoard}>
+              Delete board
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

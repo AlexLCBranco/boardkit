@@ -15,7 +15,7 @@ files.
 
 | Item | Owner |
 |------|-------|
-| Board rotation: duplicate board, export/import backup, delete board + newest-first list | Claude |
+| _nothing_ | — |
 
 ## Queued
 
@@ -77,6 +77,6 @@ Hard scope boundaries live in [`CLAUDE.md`](./CLAUDE.md) and are not
 negotiable here.
 
 These are merely un-started — the architecture stays open to them, but do not
-begin one without an explicit request: export/import as JSON, search and
-filter, board-level themes, a command palette, touch refinement, deleting a
-board outright, reordering the board list.
+begin one without an explicit request: search and
+filter, board-level themes, a command palette, touch refinement, manually
+reordering the board list (it is newest-first only).

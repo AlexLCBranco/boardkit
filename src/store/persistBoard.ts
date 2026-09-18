@@ -30,6 +30,18 @@ export function loadPersistedBoard(boardId: BoardId): BoardState | null {
   }
 }
 
+/** Removes a board's saved content. Callers must `flushPersist()` first: a
+    still-pending save for this board would otherwise fire afterwards and
+    write the deleted board straight back. */
+export function removePersistedBoard(boardId: BoardId): void {
+  try {
+    localStorage.removeItem(STORAGE_KEY_PREFIX + boardId);
+  } catch {
+    // Nothing useful to do: the registry no longer lists it, so it is
+    // unreachable whether or not this succeeds.
+  }
+}
+
 /** Writes straight away, bypassing the debounce -- for the one-time initial
     migration in `boardStore.ts`, where there is no later edit to eventually
     flush this through the normal debounced path. */

@@ -250,6 +250,10 @@ export function useDuplicateBoard() {
   return useBoardStore((state) => state.duplicateBoard);
 }
 
+export function useDeleteBoard() {
+  return useBoardStore((state) => state.deleteBoard);
+}
+
 export function useSwitchBoard() {
   return useBoardStore((state) => state.switchBoard);
 }

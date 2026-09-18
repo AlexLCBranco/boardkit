@@ -29,6 +29,7 @@ import {
   flushPersist,
   loadLegacyPersistedBoard,
   loadPersistedBoard,
+  removePersistedBoard,
   savePersistedBoardNow,
   schedulePersist,
 } from "./persistBoard";
@@ -84,6 +85,7 @@ export interface BoardActions {
   createBoard: (name: string) => void;
   duplicateBoard: (name: string) => void;
   addBoards: (entries: readonly BackupBoard[]) => void;
+  deleteBoard: () => void;
   switchBoard: (boardId: BoardId) => void;
   renameBoard: (name: string) => void;
 }
@@ -409,6 +411,21 @@ export const useBoardStore = create<BoardStore>((set) => ({
       return {
         boards: [...state.boards, ...entries.map(({ id, name }) => ({ id, name }))],
       };
+    }),
+
+  // Deletes the active board for good -- there is no board-level trash, so
+  // the UI confirms first. The last remaining board cannot be deleted: the
+  // app always has one to show. Afterwards the newest remaining board becomes
+  // active, matching the newest-first order the switcher lists them in.
+  deleteBoard: () =>
+    set((state) => {
+      if (state.boards.length <= 1) return state;
+      flushPersist();
+      removePersistedBoard(state.boardId);
+      const boards = state.boards.filter((board) => board.id !== state.boardId);
+      const nextId = boards[boards.length - 1].id;
+      const board = loadPersistedBoard(nextId) ?? createEmptyBoard();
+      return { ...board, boardId: nextId, boards, history: EMPTY_HISTORY };
     }),
 
   switchBoard: (boardId) =>

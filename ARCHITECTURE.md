@@ -387,3 +387,24 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
 - **A card kept colour but lost the icon picker (milestone 9).** Colour was
   the customisation people actually reached for; the icon picker sat there
   unused. Lists keep both -- nothing suggested the same was true there.
+- **Board rotation: duplicate, backup file, delete (v0.0.23–0.0.25).** Boards
+  are made weekly and live only in one browser's `localStorage`, so three
+  things were added around the multi-board registry:
+  - *Duplicate* (`duplicateBoard`) copies the active board under a new id and
+    shares the immutable `lists`/`cards` references rather than deep-cloning
+    them; trash is not carried over. It writes the new board to storage
+    itself, because the persistence subscriber only fires when a content
+    slice changes reference and a straight copy changes almost none.
+  - *Backup* is a third persisted document, `boardkit-backup` (`domain/
+    persistence.ts`), meant for the user to keep rather than the app. Import
+    is add-only: a board whose id already exists is skipped, so it never
+    overwrites and re-importing the same file is idempotent. Each board goes
+    through `deserializeBoard`; one bad board rejects the whole file, which
+    costs nothing because import replaces nothing. Non-active boards are
+    written straight to storage by `addBoards` for the same reason as above.
+    `features/board/backup.ts` reads the active board from the live store,
+    not storage, so a failed write cannot drop it from its own backup.
+  - *Delete* removes only the active board and refuses to remove the last
+    one. There is no board-level trash, so the UI confirms first and points
+    at export. The switcher lists boards newest-first by reversing creation
+    order at render time; nothing is stored for ordering.
