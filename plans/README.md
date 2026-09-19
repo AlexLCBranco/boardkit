@@ -54,7 +54,7 @@ The build chat should:
 | 7 | Collapse a list | Not started |
 | 8 | Clickable links in thots | Not started |
 | 9 | Keyboard shortcut system | Not started |
-| 10 | Backup reminder + automatic backup | Not started |
+| 10 | Backup reminder + automatic backup | Built (v0.0.35 reminder, v0.0.36 folder backup) |
 
 ## Gotchas every plan shares
 

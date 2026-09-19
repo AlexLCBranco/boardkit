@@ -10,3 +10,10 @@
   font-size: var(--font-size-sm);
   font-weight: var(--weight-medium);
 }
+
+.warning {
+  color: var(--palette-orange);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-tight);
+  white-space: normal;
+}

@@ -1,9 +1,11 @@
+import { toast } from "sonner";
+
 import {
   deserializeBackup,
   serializeBackup,
   type BackupBoard,
+  type BackupFileV1,
 } from "../../domain/persistence";
-import { createEmptyBoard } from "../../domain/seed";
 import { flushPersist, loadPersistedBoard } from "../../store/persistBoard";
 import { useBackupStore } from "../../store/backupStore";
 import { useBoardStore } from "../../store/boardStore";
@@ -14,26 +16,48 @@ import { useBoardStore } from "../../store/boardStore";
  * device -- a file the user holds is the only copy that survives that.
  */
 
+export interface CollectedBoards {
+  readonly boards: BackupBoard[];
+  /** Names of boards whose saved content could not be read. They are left out
+      of `boards` rather than replaced with an empty board: a backup that
+      quietly swaps a board for a blank one is worse than no backup, and with
+      automatic rotation it would push every good copy out of the folder. */
+  readonly unreadable: string[];
+}
+
 /** Every board's content, in registry order. The active board is read from
     the live store rather than storage: its latest edits may still be inside
     the debounce window, and a failed storage write (quota) would otherwise
     silently drop the board the user is looking at from its own backup. */
-function collectBoards(): BackupBoard[] {
+export function collectBoards(): CollectedBoards {
   flushPersist();
   const state = useBoardStore.getState();
-  return state.boards.map(({ id, name }) => {
+  const boards: BackupBoard[] = [];
+  const unreadable: string[] = [];
+  for (const { id, name } of state.boards) {
     if (id === state.boardId) {
       const { lists, cards, listOrder, cardOrder, trash, trashedLists } = state;
-      return { id, name, board: { lists, cards, listOrder, cardOrder, trash, trashedLists } };
+      boards.push({ id, name, board: { lists, cards, listOrder, cardOrder, trash, trashedLists } });
+      continue;
     }
-    return { id, name, board: loadPersistedBoard(id) ?? createEmptyBoard() };
-  });
+    const board = loadPersistedBoard(id);
+    if (board) boards.push({ id, name, board });
+    else unreadable.push(name);
+  }
+  return { boards, unreadable };
 }
 
-/** Downloads every board as a single JSON file. */
+/** The backup document for a set of boards, stamped with `now`. */
+export function buildBackup(boards: readonly BackupBoard[], now: Date): BackupFileV1 {
+  return serializeBackup(boards, now.toISOString());
+}
+
+/** Downloads every board as a single JSON file. Warns if a board could not be
+    read and so is missing from the file. */
 export function exportBackup(): void {
   const now = new Date();
-  const backup = serializeBackup(collectBoards(), now.toISOString());
+  const { boards, unreadable } = collectBoards();
+  const backup = buildBackup(boards, now);
   const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
@@ -42,6 +66,11 @@ export function exportBackup(): void {
   link.click();
   URL.revokeObjectURL(url);
   useBackupStore.getState().markBackedUp(now.getTime());
+  if (unreadable.length > 0) {
+    toast.warning(
+      `${listNames(unreadable)} couldn't be read, so ${unreadable.length === 1 ? "it is" : "they are"} not in this backup.`,
+    );
+  }
 }
 
 export interface ImportResult {
@@ -70,4 +99,10 @@ export async function importBackup(file: File): Promise<ImportResult> {
   const fresh = entries.filter((entry) => !existing.has(entry.id));
   useBoardStore.getState().addBoards(fresh);
   return { added: fresh.length, skipped: entries.length - fresh.length };
+}
+
+/** "Week 36", "Week 36 and Sprint", "A, B and C". */
+export function listNames(names: readonly string[]): string {
+  const quoted = names.map((name) => `“${name}”`);
+  return quoted.length <= 1 ? (quoted[0] ?? "") : `${quoted.slice(0, -1).join(", ")} and ${quoted.at(-1)}`;
 }

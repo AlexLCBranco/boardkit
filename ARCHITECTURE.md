@@ -482,3 +482,24 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   The staleness and age-wording rules are pure functions in
   `domain/backupStatus.ts` (they take `now` as an argument); `useNow` in
   `hooks/` re-renders the text as time passes.
+- **Automatic backup to a folder (v0.0.36).** Chrome/Edge only (File System
+  Access API; the menu items are hidden elsewhere). "Automatic backup…"
+  picks a folder; the handle is kept in IndexedDB through `store/idb.ts`, a
+  small key-value module written to be reused (the backgrounds plan needs
+  one). `features/board/autoBackup.ts` is the engine: it subscribes to the
+  same board slices as persistence plus `boards`/`boardId`, waits 10s of
+  quiet, then writes `boardkit-backup-YYYY-MM-DD-HHMM.json` in the exact
+  "Export all boards…" format and deletes files beyond the newest 20 -- only
+  after a successful write, and only files matching that name pattern. It
+  skips a write whose boards equal the last one written, so switching boards
+  does not burn rotation slots on duplicates. Status
+  (`off | active | needs-permission | folder-error | unsupported`) lives in
+  `backupStore`; after a browser restart the saved handle reports "prompt"
+  until the user clicks "Resume backups" (`requestPermission` needs a click).
+  `collectBoards()` no longer swaps an unreadable board for an empty one: it
+  returns it in `unreadable`. Automatic backup then writes nothing and shows
+  a warning (otherwise rotation would push every good copy out); manual
+  export leaves that board out of the file and toasts. This does not add the
+  repair-on-load behaviour queued in `PLAN.md` item 5; it only stops backups
+  from hiding the problem. Pure rules (staleness, age text, filename,
+  rotation, dot) are in `domain/backupStatus.ts`.

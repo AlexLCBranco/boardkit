@@ -1,3 +1,4 @@
+import type { AutoBackupStatus } from "../domain/backupStatus";
 import { isListFull } from "../domain/limits";
 import { computeCardNumber } from "../domain/numbering";
 import type {
@@ -298,4 +299,16 @@ export function useSendListToBoard() {
 
 export function useLastBackupAt(): number | null {
   return useBackupStore((state) => state.lastBackupAt);
+}
+
+export function useAutoBackupStatus(): AutoBackupStatus {
+  return useBackupStore((state) => state.status);
+}
+
+export function useBackupFolderName(): string | null {
+  return useBackupStore((state) => state.folderName);
+}
+
+export function useBackupWarning(): string | null {
+  return useBackupStore((state) => state.warning);
 }

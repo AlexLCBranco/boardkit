@@ -30,7 +30,7 @@ import {
   useSwitchBoard,
 } from "../../store/selectors";
 import { exportBackup, importBackup } from "./backup";
-import { BackupReminder, useBackupAttention } from "./BackupReminder";
+import { AutomaticBackupItems, BackupStatusLine, useBackupAttention } from "./BackupMenuItems";
 import styles from "./BoardSwitcher.module.css";
 import { NewBoardDialog } from "./NewBoardDialog";
 
@@ -115,9 +115,10 @@ export function BoardSwitcher() {
             Delete this board…
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <BackupReminder />
+          <BackupStatusLine />
           <DropdownMenuItem onSelect={exportBackup}>Export all boards…</DropdownMenuItem>
           <DropdownMenuItem onSelect={() => fileInput.current?.click()}>Import boards…</DropdownMenuItem>
+          <AutomaticBackupItems />
         </DropdownMenuContent>
       </DropdownMenu>
       {/* Outside the menu on purpose: the menu unmounts as soon as an item
