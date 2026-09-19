@@ -20,6 +20,12 @@ interface PopoverProps {
  * `document.body` with `position: fixed` escapes that entirely, at the cost
  * of tracking the anchor's position by hand rather than getting it from CSS.
  *
+ * React events bubble through a portal to the *React* parent, not the DOM
+ * one, and every popover here is rendered inside a draggable card or list. So
+ * a press inside the panel would reach dnd-kit's pointer listener on that
+ * card and start dragging it along with the picker. The panel stops
+ * `pointerdown` at its own edge to keep the two apart.
+ *
  * It knows nothing about colours, icons, lists or cards -- only how to open
  * a panel near a trigger and close it on an outside click, Escape, or the
  * board scrolling underneath it.
@@ -75,6 +81,7 @@ export function Popover({ anchorRef, onClose, children }: PopoverProps) {
       className={styles.panel}
       style={{ top: position.top, left: position.left }}
       role="dialog"
+      onPointerDown={(event) => event.stopPropagation()}
     >
       {children}
     </div>,
