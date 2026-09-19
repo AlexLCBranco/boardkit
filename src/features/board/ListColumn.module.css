@@ -206,7 +206,10 @@
 .scroller {
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 0 var(--space-2) var(--space-2);
+  /* Top padding gives the first card room for its selection ring and hover
+     lift, which sit outside its box and would otherwise be clipped by this
+     scroller's overflow. */
+  padding: var(--space-1) var(--space-2) var(--space-2);
   min-height: 0;
 }
 
