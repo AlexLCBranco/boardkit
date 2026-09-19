@@ -38,6 +38,8 @@ If one of these seems necessary to finish a task, stop and ask instead.
 
 - `PLAN.md` lists what is queued, what is in flight, and what is deliberately
   not being built. Read it before starting; update it when something lands.
+- `plans/` holds standalone, owner-approved feature plans, each built in its
+  own chat. `plans/README.md` has the build order, status and how to start.
 - Every change must end with a running application. No half-built states left
   behind.
 - Before writing code, say what you are building and why.
