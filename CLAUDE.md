@@ -29,7 +29,9 @@ If one of these seems necessary to finish a task, stop and ask instead.
 3. Instant editing
 4. Very clean code
 5. Modular architecture
-6. Performance at hundreds to thousands of cards
+6. Stays smooth across many saved boards. Lists are short by design: never
+   more than 50 cards in a list, and that is pushing it. Do not build list
+   virtualisation or other big-list optimisations.
 7. Easy to extend later
 
 ## How to work
