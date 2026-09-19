@@ -13,6 +13,7 @@ import type {
 } from "../domain/types";
 import { useBackupStore } from "./backupStore";
 import { useBoardStore } from "./boardStore";
+import { useSearchDialogStore } from "./searchDialogStore";
 import { useSelectionStore } from "./selectionStore";
 import { useShortcutsDialogStore } from "./shortcutsDialogStore";
 
@@ -373,4 +374,14 @@ export function useIsShortcutsDialogOpen(): boolean {
 
 export function useSetShortcutsDialogOpen() {
   return useShortcutsDialogStore((state) => state.setOpen);
+}
+
+/* The search dialog's open state lives in `searchDialogStore.ts`. */
+
+export function useIsSearchOpen(): boolean {
+  return useSearchDialogStore((state) => state.isOpen);
+}
+
+export function useSetSearchOpen() {
+  return useSearchDialogStore((state) => state.setOpen);
 }

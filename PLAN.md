@@ -77,6 +77,6 @@ Hard scope boundaries live in [`CLAUDE.md`](./CLAUDE.md) and are not
 negotiable here.
 
 These are merely un-started — the architecture stays open to them, but do not
-begin one without an explicit request: search and
-filter, board-level themes, a command palette, touch refinement, manually
+begin one without an explicit request: filtering the
+board, board-level themes, a command palette, touch refinement, manually
 reordering the board list (it is newest-first only).

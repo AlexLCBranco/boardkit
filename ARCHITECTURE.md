@@ -595,4 +595,36 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   - `?` opens the dialog through `store/shortcutsDialogStore.ts`, so the
     toolbar button and the shortcut share one open state.
   Not built: remapping keys, a command palette (`PLAN.md`'s "not being built").
-  Ctrl/Cmd+K for search registers here when that plan lands.
+  Ctrl/Cmd+K (search, below) is registered here.
+
+- **Search across all boards.** Ctrl/Cmd+K (or the toolbar magnifier) opens a
+  shadcn `CommandDialog` (cmdk) with cmdk's own fuzzy filter off
+  (`shouldFilter={false}`): matching is ours, in `domain/search.ts`.
+  - **Matching is pure.** `searchBoards(sources, query)` is a case-insensitive
+    substring match on title, pregame and postgame thots. It walks
+    `listOrder` then `cardOrder`, never the flat `cards` table, so trashed
+    cards and cards in trashed lists (which stay in `cards`) are skipped for
+    free. One hit per card (first matching field wins), capped at 100, and an
+    empty query returns nothing. `excerptAround` collapses whitespace and cuts
+    a snippet around the match; it uses a regex rather than `toLowerCase`
+    indices, which drift on characters whose lower-case form has another
+    length.
+  - **Where the boards come from.** `store/searchSources.ts` (the one place
+    that knows): `flushPersist()`, then the active board from the store (so
+    edits not yet saved count) followed by every other board via
+    `loadPersistedBoard`, newest first. Boards that fail to load are skipped;
+    search never writes. It runs once when the dialog opens: `SearchPanel` is
+    inside Radix's content, which only mounts while open, so a lazy
+    `useState(loadSearchSources)` loads on open and the query resets by
+    unmounting -- no effect, no reset code.
+  - **Opening a result** calls `switchBoard` if needed, then `revealCard`
+    (`features/search/revealCard.ts`): waits (up to ~60 frames) for the
+    `data-card-id` element to exist, scrolls it into view, and sets
+    `data-found` on it. `CardItem.module.css` turns that into a one-off pulse
+    on the card's `::after`: the inset ring and wash are static and the
+    keyframes change only `opacity`. The attribute is removed on the pseudo's
+    `animationend` (children's animations bubble up, so it checks the target).
+    Duration is the new `--duration-highlight` token.
+  - Open state is `store/searchDialogStore.ts`, shared by the button and the
+    shortcut, like the shortcuts dialog. Not built: a "this board only"
+    toggle, filtering the board while typing, auto-opening a card's thots.

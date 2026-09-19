@@ -48,6 +48,34 @@
   box-shadow: var(--shadow-md), 0 0 0 2px var(--accent);
 }
 
+/* A search result being revealed (`features/search/revealCard.ts` sets
+   `data-found`). The ring and wash are drawn once, statically, on an overlay
+   that starts invisible; the animation only changes its `opacity`, which the
+   compositor handles without layout or paint. The ring is inset so no ancestor
+   can clip it. Pointer events pass straight through to the card. */
+.card[data-found]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 2px var(--accent);
+  background: var(--surface-active);
+  opacity: 0;
+  pointer-events: none;
+  animation: card-found var(--duration-highlight) var(--ease-standard);
+}
+
+@keyframes card-found {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  15%,
+  55% {
+    opacity: 1;
+  }
+}
+
 /* The original card while it is the one being dragged: left in place as a
    placeholder (so the list doesn't collapse) but faded, since the lifted
    copy in the DragOverlay is the one the user is actually looking at. */

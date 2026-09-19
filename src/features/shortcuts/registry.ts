@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { MAX_CARDS_PER_LIST } from "../../domain/limits";
 import type { CardId } from "../../domain/types";
 import { useBoardStore } from "../../store/boardStore";
+import { useSearchDialogStore } from "../../store/searchDialogStore";
 import { useSelectionStore } from "../../store/selectionStore";
 import { useShortcutsDialogStore } from "../../store/shortcutsDialogStore";
 import {
@@ -135,6 +136,11 @@ export const SHORTCUTS: readonly Shortcut[] = [
     },
     { when: () => Object.keys(selection().selected).length > 0 || selection().clipboard.length > 0 },
   ),
+  // Ctrl+F stays the browser's own find-in-page. Works while typing: the
+  // combo has a modifier, so it never steals a plain letter from a text field.
+  global("search.open", "mod+k", "Search every board", () => useSearchDialogStore.getState().setOpen(true), {
+    whileTyping: true,
+  }),
   global("help.open", "?", "Show keyboard shortcuts", () => useShortcutsDialogStore.getState().setOpen(true)),
 
   // --- Card -----------------------------------------------------------------

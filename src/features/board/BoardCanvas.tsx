@@ -3,6 +3,7 @@ import { useRef, useState } from "react";
 
 import { Composer } from "../../components/Composer";
 import { useAddList, useListOrder } from "../../store/selectors";
+import { SearchDialog } from "../search/SearchDialog";
 import { ShortcutsDialog } from "../shortcuts/ShortcutsDialog";
 import { useShortcuts } from "../shortcuts/useShortcuts";
 import styles from "./BoardCanvas.module.css";
@@ -43,6 +44,7 @@ export function BoardCanvas() {
       <div className={styles.toolbar}>
         <UndoRedoControls />
         <ZoomControls zoom={zoom} onZoomChange={setZoom} />
+        <SearchDialog />
         <ShortcutsDialog />
         <CopyBoardButton railRef={railRef} />
         <SaveBoardButton railRef={railRef} />
