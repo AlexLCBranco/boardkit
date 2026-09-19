@@ -268,6 +268,10 @@ export function useDuplicateBoard() {
   return useBoardStore((state) => state.duplicateBoard);
 }
 
+export function useCreateBoardFromLayout() {
+  return useBoardStore((state) => state.createBoardFromLayout);
+}
+
 export function useDeleteBoard() {
   return useBoardStore((state) => state.deleteBoard);
 }

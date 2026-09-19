@@ -23,6 +23,7 @@ import {
   useBoardId,
   useBoards,
   useCreateBoard,
+  useCreateBoardFromLayout,
   useDeleteBoard,
   useDuplicateBoard,
   useRenameBoard,
@@ -50,11 +51,13 @@ export function BoardSwitcher() {
   const renameBoard = useRenameBoard();
   const switchBoard = useSwitchBoard();
   const createBoard = useCreateBoard();
+  const createBoardFromLayout = useCreateBoardFromLayout();
   const duplicateBoard = useDuplicateBoard();
   const deleteBoard = useDeleteBoard();
   const fileInput = useRef<HTMLInputElement>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [namingNewBoard, setNamingNewBoard] = useState(false);
+  const [namingLayoutBoard, setNamingLayoutBoard] = useState(false);
   // Stored oldest-first (creation order); listed newest-first, so this
   // week's board is always at the top however many have piled up.
   const newestFirst = useMemo(() => [...boards].reverse(), [boards]);
@@ -98,6 +101,9 @@ export function BoardSwitcher() {
           <DropdownMenuItem onSelect={() => duplicateBoard(`${name} (copy)`)}>
             Duplicate this board
           </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => setNamingLayoutBoard(true)}>
+            New board from these lists
+          </DropdownMenuItem>
           <DropdownMenuItem disabled={boards.length <= 1} onSelect={() => setConfirmingDelete(true)}>
             Delete this board…
           </DropdownMenuItem>
@@ -121,6 +127,13 @@ export function BoardSwitcher() {
         onOpenChange={setNamingNewBoard}
         defaultName={`Untitled board ${boards.length + 1}`}
         onCreate={createBoard}
+      />
+      <NewBoardDialog
+        open={namingLayoutBoard}
+        onOpenChange={setNamingLayoutBoard}
+        defaultName={`Untitled board ${boards.length + 1}`}
+        description="Keeps this board's lists, without their cards. Give the new board a name."
+        onCreate={createBoardFromLayout}
       />
       <AlertDialog open={confirmingDelete} onOpenChange={setConfirmingDelete}>
         <AlertDialogContent>

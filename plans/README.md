@@ -46,7 +46,7 @@ The build chat should:
 | # | Plan | Status |
 |---|---|---|
 | 1 | Move or copy to another board | Not started |
-| 2 | New board from layout | Not started |
+| 2 | New board from layout | Built (v0.0.32) |
 | 3 | Search across all boards | Not started |
 | 4 | Special card types | Not started |
 | 5 | Custom colours | Not started |

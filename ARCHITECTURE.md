@@ -442,3 +442,13 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
     one. There is no board-level trash, so the UI confirms first and points
     at export. The switcher lists boards newest-first by reversing creation
     order at render time; nothing is stored for ordering.
+- **New board from a board's layout (v0.0.32).** The switcher's "New board
+  from these lists" makes a board with the current lists (title, colour,
+  icon, width, order) and no cards, named through the same `NewBoardDialog`
+  as "+ New board". The pure `layoutOnly` in `domain/duplicate.ts` builds it
+  by walking `listOrder`, not `state.lists`: that record still holds trashed
+  lists, which must not come along. List ids are reused, as `duplicateBoard`
+  already does across boards. The `createBoardFromLayout` store action
+  copies `duplicateBoard`'s bookkeeping -- `flushPersist()` first (the
+  source may have an edit inside the 400ms save window), then immediate
+  writes of the new board and registry, and `EMPTY_HISTORY`.

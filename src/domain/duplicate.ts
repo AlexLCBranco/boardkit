@@ -4,7 +4,7 @@
  */
 
 import { createCardId, createListId } from "./ids";
-import type { BoardState, Card, CardId, ListId } from "./types";
+import type { BoardState, Card, CardId, List, ListId } from "./types";
 
 /**
  * Copies a list -- its title, colour, icon, width, and every card in it --
@@ -42,4 +42,24 @@ export function duplicateList(
     listOrder,
     cardOrder: { ...state.cardOrder, [newListId]: newCardIds },
   };
+}
+
+/**
+ * A board's skeleton: the lists currently on it, in order, with their title,
+ * colour, icon and width -- and nothing else.
+ *
+ * `state.lists` also keeps the records of trashed lists (a trashed list
+ * loses its place in `listOrder` but not its record, so restoring it works),
+ * which is why this walks `listOrder` rather than copying `state.lists`.
+ * List ids are reused as-is: each board is its own storage document, the same
+ * way `duplicateBoard` already shares ids across boards.
+ */
+export function layoutOnly(state: BoardState): BoardState {
+  const lists: Record<ListId, List> = {};
+  const cardOrder: Record<ListId, CardId[]> = {};
+  for (const listId of state.listOrder) {
+    lists[listId] = state.lists[listId];
+    cardOrder[listId] = [];
+  }
+  return { lists, cards: {}, listOrder: state.listOrder, cardOrder, trash: [], trashedLists: [] };
 }

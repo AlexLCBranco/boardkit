@@ -16,6 +16,8 @@ interface NewBoardDialogProps {
   readonly onOpenChange: (open: boolean) => void;
   /** Pre-filled so pressing Enter straight away still works. */
   readonly defaultName: string;
+  /** Overrides the default one-line explanation under the title. */
+  readonly description?: string;
   readonly onCreate: (name: string) => void;
 }
 
@@ -27,7 +29,13 @@ interface NewBoardDialogProps {
  * the dialog closes: `useState` there re-initialises from `defaultName` on
  * every open, so no reset effect is needed.
  */
-export function NewBoardDialog({ open, onOpenChange, defaultName, onCreate }: NewBoardDialogProps) {
+export function NewBoardDialog({
+  open,
+  onOpenChange,
+  defaultName,
+  description = "Give your new board a name.",
+  onCreate,
+}: NewBoardDialogProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   return (
@@ -44,6 +52,7 @@ export function NewBoardDialog({ open, onOpenChange, defaultName, onCreate }: Ne
         <NewBoardForm
           inputRef={inputRef}
           defaultName={defaultName}
+          description={description}
           onCancel={() => onOpenChange(false)}
           onSubmit={(name) => {
             onCreate(name);
@@ -58,11 +67,12 @@ export function NewBoardDialog({ open, onOpenChange, defaultName, onCreate }: Ne
 interface NewBoardFormProps {
   readonly inputRef: React.RefObject<HTMLInputElement | null>;
   readonly defaultName: string;
+  readonly description: string;
   readonly onCancel: () => void;
   readonly onSubmit: (name: string) => void;
 }
 
-function NewBoardForm({ inputRef, defaultName, onCancel, onSubmit }: NewBoardFormProps) {
+function NewBoardForm({ inputRef, defaultName, description, onCancel, onSubmit }: NewBoardFormProps) {
   const [name, setName] = useState(defaultName);
   const trimmed = name.trim();
 
@@ -75,7 +85,7 @@ function NewBoardForm({ inputRef, defaultName, onCancel, onSubmit }: NewBoardFor
     <form onSubmit={handleSubmit} className="grid gap-4">
       <DialogHeader>
         <DialogTitle>New board</DialogTitle>
-        <DialogDescription>Give your new board a name.</DialogDescription>
+        <DialogDescription>{description}</DialogDescription>
       </DialogHeader>
       <Input
         ref={inputRef}

@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-import { duplicateList as duplicateListState } from "../domain/duplicate";
+import { duplicateList as duplicateListState, layoutOnly } from "../domain/duplicate";
 import { createBoardId, createCardId, createListId } from "../domain/ids";
 import { EMPTY_HISTORY, pushEntry, stepRedo, stepUndo, type BoardPatch, type History } from "../domain/history";
 import { isListFull } from "../domain/limits";
@@ -87,6 +87,7 @@ export interface BoardActions {
   redo: () => void;
   createBoard: (name: string) => void;
   duplicateBoard: (name: string) => void;
+  createBoardFromLayout: (name: string) => void;
   addBoards: (entries: readonly BackupBoard[]) => void;
   deleteBoard: () => void;
   switchBoard: (boardId: BoardId) => void;
@@ -412,6 +413,20 @@ export const useBoardStore = create<BoardStore>((set) => ({
         trash: [],
         trashedLists: [],
       };
+      const boards = [...state.boards, { id: boardId, name }];
+      savePersistedBoardNow(board, boardId);
+      savePersistedRegistryNow(boards, boardId);
+      return { ...board, boardId, boards, history: EMPTY_HISTORY };
+    }),
+
+  // A new board with this board's lists but none of its cards. Storage
+  // bookkeeping matches `duplicateBoard`, including the flush: the source
+  // board may still have an edit waiting in the 400ms save window.
+  createBoardFromLayout: (name) =>
+    set((state) => {
+      flushPersist();
+      const boardId = createBoardId();
+      const board = layoutOnly(state);
       const boards = [...state.boards, { id: boardId, name }];
       savePersistedBoardNow(board, boardId);
       savePersistedRegistryNow(boards, boardId);
