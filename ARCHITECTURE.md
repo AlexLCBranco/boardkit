@@ -473,3 +473,12 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   `contextmenu` bubbling, because React events cross the portal into the
   card's `<article>` where dnd-kit's key listeners and the right-click
   thots toggle live. `<Toaster />` is now mounted in `App.tsx`.
+- **Backup reminder (v0.0.35).** Boards live only in one browser's
+  `localStorage`, so the board menu now shows "Last backup: 9 days ago · Back
+  up now", and the switcher's ▾ gets an orange dot when there has never been
+  a backup or the last is over 7 days old. `lastBackupAt` is per browser, not
+  per board, so it sits in its own zustand store (`store/backupStore.ts`)
+  under its own `localStorage` key and is written by every successful export.
+  The staleness and age-wording rules are pure functions in
+  `domain/backupStatus.ts` (they take `now` as an argument); `useNow` in
+  `hooks/` re-renders the text as time passes.

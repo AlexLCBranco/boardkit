@@ -1,0 +1,12 @@
+.status {
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.action {
+  margin-left: auto;
+  padding-left: var(--space-3);
+  color: var(--accent);
+  font-size: var(--font-size-sm);
+  font-weight: var(--weight-medium);
+}

@@ -15,7 +15,7 @@ files.
 
 | Item | Owner |
 |------|-------|
-| _nothing_ | — |
+| Backup reminder + automatic backup (`plans/automatic-backup.md`) — `features/board/backup.ts`, `BoardSwitcher`, new `store/backupStore.ts` | Claude |
 
 ## Queued
 

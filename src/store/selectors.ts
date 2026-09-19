@@ -10,6 +10,7 @@ import type {
   TrashEntry,
   TrashedListEntry,
 } from "../domain/types";
+import { useBackupStore } from "./backupStore";
 import { useBoardStore } from "./boardStore";
 
 /**
@@ -290,4 +291,11 @@ export function useSendCardToBoard() {
 
 export function useSendListToBoard() {
   return useBoardStore((state) => state.sendListToBoard);
+}
+
+/* Backups live in their own store (`backupStore.ts`): they are per browser,
+   not part of any board. */
+
+export function useLastBackupAt(): number | null {
+  return useBackupStore((state) => state.lastBackupAt);
 }

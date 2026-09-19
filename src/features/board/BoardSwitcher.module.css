@@ -11,6 +11,7 @@
 }
 
 .trigger {
+  position: relative;
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
@@ -28,4 +29,16 @@
 .trigger:hover {
   background: var(--surface-hover);
   color: var(--text-primary);
+}
+
+/* Marks the trigger when a backup wants attention -- see BackupReminder. */
+.trigger[data-attention="true"]::after {
+  content: "";
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--palette-orange);
 }

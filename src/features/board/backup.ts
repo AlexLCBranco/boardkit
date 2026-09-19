@@ -5,6 +5,7 @@ import {
 } from "../../domain/persistence";
 import { createEmptyBoard } from "../../domain/seed";
 import { flushPersist, loadPersistedBoard } from "../../store/persistBoard";
+import { useBackupStore } from "../../store/backupStore";
 import { useBoardStore } from "../../store/boardStore";
 
 /**
@@ -40,6 +41,7 @@ export function exportBackup(): void {
   link.download = `boardkit-backup-${now.toISOString().slice(0, 10)}.json`;
   link.click();
   URL.revokeObjectURL(url);
+  useBackupStore.getState().markBackedUp(now.getTime());
 }
 
 export interface ImportResult {

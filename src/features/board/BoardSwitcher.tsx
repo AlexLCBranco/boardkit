@@ -30,6 +30,7 @@ import {
   useSwitchBoard,
 } from "../../store/selectors";
 import { exportBackup, importBackup } from "./backup";
+import { BackupReminder, useBackupAttention } from "./BackupReminder";
 import styles from "./BoardSwitcher.module.css";
 import { NewBoardDialog } from "./NewBoardDialog";
 
@@ -54,6 +55,7 @@ export function BoardSwitcher() {
   const createBoardFromLayout = useCreateBoardFromLayout();
   const duplicateBoard = useDuplicateBoard();
   const deleteBoard = useDeleteBoard();
+  const backupNeedsAttention = useBackupAttention();
   const fileInput = useRef<HTMLInputElement>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [namingNewBoard, setNamingNewBoard] = useState(false);
@@ -83,7 +85,12 @@ export function BoardSwitcher() {
       <InlineEditable value={name} onCommit={renameBoard} ariaLabel="Board name" className={styles.name} />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button type="button" className={styles.trigger} aria-label="Switch board">
+          <button
+            type="button"
+            className={styles.trigger}
+            aria-label="Switch board"
+            data-attention={backupNeedsAttention}
+          >
             ▾
           </button>
         </DropdownMenuTrigger>
@@ -108,6 +115,7 @@ export function BoardSwitcher() {
             Delete this board…
           </DropdownMenuItem>
           <DropdownMenuSeparator />
+          <BackupReminder />
           <DropdownMenuItem onSelect={exportBackup}>Export all boards…</DropdownMenuItem>
           <DropdownMenuItem onSelect={() => fileInput.current?.click()}>Import boards…</DropdownMenuItem>
         </DropdownMenuContent>
