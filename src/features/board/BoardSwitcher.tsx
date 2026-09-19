@@ -30,6 +30,7 @@ import {
 } from "../../store/selectors";
 import { exportBackup, importBackup } from "./backup";
 import styles from "./BoardSwitcher.module.css";
+import { NewBoardDialog } from "./NewBoardDialog";
 
 /**
  * The board's name (click to rename, same `InlineEditable` every other title
@@ -53,6 +54,7 @@ export function BoardSwitcher() {
   const deleteBoard = useDeleteBoard();
   const fileInput = useRef<HTMLInputElement>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [namingNewBoard, setNamingNewBoard] = useState(false);
   // Stored oldest-first (creation order); listed newest-first, so this
   // week's board is always at the top however many have piled up.
   const newestFirst = useMemo(() => [...boards].reverse(), [boards]);
@@ -90,7 +92,7 @@ export function BoardSwitcher() {
             </DropdownMenuItem>
           ))}
           <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={() => createBoard(`Untitled board ${boards.length + 1}`)}>
+          <DropdownMenuItem onSelect={() => setNamingNewBoard(true)}>
             + New board
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={() => duplicateBoard(`${name} (copy)`)}>
@@ -113,6 +115,12 @@ export function BoardSwitcher() {
         accept="application/json,.json"
         hidden
         onChange={handleImport}
+      />
+      <NewBoardDialog
+        open={namingNewBoard}
+        onOpenChange={setNamingNewBoard}
+        defaultName={`Untitled board ${boards.length + 1}`}
+        onCreate={createBoard}
       />
       <AlertDialog open={confirmingDelete} onOpenChange={setConfirmingDelete}>
         <AlertDialogContent>
