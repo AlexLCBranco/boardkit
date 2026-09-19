@@ -4,6 +4,7 @@ import { memo, useEffect, useRef, useState, type CSSProperties } from "react";
 
 import { CustomizePanel } from "../../components/CustomizePanel";
 import { InlineEditable } from "../../components/InlineEditable";
+import { DropdownMenu, DropdownMenuTrigger } from "../../components/ui/dropdown-menu";
 import type { CardId, ListId } from "../../domain/types";
 import {
   useCard,
@@ -16,6 +17,7 @@ import {
 } from "../../store/selectors";
 import { sortableTransition } from "../../styles/motion";
 import styles from "./CardItem.module.css";
+import { CardTransferContent } from "./TransferMenus";
 
 interface CardItemProps {
   readonly cardId: CardId;
@@ -171,6 +173,18 @@ function CardItemImpl({ cardId, listId, thotsMode }: CardItemProps) {
             />
           </div>
         ))}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            className={styles.moveButton}
+            aria-label="Move or copy card to another board"
+          >
+            →
+          </button>
+        </DropdownMenuTrigger>
+        <CardTransferContent cardId={cardId} listId={listId} />
+      </DropdownMenu>
       <button
         type="button"
         className={styles.thotsButton}

@@ -41,6 +41,14 @@ import {
   savePersistedRegistryNow,
   schedulePersistRegistry,
 } from "./persistRegistry";
+import {
+  cardsOfList,
+  copyCardToBoard,
+  copyListToBoard,
+  type TransferResult,
+} from "./transferToBoard";
+
+export type TransferMode = "move" | "copy";
 
 /**
  * The board store.
@@ -88,6 +96,17 @@ export interface BoardActions {
   createBoard: (name: string) => void;
   duplicateBoard: (name: string) => void;
   createBoardFromLayout: (name: string) => void;
+  /** Copies a card to the bottom of a list on another board. A move then
+      trashes the original here (an ordinary, undoable delete). */
+  sendCardToBoard: (
+    mode: TransferMode,
+    listId: ListId,
+    cardId: CardId,
+    targetBoardId: BoardId,
+    targetListId: ListId,
+  ) => TransferResult;
+  /** Same, for a whole list, which lands at the right-hand end of the board. */
+  sendListToBoard: (mode: TransferMode, listId: ListId, targetBoardId: BoardId) => TransferResult;
   addBoards: (entries: readonly BackupBoard[]) => void;
   deleteBoard: () => void;
   switchBoard: (boardId: BoardId) => void;
@@ -158,7 +177,7 @@ function loadInitialState(): { boardId: BoardId; boards: readonly BoardSummary[]
 
 const initial = loadInitialState();
 
-export const useBoardStore = create<BoardStore>((set) => ({
+export const useBoardStore = create<BoardStore>((set, get) => ({
   ...initial.board,
   boardId: initial.boardId,
   boards: initial.boards,
@@ -432,6 +451,29 @@ export const useBoardStore = create<BoardStore>((set) => ({
       savePersistedRegistryNow(boards, boardId);
       return { ...board, boardId, boards, history: EMPTY_HISTORY };
     }),
+
+  // Cross-board transfers write to another board's storage document, which
+  // is not in memory (see `transferToBoard.ts`). A *move* is copy-then-trash:
+  // the original goes through the normal undoable delete, so Ctrl+Z only ever
+  // affects this board -- undoing a move restores the original here and
+  // leaves the copy on the other board, rather than needing an undo system
+  // that spans boards. The original is trashed only if the copy succeeded.
+  sendCardToBoard: (mode, listId, cardId, targetBoardId, targetListId) => {
+    const result = copyCardToBoard(get().cards[cardId], targetBoardId, targetListId);
+    if (result.ok && mode === "move") get().deleteCard(listId, cardId);
+    return result;
+  },
+
+  sendListToBoard: (mode, listId, targetBoardId) => {
+    const state = get();
+    const result = copyListToBoard(
+      state.lists[listId],
+      cardsOfList(state, listId),
+      targetBoardId,
+    );
+    if (result.ok && mode === "move") get().deleteList(listId);
+    return result;
+  },
 
   // Adds boards to the registry without switching to any of them, so an
   // import never disturbs what is on screen. Each board's content is written

@@ -452,3 +452,24 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   copies `duplicateBoard`'s bookkeeping -- `flushPersist()` first (the
   source may have an edit inside the 400ms save window), then immediate
   writes of the new board and registry, and `EMPTY_HISTORY`.
+- **Move or copy to another board (v0.0.33).** A card has a "->" button in its
+  hover row (a dropdown: Move/Copy to board > board > list); a list has the
+  same two items in its header's right-click menu (Move/Copy to board >
+  board). Only the active board is in the store, so `store/transferToBoard.ts`
+  does the cross-board work on the target's saved JSON: `flushPersist()`
+  (a board left <400ms ago may have edits pending), `loadPersistedBoard`,
+  a pure function from `domain/transfer.ts` (`insertCardCopy`,
+  `insertListCopy`; fresh ids via `copyCard`, now shared with
+  `duplicateList`), then `savePersistedBoardNow`. A `null` load is
+  never written over -- it returns an error the UI shows as a toast. A card
+  copy into a full list (`isListFull`) is refused twice: the picker greys
+  it out and `insertCardCopy` returns `null`. A *move* is copy-then-trash:
+  the store's `sendCardToBoard`/`sendListToBoard` call the ordinary
+  `deleteCard`/`deleteList` only if the copy succeeded, so Ctrl+Z affects
+  just this board (undoing a move restores the original here and leaves the
+  copy on the other board; there is no cross-board undo). Target list names
+  are read when a submenu opens, not held in state. The menus are shadcn
+  (supporting chrome); their content stops `keydown`/`pointerdown`/
+  `contextmenu` bubbling, because React events cross the portal into the
+  card's `<article>` where dnd-kit's key listeners and the right-click
+  thots toggle live. `<Toaster />` is now mounted in `App.tsx`.

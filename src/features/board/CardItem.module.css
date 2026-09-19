@@ -78,7 +78,7 @@
   display: flex;
   align-items: baseline;
   gap: var(--space-1);
-  padding-right: calc(3 * var(--space-5));
+  padding-right: calc(4 * var(--space-5));
   font-size: var(--font-size-md);
   line-height: var(--line-normal);
   /* Long words and pasted URLs must wrap rather than widen the column. */
@@ -188,6 +188,7 @@
   }
 }
 
+.moveButton,
 .thotsButton,
 .customizeButton,
 .deleteButton {
@@ -209,6 +210,10 @@
   transition: opacity var(--duration-fast) var(--ease-standard);
 }
 
+.moveButton {
+  right: calc(var(--space-1) + 66px);
+}
+
 .thotsButton {
   right: calc(var(--space-1) + 44px);
 }
@@ -221,6 +226,10 @@
   right: var(--space-1);
 }
 
+.card:hover .moveButton,
+.moveButton:focus-visible,
+/* Stays visible while its menu is open, even with the pointer over the menu. */
+.moveButton[data-state="open"],
 .card:hover .thotsButton,
 .thotsButton:focus-visible,
 .card:hover .customizeButton,
@@ -230,6 +239,7 @@
   opacity: 1;
 }
 
+.moveButton:hover,
 .thotsButton:hover,
 .customizeButton:hover,
 .deleteButton:hover {

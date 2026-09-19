@@ -1,3 +1,4 @@
+import { Toaster } from "../components/ui/sonner";
 import { BoardCanvas } from "../features/board/BoardCanvas";
 import { BoardSwitcher } from "../features/board/BoardSwitcher";
 import { TrashPanel } from "../features/board/TrashPanel";
@@ -22,6 +23,7 @@ export function App() {
         <BoardCanvas />
       </main>
       <VersionBadge />
+      <Toaster position="bottom-center" />
     </div>
   );
 }

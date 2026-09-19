@@ -50,6 +50,7 @@ import { sortableTransition } from "../../styles/motion";
 import { CardItem } from "./CardItem";
 import { copyAsImage } from "./copyAsImage";
 import styles from "./ListColumn.module.css";
+import { ListTransferItems } from "./TransferMenus";
 
 interface ListColumnProps {
   readonly listId: ListId;
@@ -350,6 +351,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
         </ContextMenuTrigger>
         <ContextMenuContent>
           <ContextMenuItem onSelect={() => duplicateList(listId)}>Duplicate list</ContextMenuItem>
+          <ListTransferItems listId={listId} />
         </ContextMenuContent>
       </ContextMenu>
 

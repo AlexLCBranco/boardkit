@@ -6,6 +6,11 @@
 import { createCardId, createListId } from "./ids";
 import type { BoardState, Card, CardId, List, ListId } from "./types";
 
+/** One card under a fresh id, keeping its own fields (colour, both thots). */
+export function copyCard(card: Card): Card {
+  return { ...card, id: createCardId() };
+}
+
 /**
  * Copies a list -- its title, colour, icon, width, and every card in it --
  * and slots the copy immediately to the right of the original.
@@ -27,9 +32,9 @@ export function duplicateList(
   const newCardIds: CardId[] = [];
 
   for (const cardId of state.cardOrder[listId]) {
-    const id = createCardId();
-    cards[id] = { ...state.cards[cardId], id };
-    newCardIds.push(id);
+    const copy = copyCard(state.cards[cardId]);
+    cards[copy.id] = copy;
+    newCardIds.push(copy.id);
   }
 
   const at = state.listOrder.indexOf(listId);

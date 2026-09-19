@@ -283,3 +283,11 @@ export function useSwitchBoard() {
 export function useRenameBoard() {
   return useBoardStore((state) => state.renameBoard);
 }
+
+export function useSendCardToBoard() {
+  return useBoardStore((state) => state.sendCardToBoard);
+}
+
+export function useSendListToBoard() {
+  return useBoardStore((state) => state.sendListToBoard);
+}
