@@ -210,15 +210,16 @@
   transition: opacity var(--duration-fast) var(--ease-standard);
 }
 
-.moveButton {
+/* Left to right: thots, colour, move/copy, delete. */
+.thotsButton {
   right: calc(var(--space-1) + 66px);
 }
 
-.thotsButton {
+.customizeButton {
   right: calc(var(--space-1) + 44px);
 }
 
-.customizeButton {
+.moveButton {
   right: calc(var(--space-1) + 22px);
 }
 
