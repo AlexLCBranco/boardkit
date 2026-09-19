@@ -2,8 +2,8 @@ import { useCanRedo, useCanUndo, useRedo, useUndo } from "../../store/selectors"
 import styles from "./UndoRedoControls.module.css";
 
 /**
- * The visible half of undo/redo -- the shortcuts in `useUndoRedoShortcuts`
- * do the same two actions, this just makes them discoverable and shows
+ * The visible half of undo/redo -- the undo and redo shortcuts in
+ * `features/shortcuts/registry.ts` do the same two actions, this just makes them discoverable and shows
  * whether there is anything to undo or redo without having to try it.
  */
 export function UndoRedoControls() {

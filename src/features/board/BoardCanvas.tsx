@@ -3,17 +3,16 @@ import { useRef, useState } from "react";
 
 import { Composer } from "../../components/Composer";
 import { useAddList, useListOrder } from "../../store/selectors";
+import { ShortcutsDialog } from "../shortcuts/ShortcutsDialog";
+import { useShortcuts } from "../shortcuts/useShortcuts";
 import styles from "./BoardCanvas.module.css";
 import { CopyBoardButton } from "./CopyBoardButton";
 import { BoardDragContext } from "./DragContext";
 import { ListColumn } from "./ListColumn";
 import { SaveBoardButton } from "./SaveBoardButton";
 import { SelectionBar } from "./SelectionBar";
-import { ShortcutsDialog } from "./ShortcutsDialog";
 import { UndoRedoControls } from "./UndoRedoControls";
 import { useMarqueeSelection } from "./useMarqueeSelection";
-import { useSelectionShortcuts } from "./useSelectionShortcuts";
-import { useUndoRedoShortcuts } from "./useUndoRedoShortcuts";
 import { ZoomControls } from "./ZoomControls";
 
 /**
@@ -37,8 +36,7 @@ export function BoardCanvas() {
   const railRef = useRef<HTMLDivElement>(null);
   const marqueeRef = useRef<HTMLDivElement>(null);
   const handleCanvasPointerDown = useMarqueeSelection(marqueeRef);
-  useUndoRedoShortcuts();
-  useSelectionShortcuts();
+  useShortcuts();
 
   return (
     <div className={styles.canvas}>

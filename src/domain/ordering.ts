@@ -31,6 +31,19 @@ export function moveWithinList(
 }
 
 /**
+ * Returns a new order with `id` inserted at `index` (clamped to the ends), for
+ * a card that is born in the middle of a list rather than appended to it.
+ */
+export function insertAt(
+  order: readonly CardId[],
+  id: CardId,
+  index: number,
+): readonly CardId[] {
+  const at = Math.min(Math.max(index, 0), order.length);
+  return [...order.slice(0, at), id, ...order.slice(at)];
+}
+
+/**
  * Moves `activeId` out of `fromListId` and into `toListId`, landing just
  * before `overId` -- or at the end of the destination when `overId` is
  * `null`, which is how a drop on an empty list or open list space is

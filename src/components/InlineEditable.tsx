@@ -57,6 +57,21 @@ export function InlineEditable({
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(value);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  // Set when Enter or Esc ends an edit, so focus can go back to whatever
+  // owned this field once the textarea is gone -- see the effect below.
+  const returnFocusRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (isEditing) return;
+    // Ending an edit from the keyboard should leave the keyboard where it
+    // was, not on the page: the nearest focusable ancestor (a card, a list
+    // header) takes focus back. Done here, after the textarea has unmounted,
+    // because moving focus while it is still mounted would fire its blur and
+    // commit the edit a second time. A blur (clicking elsewhere) sets
+    // nothing, so it never pulls focus back.
+    returnFocusRef.current?.focus();
+    returnFocusRef.current = null;
+  }, [isEditing]);
 
   useEffect(() => {
     if (!isEditing) return;
@@ -188,9 +203,11 @@ export function InlineEditable({
           event.stopPropagation();
           if (event.key === "Enter" && !event.shiftKey) {
             event.preventDefault();
+            returnFocusRef.current = event.currentTarget.closest<HTMLElement>("[tabindex]");
             commit();
           } else if (event.key === "Escape") {
             event.preventDefault();
+            returnFocusRef.current = event.currentTarget.closest<HTMLElement>("[tabindex]");
             cancel();
           }
         }}

@@ -299,7 +299,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
           clicks inside it never bubble through the header's drag listeners. */}
       <ContextMenu>
         <ContextMenuTrigger asChild>
-      <header className={styles.header} {...attributes} {...listeners}>
+      <header className={styles.header} data-list-header {...attributes} {...listeners}>
         {list.icon && <Icon name={list.icon} className={styles.headerIcon} />}
         <h2 className={styles.title}>
           <InlineEditable

@@ -5,7 +5,7 @@ import { duplicateList as duplicateListState, layoutOnly } from "../domain/dupli
 import { createBoardId, createCardId, createListId } from "../domain/ids";
 import { EMPTY_HISTORY, pushEntry, stepRedo, stepUndo, type BoardPatch, type History } from "../domain/history";
 import { isListFull } from "../domain/limits";
-import { moveBetweenLists, moveList, moveWithinList } from "../domain/ordering";
+import { insertAt, moveBetweenLists, moveList, moveWithinList } from "../domain/ordering";
 import type { BackupBoard } from "../domain/persistence";
 import { createEmptyBoard, createSeedBoard } from "../domain/seed";
 import {
@@ -68,6 +68,9 @@ export type TransferMode = "move" | "copy";
 export interface BoardActions {
   addList: (title: string) => void;
   addCard: (listId: ListId, title: string) => void;
+  /** Inserts a card at `index` in a list (0 = top) and returns its id, or
+      `null` when the list is full. */
+  addCardAt: (listId: ListId, index: number, title: string) => CardId | null;
   renameList: (listId: ListId, title: string) => void;
   renameCard: (cardId: CardId, title: string) => void;
   deleteList: (listId: ListId) => void;
@@ -215,6 +218,23 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
         },
       });
     }),
+
+  // Same limit guard as `addCard`, but the caller needs to know whether a
+  // card was made (and which one) to focus it, so this returns the id
+  // instead of leaving the outcome to be inferred from the state.
+  addCardAt: (listId, index, title) => {
+    if (isListFull(get().cardOrder[listId])) {
+      return null;
+    }
+    const id = createCardId();
+    set((state) =>
+      withHistory(state, {
+        cards: { ...state.cards, [id]: { id, title } },
+        cardOrder: { ...state.cardOrder, [listId]: insertAt(state.cardOrder[listId], id, index) },
+      }),
+    );
+    return id;
+  },
 
   renameList: (listId, title) =>
     set((state) =>

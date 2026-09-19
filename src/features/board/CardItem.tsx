@@ -193,6 +193,7 @@ function CardItemImpl({ cardId, listId, thotsMode }: CardItemProps) {
         type="button"
         className={styles.thotsButton}
         onClick={() => setIsDescriptionOpen((open) => !open)}
+        data-thots-toggle
         aria-label={isDescriptionOpen ? "Hide pregame thots" : "Show pregame thots"}
         aria-expanded={isDescriptionOpen}
       >

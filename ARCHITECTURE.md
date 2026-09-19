@@ -141,8 +141,8 @@ kept as the historical record of what was built, in what order, and why.
    persistence subscriber's change check and the serialized payload -- it is
    a live-session convenience, not saved content, so a reload starts with a
    clean stack on top of the restored board. Ctrl/Cmd+Z and Ctrl/Cmd+Shift+Z
-   are wired in `useUndoRedoShortcuts`, which steps aside when the event
-   target is a text field or `contenteditable` so a card or list title still
+   are entries in the shortcut registry (`features/shortcuts/registry.ts`),
+   which steps aside when the event target is a text field or `contenteditable` so a card or list title still
    being typed keeps the browser's native field-level undo instead of the
    board's.)*
 9. **shadcn/ui, card rework, and multi-board support.** A run of explicit
@@ -548,6 +548,51 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   It ignores presses on cards, headers and controls, on the scrollbar, and on
   anything portalled out of the canvas (React bubbles those events through the
   tree). dnd-kit is untouched: its sensor only listens on cards and headers.
-  Ctrl+C/V/Esc are in `useSelectionShortcuts.ts`, a stopgap beside
-  `useUndoRedoShortcuts` until the keyboard-shortcuts plan folds both into one
-  registry.
+  Ctrl+C/V/Esc are entries in the shortcut registry (see below).
+
+- **Keyboard shortcut system.** One registry, one listener, one help dialog,
+  all in `features/shortcuts/`. Adding the 30th shortcut is one line in
+  `registry.ts`'s `SHORTCUTS` array, written with a `global(...)`,
+  `card(...)` or `list(...)` helper: `{ id, keys, label, run }` plus
+  optional `whileTyping` (fire in a text field; off by default), `allowRepeat`
+  (fire on key-hold; off by default, on for focus movement) and `when` (an
+  extra condition -- while false the entry is skipped and the browser keeps
+  the key, which is how Ctrl+C still copies text when no card is selected).
+  Keys are strings (`"n"`, `"shift+n"`, `"mod+z"`, `["e", "f2"]`; `mod` is
+  Ctrl or Cmd), parsed once in `keys.ts`. Nothing else needs editing: the help
+  dialog (`ShortcutsDialog.tsx`) renders `SHORTCUTS` grouped by scope, so it
+  cannot drift from what works, and only the mouse gestures, typing keys and
+  dnd-kit's own keyboard drag are listed by hand. Design decisions:
+  - **Scopes.** `global` fires anywhere; `card` needs a card element itself
+    focused; `list` needs a list header focused. Focus is read from the DOM
+    (`dom.ts` `focusTargetOf`, off `data-card-id`, `data-list-header` and
+    `data-list-id`) -- dnd-kit already makes both focusable, so "the focused
+    card" needs no state. Focus on a button *inside* a card is not "a card
+    focused", so that button keeps its own keys. A narrower scope is checked
+    before `global`.
+  - **One listener** (`useShortcuts.ts`, mounted in `BoardCanvas`) writes the
+    two rules that hold for every shortcut once: typing is sacred, and during
+    a keyboard (or pointer) drag it stands aside. A drag is detected by the
+    `aria-pressed` dnd-kit puts on the dragged card or header.
+  - **Clash check.** `findClashes` runs at module load in dev and
+    `console.error`s two entries with the same keys in the same scope.
+  - **Focus movement** (`navigation.ts`) walks `cardOrder`/`listOrder` from the
+    store and only calls `.focus()`; left/right picks the card in the
+    neighbouring list whose vertical middle is closest, skipping empty lists.
+    Arrow keys also connect cards and headers (up from the first card, down
+    from a header) so `D` is reachable without tabbing through every button.
+  - **Some actions press the existing button** rather than duplicating its
+    logic: `T` clicks the card's `data-thots-toggle` (thots open state is
+    local to `CardItem`) and `E`/`F2` click the title (start editing is local
+    to `InlineEditable`). `N`/`Shift+N` call `addCardAt` (`domain/ordering.ts`
+    `insertAt`, 50-card guard, returns the id or `null` -> toast) inside
+    `flushSync`, so the new card exists to be pressed, then open it in rename.
+  - **Focus comes home.** `InlineEditable` hands focus back to its nearest
+    focusable ancestor (the card or header) after Enter/Esc, but not after a
+    blur -- so `N`, type, Enter, `N` works with no mouse. It does so in an
+    effect after the textarea unmounts; moving focus earlier would blur the
+    field and commit twice.
+  - `?` opens the dialog through `store/shortcutsDialogStore.ts`, so the
+    toolbar button and the shortcut share one open state.
+  Not built: remapping keys, a command palette (`PLAN.md`'s "not being built").
+  Ctrl/Cmd+K for search registers here when that plan lands.

@@ -14,6 +14,7 @@ import type {
 import { useBackupStore } from "./backupStore";
 import { useBoardStore } from "./boardStore";
 import { useSelectionStore } from "./selectionStore";
+import { useShortcutsDialogStore } from "./shortcutsDialogStore";
 
 /**
  * The selector layer: every subscription the UI makes, in one reviewable file.
@@ -362,4 +363,14 @@ export function useBackupFolderName(): string | null {
 
 export function useBackupWarning(): string | null {
   return useBackupStore((state) => state.warning);
+}
+
+/* The shortcuts dialog's open state lives in `shortcutsDialogStore.ts`. */
+
+export function useIsShortcutsDialogOpen(): boolean {
+  return useShortcutsDialogStore((state) => state.isOpen);
+}
+
+export function useSetShortcutsDialogOpen() {
+  return useShortcutsDialogStore((state) => state.setOpen);
 }

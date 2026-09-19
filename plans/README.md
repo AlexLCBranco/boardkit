@@ -53,7 +53,7 @@ The build chat should:
 | 6 | Light theme, backgrounds | Not started |
 | 7 | Collapse a list | Not started |
 | 8 | Clickable links in thots | Built (v0.0.37) |
-| 9 | Keyboard shortcut system | Not started |
+| 9 | Keyboard shortcut system | Built (v0.0.41) |
 | 10 | Backup reminder + automatic backup | Built (v0.0.35 reminder, v0.0.36 folder backup) |
 
 ## Gotchas every plan shares
