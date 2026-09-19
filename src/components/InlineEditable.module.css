@@ -70,3 +70,24 @@
 .textarea:focus {
   outline: none;
 }
+
+/* Links inside a read-only thot. Colour is a token; the underline keeps the
+   link recognisable on every card tint without relying on colour alone. */
+.link {
+  color: var(--text-link);
+  text-decoration: underline;
+  text-decoration-color: var(--text-link-underline);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.link:hover {
+  background: var(--surface-hover);
+}
+
+.link:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+  border-radius: var(--radius-sm);
+}

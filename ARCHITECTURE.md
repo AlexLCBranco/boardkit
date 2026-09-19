@@ -503,3 +503,23 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   repair-on-load behaviour queued in `PLAN.md` item 5; it only stops backups
   from hiding the problem. Pure rules (staleness, age text, filename,
   rotation, dot) are in `domain/backupStatus.ts`.
+- **Clickable links in thots (v0.0.37).** A web address in a pregame or
+  postgame thot shows as a link when the thot is not being edited; editing
+  still shows the raw text. Finding links is `domain/links.ts` (pure):
+  `splitLinks` cuts a string into `text`/`link` segments (joining them gives
+  the original back), `linkLabel` shortens the visible text. Every candidate
+  goes through `new URL()` and only `http:`/`https:` survive, so
+  `javascript:` and `data:` never become links; a trailing `.,;:!?` is left
+  out, and a closing bracket only when it has no opener in the match.
+  `InlineEditable` got an opt-in `linkify` prop (only the two thots pass it;
+  titles do not, since a title click renames). When a value contains links
+  its read-only view is a `div role="button"` rather than the usual
+  `<button>`, because an `<a>` cannot be nested in a button; values without
+  links render exactly as before. The link's click stops propagating, so it
+  opens without entering edit mode, and the div ignores Enter/Space that
+  bubble up from a focused link. Links are `draggable={false}`; dnd-kit's 4px
+  activation distance keeps a plain click from starting a drag, and a real
+  drag that starts on a link still moves the card. The link colour is
+  `--text-link` (body text colour) with an accent underline
+  (`--text-link-underline`): a blue link text failed WCAG AA on the yellow,
+  teal and green card tints (2.6-3.6:1), body text clears it everywhere.

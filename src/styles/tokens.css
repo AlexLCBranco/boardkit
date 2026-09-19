@@ -55,6 +55,10 @@
 
   --accent: #748ffc;
   --accent-hover: #91a7ff;
+  /* Links use body-text colour, marked by an accent underline: a coloured
+     link fails WCAG AA on the yellow/teal/green card tints (2.6-3.6:1). */
+  --text-link: var(--text-primary);
+  --text-link-underline: var(--accent-hover);
   --focus-ring: rgba(116, 143, 252, 0.5);
 
   /* ---- Elevation ---- */

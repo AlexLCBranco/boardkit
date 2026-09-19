@@ -158,6 +158,7 @@ function CardItemImpl({ cardId, listId, thotsMode }: CardItemProps) {
               ariaLabel="Pregame thots"
               placeholder="Add your pregame thots…"
               multiline
+              linkify
             />
           </div>
         ) : (
@@ -170,6 +171,7 @@ function CardItemImpl({ cardId, listId, thotsMode }: CardItemProps) {
               ariaLabel="Postgame thots"
               placeholder="Add your postgame thots…"
               multiline
+              linkify
             />
           </div>
         ))}

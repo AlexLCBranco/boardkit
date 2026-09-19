@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
+import { linkLabel, splitLinks } from "../domain/links";
+
 import styles from "./InlineEditable.module.css";
 
 interface InlineEditableProps {
@@ -13,6 +15,10 @@ interface InlineEditableProps {
       `placeholder`. */
   readonly multiline?: boolean;
   readonly placeholder?: string;
+  /** Show web addresses in the read-only view as clickable links (opening in
+      a new tab). Off for titles: clicking a title renames it, and a link
+      there would fight that. Editing always shows the raw text. */
+  readonly linkify?: boolean;
 }
 
 /**
@@ -46,6 +52,7 @@ export function InlineEditable({
   className,
   multiline = false,
   placeholder,
+  linkify = false,
 }: InlineEditableProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(value);
@@ -91,6 +98,55 @@ export function InlineEditable({
 
   if (!isEditing) {
     const isPlaceholder = !value && Boolean(placeholder);
+    const segments = linkify ? splitLinks(value) : [];
+
+    if (segments.some((segment) => segment.type === "link")) {
+      // An <a> cannot live inside a <button>, so a value that contains links
+      // gets a div standing in for the button. Only these get the div: text
+      // without links keeps the plain button below, exactly as before.
+      return (
+        <div
+          role="button"
+          tabIndex={0}
+          className={[styles.display, className].filter(Boolean).join(" ")}
+          onClick={startEditing}
+          onKeyDown={(event) => {
+            // Enter on a focused link bubbles up here; only act on keys
+            // pressed on the field itself. Space is also stopped so
+            // dnd-kit's KeyboardSensor does not start a drag from it.
+            if (event.target !== event.currentTarget) return;
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              event.stopPropagation();
+              startEditing();
+            }
+          }}
+          aria-label={ariaLabel}
+        >
+          {segments.map((segment, index) =>
+            segment.type === "text" ? (
+              segment.text
+            ) : (
+              <a
+                key={index}
+                className={styles.link}
+                href={segment.href}
+                title={segment.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                draggable={false}
+                // A click on a link opens it; it must not also reach the
+                // field's onClick and switch to editing.
+                onClick={(event) => event.stopPropagation()}
+              >
+                {linkLabel(segment.text)}
+              </a>
+            ),
+          )}
+        </div>
+      );
+    }
+
     return (
       <button
         type="button"
