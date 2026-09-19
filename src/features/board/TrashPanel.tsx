@@ -59,7 +59,7 @@ export function TrashPanel() {
         <button
           type="button"
           aria-label="Recently deleted lists and cards"
-          className="relative ml-auto inline-flex size-7 items-center justify-center rounded-lg text-muted-foreground/60 transition-colors hover:bg-muted hover:text-muted-foreground"
+          className="relative inline-flex size-7 items-center justify-center rounded-lg text-muted-foreground/60 transition-colors hover:bg-muted hover:text-muted-foreground"
         >
           <Trash2 size={15} />
           {totalCount > 0 && (

@@ -20,6 +20,7 @@ import {
   useSetCardDescription,
   useSetCardPostgameDescription,
 } from "../../store/selectors";
+import { useResolvedTheme } from "../../store/themeStore";
 import { sortableTransition } from "../../styles/motion";
 import styles from "./CardItem.module.css";
 import { CardTransferContent } from "./TransferMenus";
@@ -134,7 +135,8 @@ function CardItemImpl({ cardId, listId, thotsMode }: CardItemProps) {
   };
   // A custom colour can leave the theme's text unreadable; `data-ink` swaps
   // the card to white or black text when it does (see CardItem.module.css).
-  const ink = inkOf({ kind: card.kind, color }, listColor);
+  const theme = useResolvedTheme();
+  const ink = inkOf({ kind: card.kind, color }, listColor, theme);
 
   return (
     <article

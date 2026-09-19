@@ -9,6 +9,10 @@
  */
 
 :root {
+  /* Tells the browser which native controls (scrollbars, form fields, the
+     colour-picker's text selection) to draw. Flipped with the theme below. */
+  color-scheme: dark;
+
   /* ---- Spacing scale (4px base) ---- */
   --space-1: 4px;
   --space-2: 8px;
@@ -118,4 +122,51 @@
      possible background. Mirrored in styles/surfaces.ts. */
   --ink-light: #ffffff;
   --ink-dark: #000000;
+}
+
+/**
+ * The light theme.
+ *
+ * Overrides only the tokens whose value differs from dark, under the same
+ * names, so no component changes: they keep reading `var(--surface-raised)`
+ * and get the light value. `data-theme` is set on <html> by the script in
+ * index.html (before first paint) and then by store/themeStore.ts.
+ *
+ * Deliberately NOT overridden:
+ *  - the customisation palette and `--note-accent`: identifying accents that
+ *    must look the same in both themes (see the note above them);
+ *  - `--ink-light` / `--ink-dark`: pure white and black by design;
+ *  - spacing, radii, type, motion and layout: nothing about them is themed.
+ *
+ * The neutral values below are mirrored in styles/surfaces.ts, which the
+ * card-text contrast maths reads. Change them together.
+ */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --surface-app: #eef0f4;
+  --surface-raised: #ffffff;
+  --surface-sunken: #e2e6ec;
+  --surface-hover: rgba(0, 0, 0, 0.05);
+  --surface-active: rgba(0, 0, 0, 0.09);
+
+  --border-subtle: rgba(0, 0, 0, 0.1);
+  --border-strong: rgba(0, 0, 0, 0.2);
+
+  --text-primary: #1a1d23;
+  --text-secondary: #464e5c;
+  --text-muted: #6a7382;
+  --text-inverted: #ffffff;
+
+  /* Darker than the dark theme's accent: white text on a primary button
+     needs 4.5:1, which the lighter indigo cannot give. */
+  --accent: #3b5bdb;
+  --accent-hover: #364fc7;
+  --focus-ring: rgba(59, 91, 219, 0.4);
+
+  /* Softer than the dark theme's: the same black at those opacities looks
+     heavy on a pale surface. */
+  --shadow-sm: 0 1px 2px rgba(20, 30, 50, 0.14);
+  --shadow-md: 0 2px 6px rgba(20, 30, 50, 0.18);
+  --shadow-lifted: 0 12px 28px rgba(20, 30, 50, 0.28);
 }

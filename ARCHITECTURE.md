@@ -726,3 +726,32 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   the drag overlays do the same in JS. Places that print a title in a
   sentence (delete dialog, trash, search, transfer menus) fall back to
   "Untitled list" / "Untitled card".
+
+- **Light theme (v0.0.48).** Dark / Light / System, per browser.
+  - **Tokens, not components.** `tokens.css` keeps the dark values on `:root`
+    and gains `:root[data-theme="light"]`, which overrides only the neutral
+    tokens (surfaces, borders, text, accent, shadows) under the *same names*.
+    No component changed its CSS. shadcn follows for free through the
+    `@theme inline` bridge. The palette, `--note-accent` and the ink pair are
+    deliberately not themed: an accent must read as the same colour on both.
+    `color-scheme` flips with it so native scrollbars and inputs match.
+  - **No flash.** A tiny inline script in `index.html` sets `data-theme` (and
+    shadcn's `.dark` class) from `localStorage["boardkit:theme"]` before first
+    paint. `store/themeStore.ts` then owns it: it keeps the choice, the
+    attribute, the class and the resolved theme in step, and follows the OS
+    live while the choice is System. `domain/theme.ts` is the pure half
+    (`resolveTheme`).
+  - **Contrast is theme-aware.** `cardInk` / `inkOf` now take the resolved
+    theme and read that theme's card surface and text from
+    `THEME_SURFACES` (`styles/surfaces.ts`, the JS mirror of the tokens).
+    `CardItem` and the drag overlay read `useResolvedTheme()`. Every palette
+    colour clears 4.5:1 at the existing 45% tint on both themes (worst case:
+    yellow on dark, 4.87; purple on light, 8.18), so the tint strength did
+    not need a per-theme token.
+  - **Nothing animates on switch.** The theme change is one attribute flip;
+    no `transition` is added on colours.
+  - `dark:` classes in shadcn components now activate in dark mode (they
+    never did before, because no `.dark` class existed). They resolve through
+    the same bridged tokens. The toaster is given the resolved theme
+    explicitly, since it would otherwise read `next-themes`, which nothing
+    provides.

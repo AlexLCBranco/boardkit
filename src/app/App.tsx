@@ -1,7 +1,9 @@
+import { ThemeSwitch } from "../components/ThemeSwitch";
 import { Toaster } from "../components/ui/sonner";
 import { BoardCanvas } from "../features/board/BoardCanvas";
 import { BoardSwitcher } from "../features/board/BoardSwitcher";
 import { TrashPanel } from "../features/board/TrashPanel";
+import { useResolvedTheme } from "../store/themeStore";
 import styles from "./App.module.css";
 import { VersionBadge } from "./VersionBadge";
 
@@ -13,17 +15,21 @@ import { VersionBadge } from "./VersionBadge";
  * changes here.
  */
 export function App() {
+  // shadcn's toaster would otherwise read next-themes, which nothing here
+  // provides, and follow the OS instead of the user's choice.
+  const theme = useResolvedTheme();
   return (
     <div className={styles.app}>
       <header className={styles.header}>
         <BoardSwitcher />
+        <ThemeSwitch />
         <TrashPanel />
       </header>
       <main className={styles.main}>
         <BoardCanvas />
       </main>
       <VersionBadge />
-      <Toaster position="bottom-center" />
+      <Toaster position="bottom-center" theme={theme} />
     </div>
   );
 }

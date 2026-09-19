@@ -1,10 +1,25 @@
 <!doctype html>
-<html lang="en" data-theme="light">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Boardkit</title>
+    <!-- Sets the theme before the first paint, so a saved Light or System
+         choice never flashes dark first. Mirrors store/themeStore.ts (same
+         key, same fallback to Dark); the store takes over once the app loads. -->
+    <script>
+      (function () {
+        var theme = "dark";
+        try {
+          var choice = localStorage.getItem("boardkit:theme");
+          if (choice === "light") theme = "light";
+          else if (choice === "system" && !matchMedia("(prefers-color-scheme: dark)").matches) theme = "light";
+        } catch (e) {}
+        document.documentElement.dataset.theme = theme;
+        if (theme === "dark") document.documentElement.classList.add("dark");
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

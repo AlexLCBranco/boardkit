@@ -9,8 +9,8 @@ import {
   CARD_TINT_ALPHA,
   INK_DARK,
   INK_LIGHT,
-  SURFACE_RAISED,
-  TEXT_PRIMARY,
+  THEME_SURFACES,
+  type ThemeName,
 } from "../styles/surfaces";
 import { PALETTE_COLORS, type HexColor, type ItemColor, type PaletteColor } from "./types";
 
@@ -139,7 +139,9 @@ export function blend(overlay: Rgb, alpha: number, base: Rgb): Rgb {
 export type InkTone = "default" | "light" | "dark";
 
 /**
- * The text colour that stays readable on a card washed with `accent`.
+ * The text colour that stays readable on a card washed with `accent`, in
+ * `theme` (the wash is laid over that theme's card surface, and its text is
+ * that theme's).
  *
  * Palette colours (and no colour at all) always keep the theme's text: each
  * palette swatch was checked against it when the palette was chosen. A custom
@@ -148,12 +150,13 @@ export type InkTone = "default" | "light" | "dark";
  * when the theme's fails 4.5:1. White and black between them reach at least
  * 4.58:1 on every possible background, so a card is always readable.
  */
-export function cardInk(accent: ItemColor | undefined): InkTone {
+export function cardInk(accent: ItemColor | undefined, theme: ThemeName): InkTone {
   if (accent === undefined || !isHexColor(accent)) {
     return "default";
   }
-  const background = blend(toRgb(accent), CARD_TINT_ALPHA, toRgb(SURFACE_RAISED));
-  if (contrastRatio(toRgb(TEXT_PRIMARY), background) >= MIN_CONTRAST) {
+  const surface = THEME_SURFACES[theme];
+  const background = blend(toRgb(accent), CARD_TINT_ALPHA, toRgb(surface.raised));
+  if (contrastRatio(toRgb(surface.text), background) >= MIN_CONTRAST) {
     return "default";
   }
   return contrastRatio(toRgb(INK_LIGHT), background) >= contrastRatio(toRgb(INK_DARK), background)

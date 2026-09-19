@@ -25,6 +25,7 @@ import {
   useReorderCardsWithinList,
   useReorderLists,
 } from "../../store/selectors";
+import { useResolvedTheme } from "../../store/themeStore";
 import cardStyles from "./CardItem.module.css";
 import listStyles from "./ListColumn.module.css";
 
@@ -204,7 +205,8 @@ function CardOverlay({ cardId, listId }: { readonly cardId: CardId; readonly lis
     ...(card.color ? ({ "--card-accent": accentCss(card.color) } as CSSProperties) : {}),
     ...(list.color ? ({ "--list-accent": accentCss(list.color) } as CSSProperties) : {}),
   };
-  const ink = inkOf(card, list.color);
+  const theme = useResolvedTheme();
+  const ink = inkOf(card, list.color, theme);
 
   return (
     <article

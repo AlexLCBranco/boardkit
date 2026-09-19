@@ -6,19 +6,33 @@
  * in sync with `tokens.css` by hand.
  */
 
-/** `--surface-raised`: what a card's tint is laid over. */
-export const SURFACE_RAISED = "#1d2026";
+/** The two looks the app has. "System" is a *choice* (domain/theme.ts); by
+    the time anything is drawn it has resolved to one of these. */
+export type ThemeName = "dark" | "light";
 
-/** `--text-primary`: the text colour a card uses unless told otherwise. */
-export const TEXT_PRIMARY = "#e8eaee";
+/** What a card is drawn from in one theme. */
+export interface ThemeSurface {
+  /** `--surface-raised`: what a card's tint is laid over. */
+  readonly raised: string;
+  /** `--text-primary`: the text colour a card uses unless told otherwise. */
+  readonly text: string;
+}
+
+/** Mirrors `:root` and `:root[data-theme="light"]` in `tokens.css`. */
+export const THEME_SURFACES: Readonly<Record<ThemeName, ThemeSurface>> = {
+  dark: { raised: "#1d2026", text: "#e8eaee" },
+  light: { raised: "#ffffff", text: "#1a1d23" },
+};
 
 /** `--ink-light` and `--ink-dark`: the two text colours a card can switch to
-    when a custom colour makes `TEXT_PRIMARY` hard to read. Pure white and
+    when a custom colour makes the theme's text hard to read. Pure white and
     black on purpose: they are the only pair guaranteed to reach a 4.5:1
-    contrast ratio on *every* background. */
+    contrast ratio on *every* background. Identical in both themes. */
 export const INK_LIGHT = "#ffffff";
 export const INK_DARK = "#000000";
 
 /** The opacity of a card's colour wash, mirroring `--card-tint` in
-    `CardItem.module.css`. */
+    `CardItem.module.css`. The same in both themes: it was already the
+    strongest wash that clears 4.5:1 on dark, and light text-on-tint has
+    more headroom, not less (checked for every palette colour). */
 export const CARD_TINT_ALPHA = 0.45;

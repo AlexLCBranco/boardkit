@@ -6,6 +6,7 @@
  * plus its look in `CardItem`. Pure and React-free, like the rest of `domain/`.
  */
 
+import type { ThemeName } from "../styles/surfaces";
 import { cardInk, type InkTone } from "./colors";
 import { CARD_KINDS, type Card, type CardId, type CardKind, type ItemColor } from "./types";
 
@@ -46,12 +47,16 @@ export function specOf(card: Pick<Card, "kind">): CardKindSpec {
  * The text tone a card needs, given its own colour and its list's. Reads the
  * type's spec for whether the colour reaches the card's background at all.
  */
-export function inkOf(card: Pick<Card, "kind" | "color">, listColor: ItemColor | undefined): InkTone {
+export function inkOf(
+  card: Pick<Card, "kind" | "color">,
+  listColor: ItemColor | undefined,
+  theme: ThemeName,
+): InkTone {
   const spec = specOf(card);
   if (!spec.tintsBackground) {
     return "default";
   }
-  return cardInk(card.color ?? (spec.inheritsListColor ? listColor : undefined));
+  return cardInk(card.color ?? (spec.inheritsListColor ? listColor : undefined), theme);
 }
 
 /** A `kind` from storage that this build knows, or `undefined` for anything
