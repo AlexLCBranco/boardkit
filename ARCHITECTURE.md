@@ -710,4 +710,8 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
     immediately, as before. A bad hex gets a red outline and a message on
     blur/Enter and changes nothing.
   - **Recent colours** (`store/recentColorsStore.ts`): last 8, per browser in
-    `localStorage`, not per board, and outside undo history.
+    `localStorage`, not per board, and outside undo history. Each one has a
+    small × on hover or keyboard focus (`forget`) that removes it from the
+    list only; lists and cards already using it keep the colour, and a saved
+    colour that isn't in the list still shows as a swatch, without a ×. The
+    palette swatches have no ×: they are fixed.

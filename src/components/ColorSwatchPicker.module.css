@@ -54,3 +54,41 @@
   line-height: 1;
   text-shadow: 0 0 3px var(--surface-sunken), 0 0 3px var(--surface-sunken);
 }
+
+/* A custom swatch and its remove button. The palette's swatches have no such
+   button: they are fixed, and only colours the user added can be removed. */
+.customItem {
+  position: relative;
+  display: inline-flex;
+}
+
+.forget {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-full);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  font-size: var(--font-size-xs);
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease-standard);
+}
+
+/* Shown on hover or keyboard focus, so a swatch stays clean until it's
+   pointed at. */
+.customItem:hover .forget,
+.forget:focus-visible {
+  opacity: 1;
+}
+
+.forget:hover {
+  background: var(--palette-red);
+}

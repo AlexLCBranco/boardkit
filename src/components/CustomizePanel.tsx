@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type RefObject } from "react";
 
 import { CARD_KIND_CHOICES, CARD_KIND_SPECS, NORMAL_KIND } from "../domain/cardKinds";
 import type { CardKind, HexColor, IconKey, ItemColor } from "../domain/types";
-import { useRecentColors, useRememberColor } from "../store/selectors";
+import { useForgetColor, useRecentColors, useRememberColor } from "../store/selectors";
 import { ColorSwatchPicker } from "./ColorSwatchPicker";
 import styles from "./CustomizePanel.module.css";
 import { IconPicker } from "./IconPicker";
@@ -58,6 +58,7 @@ export function CustomizePanel({
   const currentKind = kind ?? NORMAL_KIND;
   const recent = useRecentColors();
   const rememberColor = useRememberColor();
+  const forgetColor = useForgetColor();
 
   // The custom picker's colour while it is being dragged or typed into. It
   // is shown live on the item (`onColorPreview`) but not saved: a drag fires
@@ -115,6 +116,7 @@ export function CustomizePanel({
           draft={draft}
           recent={recent}
           onChange={commit}
+          onForget={forgetColor}
           onDraftChange={updateDraft}
         />
       </div>

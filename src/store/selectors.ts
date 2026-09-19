@@ -409,3 +409,7 @@ export function useRecentColors(): readonly HexColor[] {
 export function useRememberColor() {
   return useRecentColorsStore((state) => state.remember);
 }
+
+export function useForgetColor() {
+  return useRecentColorsStore((state) => state.forget);
+}

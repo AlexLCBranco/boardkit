@@ -96,6 +96,11 @@ export function withRecentColor(recent: readonly HexColor[], color: HexColor): H
   return [color, ...recent.filter((existing) => existing !== color)].slice(0, RECENT_COLOR_LIMIT);
 }
 
+/** `color` taken out of the recent list. */
+export function withoutRecentColor(recent: readonly HexColor[], color: HexColor): HexColor[] {
+  return recent.filter((existing) => existing !== color);
+}
+
 // ---- Contrast ---------------------------------------------------------
 
 type Rgb = readonly [number, number, number];

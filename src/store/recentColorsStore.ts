@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-import { parseHex, withRecentColor } from "../domain/colors";
+import { parseHex, withRecentColor, withoutRecentColor } from "../domain/colors";
 import type { HexColor } from "../domain/types";
 
 /**
@@ -33,18 +33,24 @@ interface RecentColorsState {
   /** Most recent first. */
   readonly recent: readonly HexColor[];
   readonly remember: (color: HexColor) => void;
+  /** Removes a colour from the list. Lists and cards already using it keep it. */
+  readonly forget: (color: HexColor) => void;
 }
 
-export const useRecentColorsStore = create<RecentColorsState>((set, get) => ({
-  recent: loadRecent(),
-
-  remember: (color) => {
-    const recent = withRecentColor(get().recent, color);
+export const useRecentColorsStore = create<RecentColorsState>((set, get) => {
+  function save(recent: readonly HexColor[]) {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(recent));
     } catch {
       // Quota or private browsing: the list just lives in memory this session.
     }
     set({ recent });
-  },
-}));
+  }
+
+  return {
+    recent: loadRecent(),
+
+    remember: (color) => save(withRecentColor(get().recent, color)),
+    forget: (color) => save(withoutRecentColor(get().recent, color)),
+  };
+});

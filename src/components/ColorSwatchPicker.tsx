@@ -16,6 +16,8 @@ interface ColorSwatchPickerProps {
   readonly onChange: (color: ItemColor | undefined) => void;
   /** The custom picker moved. Preview it; do not save. */
   readonly onDraftChange: (color: HexColor) => void;
+  /** Remove a custom colour from the recent list. */
+  readonly onForget: (color: HexColor) => void;
 }
 
 /**
@@ -47,6 +49,7 @@ export function ColorSwatchPicker({
   recent,
   onChange,
   onDraftChange,
+  onForget,
 }: ColorSwatchPickerProps) {
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [start] = useState(() => startingColor(value));
@@ -88,15 +91,26 @@ export function ColorSwatchPicker({
           +
         </button>
         {customSwatches.map((color) => (
-          <button
-            key={color}
-            type="button"
-            className={`${styles.swatch} ${isSelected(color) ? styles.selected : ""}`}
-            style={{ background: color }}
-            onClick={() => onChange(color)}
-            aria-label={color}
-            aria-pressed={isSelected(color)}
-          />
+          <span key={color} className={styles.customItem}>
+            <button
+              type="button"
+              className={`${styles.swatch} ${isSelected(color) ? styles.selected : ""}`}
+              style={{ background: color }}
+              onClick={() => onChange(color)}
+              aria-label={color}
+              aria-pressed={isSelected(color)}
+            />
+            {recent.includes(color) && (
+              <button
+                type="button"
+                className={styles.forget}
+                onClick={() => onForget(color)}
+                aria-label={`Remove ${color} from saved colours`}
+              >
+                ×
+              </button>
+            )}
+          </span>
         ))}
       </div>
       {isPickerOpen && (
