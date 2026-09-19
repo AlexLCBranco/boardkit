@@ -61,9 +61,18 @@ export type IconKey = (typeof ICON_KEYS)[number];
     read a `var(...)`. */
 export type ListWidth = number;
 
+/** The special card types. A closed set, like the palette: the rules for
+    each live in `cardKinds.ts`. A card with no `kind` is an ordinary one. */
+export const CARD_KINDS = ["divider", "note"] as const;
+export type CardKind = (typeof CARD_KINDS)[number];
+
 export interface Card {
   readonly id: CardId;
   readonly title: string;
+  /** Absent means a normal card, so boards saved before card types existed
+      load unchanged. Switching a card back to normal only clears this field;
+      everything else on the card is kept. */
+  readonly kind?: CardKind;
   /** A card's only customisation, now that its icon picker is gone --
       colour turned out to be the one anyone actually used. */
   readonly color?: PaletteColor;

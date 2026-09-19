@@ -40,6 +40,80 @@
   transform: translateY(-1px);
 }
 
+/* ---- Special card types (domain/cardKinds.ts) ----
+   Placed before `.selected` so the selection ring still wins on hover. Each
+   type only overrides paint on the same element, so dragging, the hover
+   buttons and the customise button behave exactly as on a normal card. */
+
+/* A divider: a heading line across the list, not a card. The label is the
+   card's title. The line takes the card's own colour, else the list's; with
+   neither, it falls back to a neutral border. */
+.divider {
+  --divider-color: var(--card-accent, var(--list-accent, transparent));
+  background: none;
+  border-color: transparent;
+  box-shadow: none;
+  padding-block: var(--space-1);
+}
+
+.divider:hover {
+  background: var(--surface-hover);
+  box-shadow: none;
+  transform: none;
+}
+
+.divider .title {
+  align-items: center;
+  gap: var(--space-2);
+  padding-right: 0;
+  /* The label stays a plain text colour: mixing the accent into it would
+     drag its alpha down whenever the accent is the list's unset
+     `transparent`, and a slate or yellow label fails contrast on the dark
+     surface anyway. The line carries the colour. */
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* The label hugs its text so the line gets the rest of the row. */
+.divider .title > * {
+  flex: 0 1 auto;
+  width: auto;
+  max-width: 100%;
+}
+
+.divider .title > span {
+  min-width: 12ch;
+}
+
+.divider .title::after {
+  content: "";
+  flex: 1 1 auto;
+  min-width: var(--space-4);
+  height: 2px;
+  border-radius: var(--radius-full);
+  background:
+    linear-gradient(var(--divider-color), var(--divider-color)),
+    var(--border-strong);
+}
+
+/* A note: a reminder about the list, not a task. Sticky-note yellow by
+   default (a colour of its own still wins), ignoring the list's accent so it
+   stands out from the cards around it. */
+.note {
+  --card-tint: color-mix(in oklab, var(--card-accent, var(--note-accent)) 45%, transparent);
+  border-style: dashed;
+  border-color: var(--border-strong);
+  border-radius: var(--radius-sm);
+}
+
+.note .title {
+  font-size: var(--font-size-sm);
+  font-style: italic;
+}
+
 /* Picked by the marquee. A ring outside the card rather than a colour change,
    so it reads on every tint and never fights the card's own colour. Only
    box-shadow changes, and it already transitions above. */
@@ -97,6 +171,12 @@
   box-shadow: var(--shadow-lifted);
   cursor: grabbing;
   animation: card-lift-off var(--duration-fast) var(--ease-out) forwards;
+}
+
+/* A lifted divider needs a surface of its own, or it would float as bare text. */
+.divider.overlay {
+  background: var(--surface-raised);
+  border-color: var(--border-subtle);
 }
 
 @keyframes card-lift-off {

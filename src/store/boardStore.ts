@@ -24,6 +24,7 @@ import type {
   BoardSummary,
   Card,
   CardId,
+  CardKind,
   IconKey,
   ListId,
   ListWidth,
@@ -96,6 +97,8 @@ export interface BoardActions {
   setListColor: (listId: ListId, color: PaletteColor | undefined) => void;
   setListIcon: (listId: ListId, icon: IconKey | undefined) => void;
   setListWidths: (updates: Readonly<Record<ListId, ListWidth | undefined>>) => void;
+  /** `undefined` makes it a normal card again. One undo step. */
+  setCardKind: (cardId: CardId, kind: CardKind | undefined) => void;
   setCardColor: (cardId: CardId, color: PaletteColor | undefined) => void;
   setCardDescription: (cardId: CardId, description: string | undefined) => void;
   setCardPostgameDescription: (cardId: CardId, description: string | undefined) => void;
@@ -379,6 +382,13 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
       }
       return withHistory(state, { lists });
     }),
+
+  setCardKind: (cardId, kind) =>
+    set((state) =>
+      withHistory(state, {
+        cards: { ...state.cards, [cardId]: { ...state.cards[cardId], kind } },
+      }),
+    ),
 
   setCardColor: (cardId, color) =>
     set((state) =>

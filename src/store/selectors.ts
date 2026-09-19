@@ -199,7 +199,7 @@ export function useReorderLists() {
  * changes.
  */
 export function useCardNumber(listId: ListId, cardId: CardId): number | null {
-  return useBoardStore((state) => computeCardNumber(state.cardOrder, listId, cardId));
+  return useBoardStore((state) => computeCardNumber(state.cardOrder, state.cards, listId, cardId));
 }
 
 export function useSetListColor() {
@@ -212,6 +212,10 @@ export function useSetListIcon() {
 
 export function useSetListWidths() {
   return useBoardStore((state) => state.setListWidths);
+}
+
+export function useSetCardKind() {
+  return useBoardStore((state) => state.setCardKind);
 }
 
 export function useSetCardColor() {

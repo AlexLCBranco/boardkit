@@ -628,3 +628,44 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   - Open state is `store/searchDialogStore.ts`, shared by the button and the
     shortcut, like the shortcuts dialog. Not built: a "this board only"
     toggle, filtering the board while typing, auto-opening a card's thots.
+
+- **Special card types (divider, note).** A card can be switched to a type
+  from its customise panel's "Card type" choice. It is one optional field,
+  `Card.kind` (`domain/types.ts`), absent for a normal card, so old boards
+  load unchanged with no schema bump -- the same approach as `trash`.
+  - **Rules live in one table.** `domain/cardKinds.ts` holds
+    `CARD_KIND_SPECS`: per type, a `label`, whether it is `numbered` and
+    whether it `hasThots`. Numbering (`domain/numbering.ts`), search
+    (`domain/search.ts`), `CardItem` (the thots button, right-click, thots
+    section), `CardOverlay` and `CustomizePanel` all ask `specOf(card)`
+    rather than checking `kind === "divider"`.
+  - **Adding a type** is: add its name to `CARD_KINDS` (`types.ts`), one row
+    in `CARD_KIND_SPECS`, and a `.<name>` class in `CardItem.module.css`
+    (`CardItem` applies `styles[card.kind]` on the same `<article>`, so
+    drag, buttons and selection all keep working). The panel lists it
+    automatically.
+  - **Not numbered means not counted.** `computeCardNumber` counts only
+    numbered cards, so "1, 2, divider, 3". It now also reads `state.cards`,
+    still one primitive per card, so `useCardNumber` keeps its `Object.is`
+    bail-out. (Still the quadratic per-card selector `PLAN.md` queues item 1
+    to remove; that fix should keep the "count numbered cards only" rule.)
+  - **Switching type loses nothing.** `setCardKind` (through `withHistory`,
+    one undo step) only sets `kind`; colour and both thots stay on the
+    record. A type without thots hides them and search skips them; switching
+    back shows them again. Copies, duplicates, transfers and trash spread the
+    whole card, so they carry `kind` with no extra code.
+  - **Unknown `kind`s degrade.** `deserializeBoard` runs `withKnownKinds`,
+    which drops a `kind` this build doesn't know (a newer version, a
+    hand-edited backup) so the card loads as a normal one. It returns the
+    same `cards` object when nothing needs stripping.
+  - **Look.** A divider is a heading line: the label is the card's title,
+    the 2px line takes the card's colour, else the list's, else a neutral
+    border (the label stays `--text-secondary`: mixing a possibly
+    `transparent` accent into text drags its alpha down). A note is a dashed,
+    small-radius card with an italic label whose wash is the card's own
+    colour or `--note-accent` (yellow, new token), ignoring the list's accent.
+    Only paint differs; nothing animates beyond what a card already does.
+    A lifted divider gets a raised surface (`.divider.overlay`).
+  - Every card counts toward the 50-card limit, dividers and notes included
+    (the owner's call). Not built: a separate "add a divider" composer, and
+    collapsing the section under a divider.

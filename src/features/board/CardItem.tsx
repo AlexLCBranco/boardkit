@@ -5,6 +5,7 @@ import { memo, useEffect, useRef, useState, type CSSProperties } from "react";
 import { CustomizePanel } from "../../components/CustomizePanel";
 import { InlineEditable } from "../../components/InlineEditable";
 import { DropdownMenu, DropdownMenuTrigger } from "../../components/ui/dropdown-menu";
+import { specOf } from "../../domain/cardKinds";
 import type { CardId, ListId } from "../../domain/types";
 import {
   useCard,
@@ -13,6 +14,7 @@ import {
   useIsCardSelected,
   useRenameCard,
   useSetCardColor,
+  useSetCardKind,
   useSetCardDescription,
   useSetCardPostgameDescription,
 } from "../../store/selectors";
@@ -51,6 +53,7 @@ function CardItemImpl({ cardId, listId, thotsMode }: CardItemProps) {
   const renameCard = useRenameCard();
   const deleteCard = useDeleteCard();
   const setCardColor = useSetCardColor();
+  const setCardKind = useSetCardKind();
   const setCardDescription = useSetCardDescription();
   const setCardPostgameDescription = useSetCardPostgameDescription();
   const number = useCardNumber(listId, cardId);
@@ -65,6 +68,12 @@ function CardItemImpl({ cardId, listId, thotsMode }: CardItemProps) {
   // which ones exist -- that lives on the card itself.
   const [isDescriptionOpen, setIsDescriptionOpen] = useState(false);
   const [thotsSlot, setThotsSlot] = useState<"pregame" | "postgame">("pregame");
+
+  // What this card's type allows, read from one table (domain/cardKinds.ts)
+  // so nothing here checks `kind === "divider"`. A type without thots keeps
+  // the text and the open/closed state, and simply doesn't show them.
+  const spec = specOf(card);
+  const showsThots = spec.hasThots && isDescriptionOpen;
 
   function flipThotsSlot() {
     setThotsSlot((slot) => (slot === "pregame" ? "postgame" : "pregame"));
@@ -91,7 +100,9 @@ function CardItemImpl({ cardId, listId, thotsMode }: CardItemProps) {
   // a card.
   function handleCardContextMenu(event: React.MouseEvent<HTMLElement>) {
     event.preventDefault();
-    setIsDescriptionOpen((open) => !open);
+    if (spec.hasThots) {
+      setIsDescriptionOpen((open) => !open);
+    }
   }
 
   // `data: { listId }` is read back in DragContext's onDragEnd -- a card
@@ -117,7 +128,7 @@ function CardItemImpl({ cardId, listId, thotsMode }: CardItemProps) {
     <article
       ref={setNodeRef}
       style={style}
-      className={`${styles.card} ${isDragging ? styles.dragging : ""} ${isSelected ? styles.selected : ""}`}
+      className={`${styles.card} ${card.kind ? styles[card.kind] : ""} ${isDragging ? styles.dragging : ""} ${isSelected ? styles.selected : ""}`}
       data-card-id={cardId}
       onContextMenu={handleCardContextMenu}
       {...attributes}
@@ -131,7 +142,7 @@ function CardItemImpl({ cardId, listId, thotsMode }: CardItemProps) {
           ariaLabel="Card title"
         />
       </p>
-      {isDescriptionOpen && (
+      {showsThots && (
         <div className={styles.descriptionRow}>
           <button
             type="button"
@@ -151,7 +162,7 @@ function CardItemImpl({ cardId, listId, thotsMode }: CardItemProps) {
           </button>
         </div>
       )}
-      {isDescriptionOpen &&
+      {showsThots &&
         (thotsSlot === "pregame" ? (
           <div className={styles.description} key="pregame">
             <InlineEditable
@@ -189,16 +200,18 @@ function CardItemImpl({ cardId, listId, thotsMode }: CardItemProps) {
         </DropdownMenuTrigger>
         <CardTransferContent cardId={cardId} listId={listId} />
       </DropdownMenu>
-      <button
-        type="button"
-        className={styles.thotsButton}
-        onClick={() => setIsDescriptionOpen((open) => !open)}
-        data-thots-toggle
-        aria-label={isDescriptionOpen ? "Hide pregame thots" : "Show pregame thots"}
-        aria-expanded={isDescriptionOpen}
-      >
-        ▤
-      </button>
+      {spec.hasThots && (
+        <button
+          type="button"
+          className={styles.thotsButton}
+          onClick={() => setIsDescriptionOpen((open) => !open)}
+          data-thots-toggle
+          aria-label={isDescriptionOpen ? "Hide pregame thots" : "Show pregame thots"}
+          aria-expanded={isDescriptionOpen}
+        >
+          ▤
+        </button>
+      )}
       <button
         ref={customizeTriggerRef}
         type="button"
@@ -222,6 +235,8 @@ function CardItemImpl({ cardId, listId, thotsMode }: CardItemProps) {
           anchorRef={customizeTriggerRef}
           color={card.color}
           onColorChange={(color) => setCardColor(cardId, color)}
+          kind={card.kind}
+          onKindChange={(kind) => setCardKind(cardId, kind)}
           onClose={() => setIsCustomizeOpen(false)}
         />
       )}

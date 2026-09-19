@@ -14,6 +14,7 @@ import {
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { useState, type CSSProperties, type ReactNode } from "react";
 
+import { specOf } from "../../domain/cardKinds";
 import type { CardId, ListId } from "../../domain/types";
 import {
   useCard,
@@ -204,9 +205,12 @@ function CardOverlay({ cardId, listId }: { readonly cardId: CardId; readonly lis
   };
 
   return (
-    <article className={`${cardStyles.card} ${cardStyles.overlay}`} style={style}>
+    <article
+      className={`${cardStyles.card} ${card.kind ? cardStyles[card.kind] : ""} ${cardStyles.overlay}`}
+      style={style}
+    >
       <p className={cardStyles.title}>{card.title}</p>
-      {(card.description || card.postgameDescription) && (
+      {specOf(card).hasThots && (card.description || card.postgameDescription) && (
         <div className={cardStyles.descriptionToggle}>▸ pregame thots</div>
       )}
     </article>

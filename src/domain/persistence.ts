@@ -1,3 +1,4 @@
+import { withKnownKinds } from "./cardKinds";
 import type { BoardId, BoardState, BoardSummary } from "./types";
 
 /**
@@ -54,7 +55,11 @@ export function deserializeBoard(data: unknown): BoardState | null {
   const trashedLists = Array.isArray(data.board.trashedLists) ? data.board.trashedLists : [];
   // Also strips any extra fields boards saved by earlier versions carry (a
   // stale `boards` list, `boardId`, `history`) so they cannot reach the store.
-  return pickContent({ ...data.board, trash, trashedLists });
+  // A card's `kind` is optional the same way, but one this build doesn't know
+  // (from a newer version, or a hand-edited backup) is dropped, so the card
+  // loads as a normal one instead of breaking the board.
+  const cards = withKnownKinds(data.board.cards);
+  return pickContent({ ...data.board, cards, trash, trashedLists });
 }
 
 function isPersistedBoardV1(data: unknown): data is PersistedBoardV1 {
