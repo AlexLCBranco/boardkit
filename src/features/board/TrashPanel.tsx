@@ -11,12 +11,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "../../components/ui/dialog";
+import { MAX_CARDS_PER_LIST } from "../../domain/limits";
 import type { TrashEntry, TrashedListEntry } from "../../domain/types";
 import {
   useCard,
   useCardCount,
   useEmptyListTrash,
   useEmptyTrash,
+  useIsListFull,
   useList,
   useListIsOnBoard,
   usePermanentlyDeleteCard,
@@ -161,6 +163,7 @@ function TrashRow({ entry }: { entry: TrashEntry }) {
   const card = useCard(entry.cardId);
   const listIsOnBoard = useListIsOnBoard(entry.listId);
   const list = useList(entry.listId);
+  const listIsFull = useIsListFull(entry.listId);
   const restoreCard = useRestoreCard();
   const permanentlyDeleteCard = usePermanentlyDeleteCard();
 
@@ -177,9 +180,15 @@ function TrashRow({ entry }: { entry: TrashEntry }) {
         variant="ghost"
         size="icon-sm"
         onClick={() => restoreCard(entry.cardId)}
-        disabled={!listIsOnBoard}
+        disabled={!listIsOnBoard || listIsFull}
         aria-label="Restore card"
-        title={listIsOnBoard ? "Restore" : "Original list isn't on the board"}
+        title={
+          !listIsOnBoard
+            ? "Original list isn't on the board"
+            : listIsFull
+              ? `"${list.title}" is full (${MAX_CARDS_PER_LIST} cards max)`
+              : "Restore"
+        }
       >
         <RotateCcw />
       </Button>

@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { duplicateList as duplicateListState } from "../domain/duplicate";
 import { createBoardId, createCardId, createListId } from "../domain/ids";
 import { EMPTY_HISTORY, pushEntry, stepRedo, stepUndo, type BoardPatch, type History } from "../domain/history";
+import { isListFull } from "../domain/limits";
 import { moveBetweenLists, moveList, moveWithinList } from "../domain/ordering";
 import type { BackupBoard } from "../domain/persistence";
 import { createEmptyBoard, createSeedBoard } from "../domain/seed";
@@ -172,8 +173,14 @@ export const useBoardStore = create<BoardStore>((set) => ({
       });
     }),
 
+  // A full list (see domain/limits.ts) ignores the request. The UI hides
+  // the composer before this can happen; the guard here is what makes the
+  // limit true for every caller, not just the ones that remember the UI.
   addCard: (listId, title) =>
     set((state) => {
+      if (isListFull(state.cardOrder[listId])) {
+        return state;
+      }
       const id = createCardId();
       return withHistory(state, {
         cards: { ...state.cards, [id]: { id, title } },
@@ -260,12 +267,18 @@ export const useBoardStore = create<BoardStore>((set) => ({
   // three lists before dropping produces three undo-able moves, not one --
   // which matches the fact that the board's content already changed at each
   // crossing, in full view, well before the drop.
+  //
+  // A full destination list refuses the card: it opens no gap, and the card
+  // stays in the list it came from.
   moveCardBetweenLists: (activeId, fromListId, toListId, overId) =>
-    set((state) =>
-      withHistory(state, {
+    set((state) => {
+      if (isListFull(state.cardOrder[toListId])) {
+        return state;
+      }
+      return withHistory(state, {
         cardOrder: moveBetweenLists(state.cardOrder, activeId, fromListId, toListId, overId),
-      }),
-    ),
+      });
+    }),
 
   reorderLists: (activeId, overId) =>
     set((state) =>

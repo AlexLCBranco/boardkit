@@ -148,7 +148,13 @@ export function BoardDragContext({ children }: { readonly children: ReactNode })
       const overData = dragDataOf(over);
       // A drop on an empty list was already placed by handleDragOver above;
       // only a drop on another card still needs its final position committed.
-      if (overData?.type === "card" && over.id !== active.id) {
+      // That card must be in the dragged card's own list: if it isn't, the
+      // destination was full and refused the card, so there is nothing to do.
+      if (
+        overData?.type === "card" &&
+        overData.listId === activeData.listId &&
+        over.id !== active.id
+      ) {
         reorderCardsWithinList(activeData.listId, active.id as CardId, over.id as CardId);
       }
     }

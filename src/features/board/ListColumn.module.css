@@ -223,6 +223,15 @@
   margin-top: var(--space-2);
 }
 
+/* Takes the "Add a card" button's place once the list hits its card limit,
+   with the same padding so the column's height doesn't jump. */
+.fullNote {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+}
+
 .emptyDropZone {
   min-height: 48px;
   border: 1px dashed transparent;

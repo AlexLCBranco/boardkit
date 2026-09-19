@@ -30,11 +30,13 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from "../../components/ui/context-menu";
+import { MAX_CARDS_PER_LIST } from "../../domain/limits";
 import type { ListId } from "../../domain/types";
 import {
   useAddCard,
   useCardCount,
   useCardIds,
+  useIsListFull,
   useDeleteList,
   useDuplicateList,
   useList,
@@ -62,9 +64,10 @@ interface ListColumnProps {
  * does not re-render for it.
  *
  * The scroll container lives here rather than on the board, so each column
- * scrolls independently and, later, can be virtualised on its own. The
- * add-card composer sits inside that same scroller, after the cards, so it
- * scrolls with them rather than pinning to the bottom of the column.
+ * scrolls independently. The add-card composer sits inside that same
+ * scroller, after the cards, so it scrolls with them rather than pinning to
+ * the bottom of the column. Once the list reaches its card limit
+ * (`domain/limits.ts`) a short note takes the composer's place.
  *
  * The whole column is a sortable item -- `setNodeRef` and its transform sit
  * on the outer `<section>`, so the entire column (cards included) slides as
@@ -77,6 +80,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
   const list = useList(listId);
   const cardIds = useCardIds(listId);
   const cardCount = useCardCount(listId);
+  const isFull = useIsListFull(listId);
   const renameList = useRenameList();
   const deleteList = useDeleteList();
   const duplicateList = useDuplicateList();
@@ -393,11 +397,17 @@ function ListColumnImpl({ listId }: ListColumnProps) {
           <EmptyListDropZone listId={listId} />
         )}
         <div className={styles.composerSlot}>
-          <Composer
-            label="Add a card"
-            placeholder="Enter a title for this card…"
-            onSubmit={(title) => addCard(listId, title)}
-          />
+          {isFull ? (
+            <p className={styles.fullNote} data-capture-exclude="true">
+              List is full · {MAX_CARDS_PER_LIST} cards max
+            </p>
+          ) : (
+            <Composer
+              label="Add a card"
+              placeholder="Enter a title for this card…"
+              onSubmit={(title) => addCard(listId, title)}
+            />
+          )}
         </div>
       </div>
 

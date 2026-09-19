@@ -1,3 +1,4 @@
+import { isListFull } from "../domain/limits";
 import { computeCardNumber } from "../domain/numbering";
 import type {
   BoardId,
@@ -66,6 +67,19 @@ export function useCard(cardId: CardId): Card {
  */
 export function useCardCount(listId: ListId): number {
   return useBoardStore((state) => state.cardOrder[listId].length);
+}
+
+/**
+ * Whether a list has reached the per-list card limit. A boolean, so a
+ * subscriber re-renders only when the list crosses the limit, not on every
+ * card added below it. Tolerates a list id with no `cardOrder` entry (a
+ * trash entry whose list was permanently deleted) by reporting not-full.
+ */
+export function useIsListFull(listId: ListId): boolean {
+  return useBoardStore((state) => {
+    const cardIds = state.cardOrder[listId];
+    return cardIds !== undefined && isListFull(cardIds);
+  });
 }
 
 /**

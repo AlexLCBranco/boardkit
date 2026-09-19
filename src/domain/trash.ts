@@ -10,6 +10,7 @@
  * with no extra bookkeeping.
  */
 
+import { isListFull } from "./limits";
 import type { BoardState, Card, CardId, List, ListId } from "./types";
 
 /** How many deleted cards the trash keeps before it starts forgetting the
@@ -62,14 +63,19 @@ export function moveCardToTrash(
  * if that list isn't currently on the board -- either it was trashed too in
  * the meantime (its own record still exists, but `listOrder` doesn't have
  * it) or it was permanently deleted -- callers should fall back to offering
- * only a permanent delete in that case.
+ * only a permanent delete in that case. Also `null` when that list is full
+ * (see `limits.ts`): the card waits in the trash until there is room.
  */
 export function restoreCardFromTrash(
   state: BoardState,
   cardId: CardId,
 ): Pick<BoardState, "cardOrder" | "trash"> | null {
   const entry = state.trash.find((e) => e.cardId === cardId);
-  if (!entry || !state.listOrder.includes(entry.listId)) {
+  if (
+    !entry ||
+    !state.listOrder.includes(entry.listId) ||
+    isListFull(state.cardOrder[entry.listId])
+  ) {
     return null;
   }
 

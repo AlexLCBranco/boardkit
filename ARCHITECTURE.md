@@ -376,6 +376,23 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   The `ContextMenu` wraps only the `<header>` and its content portals out,
   so menu clicks never bubble through the header's drag listeners.
 
+- **A list holds at most 50 cards (v0.0.31).** Boardkit is many boards of
+  short lists, so the ceiling is a product rule, not a performance
+  workaround. It lives in `domain/limits.ts` (`MAX_CARDS_PER_LIST`,
+  `isListFull`) because three separate actions can put a card into a list,
+  and each one checks it there rather than trusting the UI: `addCard` and
+  `moveCardBetweenLists` return the state unchanged, and
+  `restoreCardFromTrash` returns `null` (the card stays in the trash).
+  During a drag a full list opens no gap, and the card stays in its own list;
+  `DragContext`'s drop handler only commits a reorder when the card it lands
+  on is in the dragged card's own list, so a refused drop leaves no empty
+  undo step. The UI side is a boolean selector (`useIsListFull`), which
+  re-renders only when a list crosses the limit: the "Add a card" composer
+  gives way to a short note, and the trash's restore button is disabled with
+  a tooltip. Duplicating a list is exempt, since the copy is never bigger
+  than the original. Boards saved before the limit that already hold more
+  than 50 are not trimmed; they just can't grow.
+
 ## Decisions
 
 - **Vite + React + TypeScript.** Fast HMR matters when tuning drag feel.
