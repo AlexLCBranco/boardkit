@@ -237,9 +237,37 @@
 
 /* Offered above the composer while something is on the clipboard. Styled to
    sit quietly next to "Add a card" rather than compete with it. */
+.pasteRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.pasteDismiss {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-size: var(--font-size-lg);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.pasteDismiss:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.pasteDismiss:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
 .pasteButton {
   display: block;
-  width: 100%;
+  flex: 1 1 auto;
+  min-width: 0;
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
   color: var(--accent-hover);

@@ -18,6 +18,8 @@ interface SelectionStore {
   clearSelection: () => void;
   copySelection: () => void;
   pasteInto: (listId: ListId) => void;
+  /** Forgets the copied cards, so the per-list paste buttons go away. */
+  clearClipboard: () => void;
 }
 
 const NOTHING: Selected = {};
@@ -52,6 +54,8 @@ export const useSelectionStore = create<SelectionStore>((set, get) => ({
       set({ clipboard: cards });
     }
   },
+
+  clearClipboard: () => set((state) => (state.clipboard.length === 0 ? state : { clipboard: [] })),
 
   pasteInto: (listId) => {
     const { clipboard } = get();

@@ -36,6 +36,7 @@ import {
   useAddCard,
   useCardCount,
   useCardIds,
+  useClearClipboard,
   useClipboardCount,
   useIsListFull,
   useDeleteList,
@@ -90,6 +91,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
   const addCard = useAddCard();
   const clipboardCount = useClipboardCount();
   const pasteInto = usePasteInto();
+  const clearClipboard = useClearClipboard();
   const setListColor = useSetListColor();
   const setListIcon = useSetListIcon();
   const setListWidths = useSetListWidths();
@@ -404,14 +406,24 @@ function ListColumnImpl({ listId }: ListColumnProps) {
         )}
         <div className={styles.composerSlot}>
           {clipboardCount > 0 && !isFull && (
-            <button
-              type="button"
-              className={styles.pasteButton}
-              onClick={() => pasteInto(listId)}
-              data-capture-exclude="true"
-            >
-              {pasteLabel(clipboardCount, cardRoom(cardIds))}
-            </button>
+            <div className={styles.pasteRow} data-capture-exclude="true">
+              <button
+                type="button"
+                className={styles.pasteButton}
+                onClick={() => pasteInto(listId)}
+              >
+                {pasteLabel(clipboardCount, cardRoom(cardIds))}
+              </button>
+              <button
+                type="button"
+                className={styles.pasteDismiss}
+                onClick={clearClipboard}
+                aria-label="Cancel paste"
+                title="Cancel paste"
+              >
+                ×
+              </button>
+            </div>
           )}
           {isFull ? (
             <p className={styles.fullNote} data-capture-exclude="true">

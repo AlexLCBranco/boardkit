@@ -43,7 +43,7 @@ const SHORTCUT_GROUPS: ShortcutGroup[] = [
       { keys: ["Shift", "Drag"], description: "Add to the current selection" },
       { keys: ["Ctrl", "C"], description: "Copy the selected cards" },
       { keys: ["Ctrl", "V"], description: "Paste into the list under the pointer" },
-      { keys: ["Esc"], description: "Clear the selection" },
+      { keys: ["Esc"], description: "Clear the selection, then the copied cards" },
     ],
   },
   {

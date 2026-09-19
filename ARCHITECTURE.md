@@ -527,7 +527,7 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   canvas draws a box and selects every card it touches; the selection stays
   after release and a floating bar offers Copy. Shift-drag adds to the
   selection, a click on empty canvas or Esc clears it. Copied cards can be
-  pasted with a "Paste N cards" button at the bottom of each list, or Ctrl+V
+  pasted with a "Paste N cards" button (with a × that forgets the copy, as does Esc once nothing is selected) at the bottom of each list, or Ctrl+V
   into the list under the pointer. Cards only for now; lists are not
   selectable. Where things live:
   `store/selectionStore.ts` is a second Zustand store for the selection and

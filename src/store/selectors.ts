@@ -330,6 +330,10 @@ export function useCopySelection() {
   return useSelectionStore((state) => state.copySelection);
 }
 
+export function useClearClipboard() {
+  return useSelectionStore((state) => state.clearClipboard);
+}
+
 export function usePasteInto() {
   return useSelectionStore((state) => state.pasteInto);
 }

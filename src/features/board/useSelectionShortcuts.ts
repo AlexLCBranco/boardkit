@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 
 import {
+  useClearClipboard,
   useClearSelection,
   useCopySelection,
   usePasteInto,
@@ -22,6 +23,7 @@ import type { ListId } from "../../domain/types";
 export function useSelectionShortcuts(): void {
   const selectedCount = useSelectedCount();
   const clearSelection = useClearSelection();
+  const clearClipboard = useClearClipboard();
   const copySelection = useCopySelection();
   const pasteInto = usePasteInto();
 
@@ -36,8 +38,14 @@ export function useSelectionShortcuts(): void {
       if (isEditableTarget(event.target)) {
         return;
       }
-      if (event.key === "Escape" && selectedCount > 0) {
-        clearSelection();
+      // Esc lets go in two steps: the selection first, then the copied cards
+      // (which are what keeps the paste buttons on screen).
+      if (event.key === "Escape") {
+        if (selectedCount > 0) {
+          clearSelection();
+        } else {
+          clearClipboard();
+        }
         return;
       }
       if (!(event.ctrlKey || event.metaKey)) {
@@ -63,7 +71,7 @@ export function useSelectionShortcuts(): void {
       document.removeEventListener("pointermove", handlePointerMove);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [selectedCount, clearSelection, copySelection, pasteInto]);
+  }, [selectedCount, clearSelection, clearClipboard, copySelection, pasteInto]);
 }
 
 function isEditableTarget(target: EventTarget | null): boolean {
