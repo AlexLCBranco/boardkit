@@ -9,11 +9,14 @@ interface InlineEditableProps {
   readonly onCommit: (value: string) => void;
   readonly ariaLabel: string;
   readonly className?: string;
-  /** A title may never become empty (the composer is how you remove one);
-      a multiline field like a description may, which is how it's cleared.
-      Also switches Enter from "commit" to an ordinary newline, and enables
+  /** Also switches Enter from "commit" to an ordinary newline, and enables
       `placeholder`. */
   readonly multiline?: boolean;
+  /** Whether committing an empty value is allowed. Card and list titles may
+      be blank; a board's name may not, because the switcher would have
+      nothing to show. A multiline field like a description is always
+      clearable. */
+  readonly allowEmpty?: boolean;
   readonly placeholder?: string;
   /** Show web addresses in the read-only view as clickable links (opening in
       a new tab). Off for titles: clicking a title renames it, and a link
@@ -51,6 +54,7 @@ export function InlineEditable({
   ariaLabel,
   className,
   multiline = false,
+  allowEmpty = false,
   placeholder,
   linkify = false,
 }: InlineEditableProps) {
@@ -102,7 +106,7 @@ export function InlineEditable({
     setIsEditing(false);
     const trimmed = draft.trim();
     if (trimmed === value) return;
-    if (!multiline && !trimmed) return;
+    if (!multiline && !allowEmpty && !trimmed) return;
     onCommit(trimmed);
   }
 

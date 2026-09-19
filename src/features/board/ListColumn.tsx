@@ -311,6 +311,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
             value={list.title}
             onCommit={(title) => renameList(listId, title)}
             ariaLabel="List title"
+            allowEmpty
           />
         </h2>
         <span className={styles.count}>{cardCount}</span>
@@ -369,7 +370,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
       <AlertDialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete "{list.title}"?</AlertDialogTitle>
+            <AlertDialogTitle>Delete {list.title ? `"${list.title}"` : "this list"}?</AlertDialogTitle>
             <AlertDialogDescription>
               This moves the list, and its {cardCount} card{cardCount === 1 ? "" : "s"}, to the
               trash. You can restore it from there.

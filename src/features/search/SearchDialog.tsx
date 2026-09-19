@@ -88,10 +88,12 @@ function SearchPanel({ onDone }: { readonly onDone: () => void }) {
             <span className="flex w-full min-w-0 items-baseline gap-1.5">
               <span className="shrink-0 font-medium">{hit.boardName}</span>
               <span className="text-muted-foreground">·</span>
-              <span className="shrink-0 text-muted-foreground">{hit.listTitle}</span>
+              <span className="shrink-0 text-muted-foreground">
+                {hit.listTitle || "Untitled list"}
+              </span>
               <span className="text-muted-foreground">·</span>
               <span className="min-w-0 truncate">
-                {hit.field === "title" ? <Highlighted excerpt={hit.excerpt} /> : hit.cardTitle}
+                {hit.field === "title" ? <Highlighted excerpt={hit.excerpt} /> : hit.cardTitle || "Untitled card"}
               </span>
             </span>
             {hit.field !== "title" && (

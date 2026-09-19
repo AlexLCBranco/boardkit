@@ -172,7 +172,7 @@ function TrashRow({ entry }: { entry: TrashEntry }) {
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm">{card.title || "Untitled card"}</p>
         <p className="truncate text-xs text-muted-foreground">
-          {listIsOnBoard ? `from "${list.title}"` : "original list isn't on the board"} ·{" "}
+          {listIsOnBoard ? `from "${list.title || "Untitled list"}"` : "original list isn't on the board"} ·{" "}
           {formatDistanceToNow(entry.deletedAt, { addSuffix: true })}
         </p>
       </div>
@@ -186,7 +186,7 @@ function TrashRow({ entry }: { entry: TrashEntry }) {
           !listIsOnBoard
             ? "Original list isn't on the board"
             : listIsFull
-              ? `"${list.title}" is full (${MAX_CARDS_PER_LIST} cards max)`
+              ? `"${list.title || "Untitled list"}" is full (${MAX_CARDS_PER_LIST} cards max)`
               : "Restore"
         }
       >

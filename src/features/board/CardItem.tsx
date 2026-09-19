@@ -153,6 +153,7 @@ function CardItemImpl({ cardId, listId, thotsMode }: CardItemProps) {
           value={card.title}
           onCommit={(title) => renameCard(cardId, title)}
           ariaLabel="Card title"
+          allowEmpty
         />
       </p>
       {showsThots && (

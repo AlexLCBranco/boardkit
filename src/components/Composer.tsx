@@ -20,7 +20,7 @@ interface ComposerProps {
  *
  * Escape or blur closes the composer and discards the draft. Only Enter (or
  * the Add button) creates something, so a stray click elsewhere can't leave
- * behind an accidental card.
+ * behind an accidental card. The title may be blank.
  */
 export function Composer({ label, placeholder, onSubmit }: ComposerProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -44,12 +44,9 @@ export function Composer({ label, placeholder, onSubmit }: ComposerProps) {
   }
 
   function submit() {
-    const trimmed = draft.trim();
-    if (!trimmed) {
-      close();
-      return;
-    }
-    onSubmit(trimmed);
+    // A blank title is allowed: Enter on an empty field adds an empty card
+    // or list. Escape, blur and × are how you close without adding.
+    onSubmit(draft.trim());
     setDraft("");
     textareaRef.current?.focus();
   }

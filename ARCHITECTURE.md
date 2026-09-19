@@ -715,3 +715,14 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
     list only; lists and cards already using it keep the colour, and a saved
     colour that isn't in the list still shows as a swatch, without a ×. The
     palette swatches have no ×: they are fixed.
+
+- **Blank titles (v0.0.47).** Card and list titles may be empty. The store
+  never enforced otherwise; the rule lived in two UI components. `Composer`
+  now submits an empty draft (Escape, blur and × still close without adding),
+  and `InlineEditable` gained an `allowEmpty` prop -- passed by card and list
+  titles, withheld by the board name, which the switcher needs something to
+  show for. A blank title's button is kept one line tall by
+  `.display:empty::before` (a zero-width space), so it is still clickable and
+  the drag overlays do the same in JS. Places that print a title in a
+  sentence (delete dialog, trash, search, transfer menus) fall back to
+  "Untitled list" / "Untitled card".

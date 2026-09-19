@@ -19,6 +19,12 @@
   overflow-wrap: anywhere;
 }
 
+/* A blank title has no text to give the button a line of height, which would
+   leave nothing to click. A zero-width space restores one line. */
+.display:empty::before {
+  content: "\200b";
+}
+
 .display:hover {
   background: var(--surface-hover);
 }

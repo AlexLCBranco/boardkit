@@ -212,7 +212,8 @@ function CardOverlay({ cardId, listId }: { readonly cardId: CardId; readonly lis
       style={style}
       data-ink={ink === "default" ? undefined : ink}
     >
-      <p className={cardStyles.title}>{card.title}</p>
+      {/* A zero-width space keeps a blank title one line tall, as on the card. */}
+      <p className={cardStyles.title}>{card.title || "​"}</p>
       {specOf(card).hasThots && (card.description || card.postgameDescription) && (
         <div className={cardStyles.descriptionToggle}>▸ pregame thots</div>
       )}
@@ -242,7 +243,7 @@ function ListOverlay({ listId }: { readonly listId: ListId }) {
   return (
     <div className={`${listStyles.column} ${listStyles.overlay}`} style={style}>
       <div className={listStyles.header}>
-        <h2 className={listStyles.title}>{list.title}</h2>
+        <h2 className={listStyles.title}>{list.title || "​"}</h2>
         <span className={listStyles.count}>{cardCount}</span>
       </div>
     </div>

@@ -131,10 +131,10 @@ function CardListPicker({
           disabled={target.full}
           onSelect={() => {
             const result = sendCardToBoard(mode, listId, cardId, board.id, target.id);
-            report(mode, result.ok, `“${board.name}” → “${target.title}”`, !result.ok ? result.message : undefined);
+            report(mode, result.ok, `“${board.name}” → “${target.title || "Untitled list"}”`, !result.ok ? result.message : undefined);
           }}
         >
-          {target.title}
+          {target.title || "Untitled list"}
           {target.full && " (full)"}
         </DropdownMenuItem>
       ))}
