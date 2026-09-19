@@ -40,6 +40,31 @@
   transform: translateY(-1px);
 }
 
+/* A custom colour that leaves the theme's text below 4.5:1 (see `cardInk` in
+   domain/colors.ts). Every text token is re-pointed for this card and its
+   children, so titles, numbers, thots, links and the hover buttons all follow
+   with no per-element rules. `--text-link` is set as well because it was
+   resolved from `--text-primary` back at :root and would not follow.
+   `color` is restated too: the card's plain text inherits the body's already
+   computed colour, so re-pointing a custom property alone would never reach it. */
+.card[data-ink="light"] {
+  color: var(--ink-light);
+  --text-primary: var(--ink-light);
+  --text-secondary: var(--ink-light);
+  --text-muted: var(--ink-light);
+  --text-link: var(--ink-light);
+  --text-link-underline: var(--ink-light);
+}
+
+.card[data-ink="dark"] {
+  color: var(--ink-dark);
+  --text-primary: var(--ink-dark);
+  --text-secondary: var(--ink-dark);
+  --text-muted: var(--ink-dark);
+  --text-link: var(--ink-dark);
+  --text-link-underline: var(--ink-dark);
+}
+
 /* ---- Special card types (domain/cardKinds.ts) ----
    Placed before `.selected` so the selection ring still wins on hover. Each
    type only overrides paint on the same element, so dragging, the hover

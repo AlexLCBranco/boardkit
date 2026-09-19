@@ -28,7 +28,7 @@ import type {
   IconKey,
   ListId,
   ListWidth,
-  PaletteColor,
+  ItemColor,
 } from "../domain/types";
 import {
   flushPersist,
@@ -94,12 +94,12 @@ export interface BoardActions {
     overId: CardId | null,
   ) => void;
   reorderLists: (activeId: ListId, overId: ListId) => void;
-  setListColor: (listId: ListId, color: PaletteColor | undefined) => void;
+  setListColor: (listId: ListId, color: ItemColor | undefined) => void;
   setListIcon: (listId: ListId, icon: IconKey | undefined) => void;
   setListWidths: (updates: Readonly<Record<ListId, ListWidth | undefined>>) => void;
   /** `undefined` makes it a normal card again. One undo step. */
   setCardKind: (cardId: CardId, kind: CardKind | undefined) => void;
-  setCardColor: (cardId: CardId, color: PaletteColor | undefined) => void;
+  setCardColor: (cardId: CardId, color: ItemColor | undefined) => void;
   setCardDescription: (cardId: CardId, description: string | undefined) => void;
   setCardPostgameDescription: (cardId: CardId, description: string | undefined) => void;
   undo: () => void;

@@ -49,7 +49,7 @@ The build chat should:
 | 2 | New board from layout | Built (v0.0.32) |
 | 3 | Search across all boards | Built (v0.0.42) |
 | 4 | Special card types | Built (v0.0.43: divider + note) |
-| 5 | Custom colours | Not started |
+| 5 | Custom colours | Built (v0.0.44) |
 | 6 | Light theme, backgrounds | Not started |
 | 7 | Collapse a list | Not started |
 | 8 | Clickable links in thots | Built (v0.0.37) |

@@ -28,13 +28,13 @@ export type BoardId = Brand<string, "BoardId">;
 /**
  * The customisation vocabulary.
  *
- * Both are closed sets rather than free-form strings (a hex value, an
- * uploaded icon): a fixed palette is what makes a runtime colour a single
- * CSS custom property swap instead of a colour-picker widget with its own
- * validation, and a fixed icon set is what makes `IconSprite` a handful of
- * inline paths instead of a bundled icon library. The `as const` array is
- * the runtime companion to the type -- pickers iterate `PALETTE_COLORS` and
- * `ICON_KEYS` rather than each inventing their own copy of the list.
+ * Icons are a closed set rather than an uploaded image: a fixed set is what
+ * makes `IconSprite` a handful of inline paths instead of a bundled icon
+ * library. Colours started as a closed set too, and now also accept any hex
+ * (`ItemColor` below); the palette stays as the quick-pick swatches. The
+ * `as const` arrays are the runtime companions to the types -- pickers
+ * iterate `PALETTE_COLORS` and `ICON_KEYS` rather than each inventing their
+ * own copy of the list.
  */
 export const PALETTE_COLORS = [
   "slate",
@@ -47,6 +47,15 @@ export const PALETTE_COLORS = [
   "purple",
 ] as const;
 export type PaletteColor = (typeof PALETTE_COLORS)[number];
+
+/** A colour the user picked freely: always `#rrggbb`, lowercase. Only
+    `parseHex` (domain/colors.ts) makes one, so a `HexColor` is known to be
+    well-formed wherever it turns up. */
+export type HexColor = Brand<string, "HexColor">;
+
+/** What a list or card's `color` holds: a palette swatch or a picked hex.
+    Old boards only ever contain palette names, so they load unchanged. */
+export type ItemColor = PaletteColor | HexColor;
 
 export const ICON_KEYS = ["star", "flag", "bug", "rocket", "bolt", "fire", "heart", "tag"] as const;
 export type IconKey = (typeof ICON_KEYS)[number];
@@ -75,7 +84,7 @@ export interface Card {
   readonly kind?: CardKind;
   /** A card's only customisation, now that its icon picker is gone --
       colour turned out to be the one anyone actually used. */
-  readonly color?: PaletteColor;
+  readonly color?: ItemColor;
   /** Shown in the UI as "pregame thots". Kept as `description` -- rather
       than renamed to match -- so boards saved before that label existed
       keep their text; only the second, `postgameDescription`, is new. */
@@ -87,7 +96,7 @@ export interface Card {
 export interface List {
   readonly id: ListId;
   readonly title: string;
-  readonly color?: PaletteColor;
+  readonly color?: ItemColor;
   readonly icon?: IconKey;
   /** Column width, as a card-line-length control. Undefined means the
       default `--list-width` from tokens.css. */

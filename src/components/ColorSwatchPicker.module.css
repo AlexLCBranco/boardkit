@@ -25,3 +25,32 @@
   background: repeating-conic-gradient(var(--surface-hover) 0% 25%, transparent 0% 50%) 0 0 / 8px
     8px;
 }
+
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* The "+": a spectrum ring behind a plus sign, so it reads as "pick any
+   colour" before it's clicked. The glyph sits on a dark disc to stay legible
+   against every hue in the ring. */
+.custom {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  background: conic-gradient(
+    var(--palette-red),
+    var(--palette-yellow),
+    var(--palette-green),
+    var(--palette-teal),
+    var(--palette-blue),
+    var(--palette-purple),
+    var(--palette-red)
+  );
+  color: var(--text-primary);
+  font-size: var(--font-size-md);
+  font-weight: var(--weight-bold);
+  line-height: 1;
+  text-shadow: 0 0 3px var(--surface-sunken), 0 0 3px var(--surface-sunken);
+}

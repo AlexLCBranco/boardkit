@@ -31,7 +31,8 @@ import {
   ContextMenuTrigger,
 } from "../../components/ui/context-menu";
 import { MAX_CARDS_PER_LIST, cardRoom } from "../../domain/limits";
-import type { ListId } from "../../domain/types";
+import { accentCss } from "../../domain/colors";
+import type { ItemColor, ListId } from "../../domain/types";
 import {
   useAddCard,
   useCardCount,
@@ -97,6 +98,9 @@ function ListColumnImpl({ listId }: ListColumnProps) {
   const setListWidths = useSetListWidths();
 
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
+  // A colour being tried in the customise panel's picker, shown before it is
+  // saved. Local state, so previewing never touches the store or undo stack.
+  const [previewColor, setPreviewColor] = useState<ItemColor | null>(null);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [copyState, setCopyState] = useState<"idle" | "copied" | "error">("idle");
@@ -280,7 +284,8 @@ function ListColumnImpl({ listId }: ListColumnProps) {
   // ordinary inherited custom property to every card inside -- one value,
   // read back in CardItem.module.css, rather than threading a colour prop
   // through the card tree.
-  const accent = list.color ? `var(--palette-${list.color})` : undefined;
+  const color = previewColor ?? list.color;
+  const accent = color ? accentCss(color) : undefined;
   const style: CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -384,7 +389,8 @@ function ListColumnImpl({ listId }: ListColumnProps) {
           anchorRef={customizeTriggerRef}
           color={list.color}
           icon={list.icon}
-          onColorChange={(color) => setListColor(listId, color)}
+          onColorChange={(next) => setListColor(listId, next)}
+          onColorPreview={setPreviewColor}
           onIconChange={(icon) => setListIcon(listId, icon)}
           onClose={() => setIsCustomizeOpen(false)}
         />

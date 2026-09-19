@@ -6,6 +6,8 @@ import type {
   BoardSummary,
   Card,
   CardId,
+  HexColor,
+  ItemColor,
   List,
   ListId,
   TrashEntry,
@@ -13,6 +15,7 @@ import type {
 } from "../domain/types";
 import { useBackupStore } from "./backupStore";
 import { useBoardStore } from "./boardStore";
+import { useRecentColorsStore } from "./recentColorsStore";
 import { useSearchDialogStore } from "./searchDialogStore";
 import { useSelectionStore } from "./selectionStore";
 import { useShortcutsDialogStore } from "./shortcutsDialogStore";
@@ -58,6 +61,14 @@ export function useCardIds(listId: ListId): readonly CardId[] {
 }
 
 /** One card's own data. The narrowest subscription in the app. */
+/**
+ * Just a list's colour, for a card that needs it (to pick readable text on the
+ * list's tint) without re-rendering when the list is renamed or resized.
+ */
+export function useListColor(listId: ListId): ItemColor | undefined {
+  return useBoardStore((state) => state.lists[listId].color);
+}
+
 export function useCard(cardId: CardId): Card {
   return useBoardStore((state) => state.cards[cardId]);
 }
@@ -388,4 +399,13 @@ export function useIsSearchOpen(): boolean {
 
 export function useSetSearchOpen() {
   return useSearchDialogStore((state) => state.setOpen);
+}
+
+/** The custom colours picked lately, most recent first -- per browser. */
+export function useRecentColors(): readonly HexColor[] {
+  return useRecentColorsStore((state) => state.recent);
+}
+
+export function useRememberColor() {
+  return useRecentColorsStore((state) => state.remember);
 }

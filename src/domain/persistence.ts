@@ -1,4 +1,5 @@
 import { withKnownKinds } from "./cardKinds";
+import { withKnownColors } from "./colors";
 import type { BoardId, BoardState, BoardSummary } from "./types";
 
 /**
@@ -58,8 +59,11 @@ export function deserializeBoard(data: unknown): BoardState | null {
   // A card's `kind` is optional the same way, but one this build doesn't know
   // (from a newer version, or a hand-edited backup) is dropped, so the card
   // loads as a normal one instead of breaking the board.
-  const cards = withKnownKinds(data.board.cards);
-  return pickContent({ ...data.board, cards, trash, trashedLists });
+  // Colours get the same treatment: one this build can't read is dropped, so
+  // the list or card loads uncoloured instead of breaking the board.
+  const cards = withKnownColors(withKnownKinds(data.board.cards));
+  const lists = withKnownColors(data.board.lists);
+  return pickContent({ ...data.board, lists, cards, trash, trashedLists });
 }
 
 function isPersistedBoardV1(data: unknown): data is PersistedBoardV1 {

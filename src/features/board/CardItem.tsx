@@ -5,13 +5,15 @@ import { memo, useEffect, useRef, useState, type CSSProperties } from "react";
 import { CustomizePanel } from "../../components/CustomizePanel";
 import { InlineEditable } from "../../components/InlineEditable";
 import { DropdownMenu, DropdownMenuTrigger } from "../../components/ui/dropdown-menu";
-import { specOf } from "../../domain/cardKinds";
-import type { CardId, ListId } from "../../domain/types";
+import { inkOf, specOf } from "../../domain/cardKinds";
+import { accentCss } from "../../domain/colors";
+import type { CardId, ItemColor, ListId } from "../../domain/types";
 import {
   useCard,
   useCardNumber,
   useDeleteCard,
   useIsCardSelected,
+  useListColor,
   useRenameCard,
   useSetCardColor,
   useSetCardKind,
@@ -59,7 +61,13 @@ function CardItemImpl({ cardId, listId, thotsMode }: CardItemProps) {
   const number = useCardNumber(listId, cardId);
   const isSelected = useIsCardSelected(cardId);
 
+  const listColor = useListColor(listId);
+
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
+  // A colour being tried in the customise panel's picker, shown before it is
+  // saved. Local to this card, so previewing re-renders this card alone and
+  // never touches the store, the undo stack or the disk.
+  const [previewColor, setPreviewColor] = useState<ItemColor | null>(null);
   const customizeTriggerRef = useRef<HTMLButtonElement>(null);
   // Collapsed by default so a description doesn't inflate every card's
   // height on a board with hundreds of them -- purely local, ephemeral
@@ -118,11 +126,15 @@ function CardItemImpl({ cardId, listId, thotsMode }: CardItemProps) {
   // no colour of its own, `--card-accent` is simply left unset and the CSS
   // fallback in CardItem.module.css tints the card with the list's accent
   // instead.
+  const color = previewColor ?? card.color;
   const style: CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
-    ...(card.color ? ({ "--card-accent": `var(--palette-${card.color})` } as CSSProperties) : {}),
+    ...(color ? ({ "--card-accent": accentCss(color) } as CSSProperties) : {}),
   };
+  // A custom colour can leave the theme's text unreadable; `data-ink` swaps
+  // the card to white or black text when it does (see CardItem.module.css).
+  const ink = inkOf({ kind: card.kind, color }, listColor);
 
   return (
     <article
@@ -130,6 +142,7 @@ function CardItemImpl({ cardId, listId, thotsMode }: CardItemProps) {
       style={style}
       className={`${styles.card} ${card.kind ? styles[card.kind] : ""} ${isDragging ? styles.dragging : ""} ${isSelected ? styles.selected : ""}`}
       data-card-id={cardId}
+      data-ink={ink === "default" ? undefined : ink}
       onContextMenu={handleCardContextMenu}
       {...attributes}
       {...listeners}
@@ -219,7 +232,7 @@ function CardItemImpl({ cardId, listId, thotsMode }: CardItemProps) {
         onClick={() => setIsCustomizeOpen((open) => !open)}
         aria-label="Customise card"
       >
-        <span className={styles.customizeSwatch} style={card.color ? { background: `var(--palette-${card.color})` } : undefined} />
+        <span className={styles.customizeSwatch} style={color ? { background: accentCss(color) } : undefined} />
       </button>
       <button
         type="button"
@@ -234,7 +247,8 @@ function CardItemImpl({ cardId, listId, thotsMode }: CardItemProps) {
         <CustomizePanel
           anchorRef={customizeTriggerRef}
           color={card.color}
-          onColorChange={(color) => setCardColor(cardId, color)}
+          onColorChange={(next) => setCardColor(cardId, next)}
+          onColorPreview={setPreviewColor}
           kind={card.kind}
           onKindChange={(kind) => setCardKind(cardId, kind)}
           onClose={() => setIsCustomizeOpen(false)}

@@ -111,4 +111,11 @@
 
   /* The colour a note card takes when it has none of its own. */
   --note-accent: var(--palette-yellow);
+
+  /* The two text colours a card switches to when a custom colour makes the
+     theme's text unreadable (domain/colors.ts `cardInk`). Pure white and
+     black, because they are the only pair that reaches 4.5:1 on every
+     possible background. Mirrored in styles/surfaces.ts. */
+  --ink-light: #ffffff;
+  --ink-dark: #000000;
 }

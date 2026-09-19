@@ -14,7 +14,8 @@ import {
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { useState, type CSSProperties, type ReactNode } from "react";
 
-import { specOf } from "../../domain/cardKinds";
+import { inkOf, specOf } from "../../domain/cardKinds";
+import { accentCss } from "../../domain/colors";
 import type { CardId, ListId } from "../../domain/types";
 import {
   useCard,
@@ -200,14 +201,16 @@ function CardOverlay({ cardId, listId }: { readonly cardId: CardId; readonly lis
   const list = useList(listId);
 
   const style: CSSProperties = {
-    ...(card.color ? ({ "--card-accent": `var(--palette-${card.color})` } as CSSProperties) : {}),
-    ...(list.color ? ({ "--list-accent": `var(--palette-${list.color})` } as CSSProperties) : {}),
+    ...(card.color ? ({ "--card-accent": accentCss(card.color) } as CSSProperties) : {}),
+    ...(list.color ? ({ "--list-accent": accentCss(list.color) } as CSSProperties) : {}),
   };
+  const ink = inkOf(card, list.color);
 
   return (
     <article
       className={`${cardStyles.card} ${card.kind ? cardStyles[card.kind] : ""} ${cardStyles.overlay}`}
       style={style}
+      data-ink={ink === "default" ? undefined : ink}
     >
       <p className={cardStyles.title}>{card.title}</p>
       {specOf(card).hasThots && (card.description || card.postgameDescription) && (
@@ -232,7 +235,7 @@ function ListOverlay({ listId }: { readonly listId: ListId }) {
   // cascade and needs both set explicitly to keep looking like the column
   // being dragged.
   const style: CSSProperties = {
-    ...(list.color ? ({ "--list-accent": `var(--palette-${list.color})` } as CSSProperties) : {}),
+    ...(list.color ? ({ "--list-accent": accentCss(list.color) } as CSSProperties) : {}),
     ...(list.width ? ({ "--column-width": `${list.width}px` } as CSSProperties) : {}),
   };
 

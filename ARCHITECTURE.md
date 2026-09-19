@@ -669,3 +669,45 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   - Every card counts toward the 50-card limit, dividers and notes included
     (the owner's call). Not built: a separate "add a divider" composer, and
     collapsing the section under a divider.
+
+- **Custom colours (v0.0.44).** The swatches in the customise panel gain a
+  "+" that opens a shade area, hue slider and hex box (`react-colorful`, ~2 KB,
+  restyled onto tokens in `CustomColorPicker.module.css`). Recent picks show
+  after the palette. The picker opens inline inside `CustomizePanel` rather
+  than as a second popover: the panel's `Popover` closes on any pointerdown
+  outside itself, and a portalled second popover would count as "outside".
+  - **Data.** `color` on `List` and `Card` is `ItemColor = PaletteColor |
+    HexColor` (`domain/types.ts`); `HexColor` is a branded lowercase
+    `#rrggbb` that only `parseHex` (`domain/colors.ts`) can produce. Old
+    boards hold palette names, which stay valid, so no schema bump.
+    `deserializeBoard` runs `withKnownColors` over lists and cards: `#FFF`
+    is normalised, anything unreadable is dropped to "no colour", never a
+    failed load. Backups, transfers and search all load through it.
+  - **CSS.** `accentCss(color)` returns `var(--palette-x)` or the hex, and is
+    written to the same `--card-accent` / `--list-accent` properties as
+    before, so the tint, divider line and drag overlay needed no changes.
+    User colours are never filtered or transformed (Excalidraw's "picked
+    colour isn't the colour I see" bug).
+  - **Readable text.** `cardInk` (`domain/colors.ts`) blends the accent at
+    45% over the card surface, exactly as `--card-tint` paints it, and if
+    the theme's text falls below 4.6:1 (4.5 plus a rounding margin) switches
+    the card to white or black -- the only pair that reaches 4.5:1 on every
+    background. `inkOf` (`domain/cardKinds.ts`) supplies the effective accent
+    (a note ignores its list's colour; a divider has no tinted background).
+    The result is a `data-ink` attribute; `CardItem.module.css` re-points the
+    text tokens (and `color`, and `--text-link`, which was resolved at :root)
+    for that card. Palette colours never switch. The JS mirrors of the
+    surface/text tokens are in `styles/surfaces.ts`, like `motion.ts`.
+    Lists don't switch: a 25% tint of even pure white leaves ~7:1 for the
+    theme's text.
+  - **One drag, one write.** While the picker is dragged or a hex typed, the
+    colour is a *preview*: `CustomizePanel` holds a draft and the owner
+    (`CardItem`, `ListColumn`) shows it through local `previewColor` state,
+    so previewing never touches the store, undo stack or disk. The draft is
+    saved once, when the panel closes or a hex is confirmed with Enter.
+    Escape (seen in a capture-phase listener, before `Popover`'s own handler
+    closes and would save) discards it. Palette and recent swatches save
+    immediately, as before. A bad hex gets a red outline and a message on
+    blur/Enter and changes nothing.
+  - **Recent colours** (`store/recentColorsStore.ts`): last 8, per browser in
+    `localStorage`, not per board, and outside undo history.
