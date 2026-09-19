@@ -2,6 +2,7 @@ import type { AutoBackupStatus } from "../domain/backupStatus";
 import { isListFull } from "../domain/limits";
 import { computeCardNumber } from "../domain/numbering";
 import type {
+  BoardBackground,
   BoardId,
   BoardSummary,
   Card,
@@ -223,6 +224,14 @@ export function useSetListIcon() {
 
 export function useSetListWidths() {
   return useBoardStore((state) => state.setListWidths);
+}
+
+export function useBackground(): BoardBackground | undefined {
+  return useBoardStore((state) => state.background);
+}
+
+export function useSetBackground() {
+  return useBoardStore((state) => state.setBackground);
 }
 
 export function useSetCardKind() {

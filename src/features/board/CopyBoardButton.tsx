@@ -3,6 +3,7 @@ import { useState } from "react";
 
 import { Button } from "../../components/ui/button";
 import { copyAsImage } from "./copyAsImage";
+import { exportBackgroundColor } from "./exportBackground";
 
 interface CopyBoardButtonProps {
   readonly railRef: React.RefObject<HTMLElement | null>;
@@ -23,7 +24,14 @@ export function CopyBoardButton({ railRef }: CopyBoardButtonProps) {
       return;
     }
     try {
-      await copyAsImage(rail, { pixelRatio: 4, zoom: 1 });
+      // Transparent unless the board has a background of its own, so pasting
+      // into a document still works as it always has.
+      const backgroundColor = exportBackgroundColor();
+      await copyAsImage(rail, {
+        pixelRatio: 4,
+        zoom: 1,
+        ...(backgroundColor !== undefined ? { backgroundColor } : {}),
+      });
       setState("copied");
     } catch (error) {
       console.error("copy board as image failed", error);

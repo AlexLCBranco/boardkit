@@ -1,12 +1,13 @@
-import { useEffect, useRef, useState, type RefObject } from "react";
+import type { RefObject } from "react";
 
 import { CARD_KIND_CHOICES, CARD_KIND_SPECS, NORMAL_KIND } from "../domain/cardKinds";
-import type { CardKind, HexColor, IconKey, ItemColor } from "../domain/types";
-import { useForgetColor, useRecentColors, useRememberColor } from "../store/selectors";
+import type { CardKind, IconKey, ItemColor } from "../domain/types";
+import { useForgetColor, useRecentColors } from "../store/selectors";
 import { ColorSwatchPicker } from "./ColorSwatchPicker";
 import styles from "./CustomizePanel.module.css";
 import { IconPicker } from "./IconPicker";
 import { Popover } from "./Popover";
+import { useColorDraft } from "./useColorDraft";
 
 interface CustomizePanelProps {
   readonly anchorRef: RefObject<HTMLElement | null>;
@@ -57,53 +58,11 @@ export function CustomizePanel({
 }: CustomizePanelProps) {
   const currentKind = kind ?? NORMAL_KIND;
   const recent = useRecentColors();
-  const rememberColor = useRememberColor();
   const forgetColor = useForgetColor();
-
-  // The custom picker's colour while it is being dragged or typed into. It
-  // is shown live on the item (`onColorPreview`) but not saved: a drag fires
-  // dozens of changes, and saving each would bury the undo stack and the
-  // disk. The whole session becomes one write, when the panel closes or a
-  // swatch or typed hex is confirmed. A ref mirrors it so `handleClose`
-  // reads the latest value, not the one from the render it was created in.
-  const [draft, setDraft] = useState<HexColor | null>(null);
-  const draftRef = useRef<HexColor | null>(null);
-  const isDiscardedRef = useRef(false);
-
-  function updateDraft(next: HexColor | null) {
-    draftRef.current = next;
-    setDraft(next);
-    onColorPreview(next);
-  }
-
-  function commit(next: ItemColor | undefined) {
-    updateDraft(null);
-    onColorChange(next);
-    if (next !== undefined && next.startsWith("#")) {
-      rememberColor(next as HexColor);
-    }
-  }
-
-  // Escape abandons the draft. It has to be seen *before* Popover's own
-  // Escape handler closes the panel (which would otherwise save it), so this
-  // listens in the capture phase, which runs ahead of Popover's bubbling one.
-  useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        isDiscardedRef.current = true;
-      }
-    }
-    document.addEventListener("keydown", handleKeyDown, true);
-    return () => document.removeEventListener("keydown", handleKeyDown, true);
-  }, []);
+  const { draft, updateDraft, commit, finish } = useColorDraft(onColorChange, onColorPreview);
 
   function handleClose() {
-    const pending = draftRef.current;
-    if (pending !== null && !isDiscardedRef.current) {
-      commit(pending);
-    } else {
-      updateDraft(null);
-    }
+    finish();
     onClose();
   }
 

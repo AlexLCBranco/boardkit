@@ -67,6 +67,7 @@ export function initAutoBackup(): () => void {
       state.cardOrder !== previous.cardOrder ||
       state.trash !== previous.trash ||
       state.trashedLists !== previous.trashedLists ||
+      state.background !== previous.background ||
       state.boards !== previous.boards ||
       state.boardId !== previous.boardId
     ) {

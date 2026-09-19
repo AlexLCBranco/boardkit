@@ -1,6 +1,7 @@
 import { toast } from "sonner";
 
 import {
+  boardContent,
   deserializeBackup,
   serializeBackup,
   type BackupBoard,
@@ -36,8 +37,7 @@ export function collectBoards(): CollectedBoards {
   const unreadable: string[] = [];
   for (const { id, name } of state.boards) {
     if (id === state.boardId) {
-      const { lists, cards, listOrder, cardOrder, trash, trashedLists } = state;
-      boards.push({ id, name, board: { lists, cards, listOrder, cardOrder, trash, trashedLists } });
+      boards.push({ id, name, board: boardContent(state) });
       continue;
     }
     const board = loadPersistedBoard(id);

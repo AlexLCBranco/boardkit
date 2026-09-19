@@ -51,7 +51,7 @@ export function duplicateList(
 
 /**
  * A board's skeleton: the lists currently on it, in order, with their title,
- * colour, icon and width -- and nothing else.
+ * colour, icon and width, plus the board's background -- and nothing else.
  *
  * `state.lists` also keeps the records of trashed lists (a trashed list
  * loses its place in `listOrder` but not its record, so restoring it works),
@@ -66,5 +66,13 @@ export function layoutOnly(state: BoardState): BoardState {
     lists[listId] = state.lists[listId];
     cardOrder[listId] = [];
   }
-  return { lists, cards: {}, listOrder: state.listOrder, cardOrder, trash: [], trashedLists: [] };
+  return {
+    lists,
+    cards: {},
+    listOrder: state.listOrder,
+    cardOrder,
+    trash: [],
+    trashedLists: [],
+    background: state.background,
+  };
 }

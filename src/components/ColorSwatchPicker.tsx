@@ -18,6 +18,8 @@ interface ColorSwatchPickerProps {
   readonly onDraftChange: (color: HexColor) => void;
   /** Remove a custom colour from the recent list. */
   readonly onForget: (color: HexColor) => void;
+  /** What the "no colour" swatch is called, for screen readers. */
+  readonly noneLabel?: string;
 }
 
 /**
@@ -50,6 +52,7 @@ export function ColorSwatchPicker({
   onChange,
   onDraftChange,
   onForget,
+  noneLabel = "No colour",
 }: ColorSwatchPickerProps) {
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [start] = useState(() => startingColor(value));
@@ -67,7 +70,7 @@ export function ColorSwatchPicker({
           type="button"
           className={`${styles.swatch} ${styles.none} ${isSelected(undefined) ? styles.selected : ""}`}
           onClick={() => onChange(undefined)}
-          aria-label="No colour"
+          aria-label={noneLabel}
           aria-pressed={isSelected(undefined)}
         />
         {PALETTE_COLORS.map((color) => (

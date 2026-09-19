@@ -755,3 +755,40 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
     the same bridged tokens. The toaster is given the resolved theme
     explicitly, since it would otherwise read `next-themes`, which nothing
     provides.
+
+- **Board background colour (v0.0.49).** Each board can have a colour behind
+  its lists, set from the board menu's "Background…".
+  - **Data.** `BoardState.background?: BoardBackground`, a tagged union that
+    today has one member, `{ kind: "color", color: ItemColor }` (palette name
+    or hex), so the image variant is a new member, not a change. Optional, so
+    old boards load unchanged. `domain/background.ts` cleans it on load
+    (`knownBackground`): anything unreadable degrades to "no background".
+    `persistence.ts`'s content picker is now exported as `boardContent` and is
+    the only place that lists a board's saved fields (backup export uses it
+    too); `background` is always present as a key, because a loaded board is
+    spread over the live store and a *missing* key would leave the previous
+    board's background showing. Duplicate board and "new board from these
+    lists" carry it over.
+  - **Undo.** `setBackground` goes through `withHistory` like any edit.
+    Picking a custom colour is one drag = one write: `useColorDraft`
+    (extracted from `CustomizePanel`, now shared) previews live and saves once
+    when the panel closes or a hex is confirmed; Escape discards. The preview
+    lives in `store/backgroundPreviewStore.ts`, never in the board store.
+  - **Rendering.** `BoardBackdrop` is a separate layer behind the lists
+    (`z-index: -1` in an isolated canvas), subscribed to the background alone,
+    so a picker drag repaints one element and re-renders no list. The colour is
+    the `--board-background` custom property. It applies as-is in both themes:
+    an explicit user choice, and lists and cards sit on their own surfaces.
+  - **Readable chrome.** Only controls with no surface of their own sit on the
+    background: the toolbar icons and "Add a list". `chromeOnColor`
+    (`domain/colors.ts`) leaves them alone while the theme's dimmer text
+    reaches 4.5:1 on the colour; otherwise it picks pure black or white text
+    (always >= 4.58:1; mid-tones like blue need it, neither scheme's own text
+    clears 4.5:1) plus the scheme whose surfaces suit it. Applied as
+    `data-scheme` / `data-ink` on just those elements. `tokens.css` now
+    declares the neutral tokens for `[data-scheme="dark|light"]` as well as
+    the root theme, so any subtree can force a scheme; lists and cards never
+    do. `PALETTE_HEX` in `styles/surfaces.ts` mirrors the palette for this.
+  - **Export.** The backdrop is not inside the captured rail, so PNG/PDF save
+    and copy-as-image fill behind it explicitly (`exportBackground.ts`). Copy
+    stays transparent when the board has no background, as before.

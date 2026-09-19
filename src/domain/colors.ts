@@ -9,6 +9,7 @@ import {
   CARD_TINT_ALPHA,
   INK_DARK,
   INK_LIGHT,
+  PALETTE_HEX,
   THEME_SURFACES,
   type ThemeName,
 } from "../styles/surfaces";
@@ -133,6 +134,41 @@ export function blend(overlay: Rgb, alpha: number, base: Rgb): Rgb {
   return overlay.map((channel, index) =>
     Math.round(channel * alpha + base[index] * (1 - alpha)),
   ) as unknown as Rgb;
+}
+
+/** The colour as `#rrggbb`, resolving a palette name through its mirror. */
+export function solidHex(color: ItemColor): string {
+  return isHexColor(color) ? color : PALETTE_HEX[color];
+}
+
+/** How bare controls should be drawn to stay readable on a colour: which
+    scheme's surfaces to use, and whether to force pure black or white text. */
+export interface Chrome {
+  readonly scheme: ThemeName;
+  readonly ink: InkTone;
+}
+
+/**
+ * How controls with no surface of their own (a toolbar icon, "Add a list")
+ * should look directly on `color`.
+ *
+ * Whenever the theme's own dimmer text (the harder case) reaches 4.5:1 there,
+ * nothing changes -- a background rarely alters how the toolbar looks. When
+ * it doesn't, the controls switch to pure black or white text, whichever
+ * reads better (always at least 4.58:1, as for cards), together with the
+ * scheme whose surfaces suit it, so the undo and zoom pills stay legible too.
+ * Mid-tones are the reason for the ink: on a mid blue neither scheme's own
+ * text clears 4.5:1, and only black or white does.
+ */
+export function chromeOnColor(color: ItemColor, theme: ThemeName): Chrome {
+  const background = toRgb(solidHex(color));
+  const own = contrastRatio(toRgb(THEME_SURFACES[theme].textSecondary), background);
+  if (own >= MIN_CONTRAST) {
+    return { scheme: theme, ink: "default" };
+  }
+  return contrastRatio(toRgb(INK_LIGHT), background) >= contrastRatio(toRgb(INK_DARK), background)
+    ? { scheme: "dark", ink: "light" }
+    : { scheme: "light", ink: "dark" };
 }
 
 /** Which text colour a card should use: the theme's own, or a forced one. */

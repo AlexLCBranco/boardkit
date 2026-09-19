@@ -29,6 +29,7 @@ import {
   useRenameBoard,
   useSwitchBoard,
 } from "../../store/selectors";
+import { BackgroundPanel } from "./BackgroundPanel";
 import { exportBackup, importBackup } from "./backup";
 import { AutomaticBackupItems, BackupStatusLine, useBackupAttention } from "./BackupMenuItems";
 import styles from "./BoardSwitcher.module.css";
@@ -57,6 +58,8 @@ export function BoardSwitcher() {
   const deleteBoard = useDeleteBoard();
   const backupNeedsAttention = useBackupAttention();
   const fileInput = useRef<HTMLInputElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const [choosingBackground, setChoosingBackground] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [namingNewBoard, setNamingNewBoard] = useState(false);
   const [namingLayoutBoard, setNamingLayoutBoard] = useState(false);
@@ -86,6 +89,7 @@ export function BoardSwitcher() {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
+            ref={triggerRef}
             type="button"
             className={styles.trigger}
             aria-label="Switch board"
@@ -111,6 +115,9 @@ export function BoardSwitcher() {
           <DropdownMenuItem onSelect={() => setNamingLayoutBoard(true)}>
             New board from these lists
           </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => setChoosingBackground(true)}>
+            Background…
+          </DropdownMenuItem>
           <DropdownMenuItem disabled={boards.length <= 1} onSelect={() => setConfirmingDelete(true)}>
             Delete this board…
           </DropdownMenuItem>
@@ -121,6 +128,15 @@ export function BoardSwitcher() {
           <AutomaticBackupItems />
         </DropdownMenuContent>
       </DropdownMenu>
+      {/* Keyed by board, so switching boards while it is open drops an unsaved
+          preview instead of applying it to the wrong board. */}
+      {choosingBackground && (
+        <BackgroundPanel
+          key={boardId}
+          anchorRef={triggerRef}
+          onClose={() => setChoosingBackground(false)}
+        />
+      )}
       {/* Outside the menu on purpose: the menu unmounts as soon as an item
           is chosen, and the file picker's change event needs an input that
           is still in the page when the user comes back from it. */}

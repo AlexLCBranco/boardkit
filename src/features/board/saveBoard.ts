@@ -1,4 +1,5 @@
 import { canvasToBlob, renderToCanvas } from "./copyAsImage";
+import { exportBackgroundColor } from "./exportBackground";
 import { jpegToPdf } from "./imagePdf";
 
 /**
@@ -12,9 +13,14 @@ import { jpegToPdf } from "./imagePdf";
 const PIXEL_RATIO = 2;
 const JPEG_QUALITY = 0.92;
 
-/** The first opaque background at or above `node`, since the rail itself is
-    transparent and a JPEG would otherwise render that as black. */
+/** What to fill behind the rail: the board's own background if it has one,
+    else the first opaque background at or above `node`. The rail itself is
+    transparent, and a JPEG would otherwise render that as black. */
 function backgroundBehind(node: HTMLElement): string {
+  const own = exportBackgroundColor();
+  if (own !== undefined) {
+    return own;
+  }
   for (let el: HTMLElement | null = node; el; el = el.parentElement) {
     const color = getComputedStyle(el).backgroundColor;
     if (color !== "rgba(0, 0, 0, 0)" && color !== "transparent") {

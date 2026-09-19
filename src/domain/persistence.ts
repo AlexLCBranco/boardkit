@@ -1,3 +1,4 @@
+import { knownBackground } from "./background";
 import { withKnownKinds } from "./cardKinds";
 import { withKnownColors } from "./colors";
 import type { BoardId, BoardState, BoardSummary } from "./types";
@@ -19,19 +20,24 @@ export interface PersistedBoardV1 {
 }
 
 /**
- * Copies out exactly the six content fields. Callers pass the whole store
- * state (which also carries `boardId`, `boards`, `history` and the actions),
- * so anything not named here would leak into storage -- and, worse, be spread
+ * Copies out exactly the content fields. Callers pass the whole store state
+ * (which also carries `boardId`, `boards`, `history` and the actions), so
+ * anything not named here would leak into storage -- and, worse, be spread
  * back over the live store on load, e.g. an old board list overwriting the
  * current one when switching boards.
+ *
+ * `background` is always present as a key, even when it is `undefined`: a
+ * loaded board is spread over the live store, and a key that is merely
+ * missing would leave the *previous* board's background showing.
+ * `JSON.stringify` drops an undefined value, so nothing extra is saved.
  */
-function pickContent(board: BoardState): BoardState {
-  const { lists, cards, listOrder, cardOrder, trash, trashedLists } = board;
-  return { lists, cards, listOrder, cardOrder, trash, trashedLists };
+export function boardContent(board: BoardState): BoardState {
+  const { lists, cards, listOrder, cardOrder, trash, trashedLists, background } = board;
+  return { lists, cards, listOrder, cardOrder, trash, trashedLists, background };
 }
 
 export function serializeBoard(board: BoardState): PersistedBoardV1 {
-  return { version: SCHEMA_VERSION, board: pickContent(board) };
+  return { version: SCHEMA_VERSION, board: boardContent(board) };
 }
 
 /**
@@ -63,7 +69,9 @@ export function deserializeBoard(data: unknown): BoardState | null {
   // the list or card loads uncoloured instead of breaking the board.
   const cards = withKnownColors(withKnownKinds(data.board.cards));
   const lists = withKnownColors(data.board.lists);
-  return pickContent({ ...data.board, lists, cards, trash, trashedLists });
+  // A background this build can't read is dropped the same way.
+  const background = knownBackground(data.board.background);
+  return boardContent({ ...data.board, lists, cards, trash, trashedLists, background });
 }
 
 function isPersistedBoardV1(data: unknown): data is PersistedBoardV1 {

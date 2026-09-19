@@ -9,10 +9,6 @@
  */
 
 :root {
-  /* Tells the browser which native controls (scrollbars, form fields, the
-     colour-picker's text selection) to draw. Flipped with the theme below. */
-  color-scheme: dark;
-
   /* ---- Spacing scale (4px base) ---- */
   --space-1: 4px;
   --space-2: 8px;
@@ -41,34 +37,6 @@
   --weight-normal: 400;
   --weight-medium: 500;
   --weight-bold: 600;
-
-  /* ---- Neutral palette (black) ---- */
-  --surface-app: #14161b;
-  --surface-raised: #1d2026;
-  --surface-sunken: #0f1115;
-  --surface-hover: rgba(255, 255, 255, 0.06);
-  --surface-active: rgba(255, 255, 255, 0.1);
-
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.16);
-
-  --text-primary: #e8eaee;
-  --text-secondary: #a3abb9;
-  --text-muted: #737d8c;
-  --text-inverted: #14181f;
-
-  --accent: #748ffc;
-  --accent-hover: #91a7ff;
-  /* Links use body-text colour, marked by an accent underline: a coloured
-     link fails WCAG AA on the yellow/teal/green card tints (2.6-3.6:1). */
-  --text-link: var(--text-primary);
-  --text-link-underline: var(--accent-hover);
-  --focus-ring: rgba(116, 143, 252, 0.5);
-
-  /* ---- Elevation ---- */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 2px 6px rgba(0, 0, 0, 0.45);
-  --shadow-lifted: 0 12px 28px rgba(0, 0, 0, 0.6);
 
   /* ---- Motion ----
      Durations stay short: anything above ~200ms reads as sluggish during drag. */
@@ -125,6 +93,48 @@
 }
 
 /**
+ * The dark theme's neutrals (surfaces, borders, text, accent, elevation).
+ *
+ * Declared for `:root` *and* `[data-scheme="dark"]`, so any element can force
+ * a scheme for its own subtree (see the light block below for why). The theme
+ * itself is only ever on <html>, via `data-theme`.
+ *
+ * `color-scheme` tells the browser which native controls (scrollbars, form
+ * fields) to draw, and flips with the scheme.
+ */
+:root,
+[data-scheme="dark"] {
+  color-scheme: dark;
+
+  --surface-app: #14161b;
+  --surface-raised: #1d2026;
+  --surface-sunken: #0f1115;
+  --surface-hover: rgba(255, 255, 255, 0.06);
+  --surface-active: rgba(255, 255, 255, 0.1);
+
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.16);
+
+  --text-primary: #e8eaee;
+  --text-secondary: #a3abb9;
+  --text-muted: #737d8c;
+  --text-inverted: #14181f;
+
+  --accent: #748ffc;
+  --accent-hover: #91a7ff;
+  /* Links use body-text colour, marked by an accent underline: a coloured
+     link fails WCAG AA on the yellow/teal/green card tints (2.6-3.6:1). */
+  --text-link: var(--text-primary);
+  --text-link-underline: var(--accent-hover);
+  --focus-ring: rgba(116, 143, 252, 0.5);
+
+  /* ---- Elevation ---- */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 2px 6px rgba(0, 0, 0, 0.45);
+  --shadow-lifted: 0 12px 28px rgba(0, 0, 0, 0.6);
+}
+
+/**
  * The light theme.
  *
  * Overrides only the tokens whose value differs from dark, under the same
@@ -138,10 +148,17 @@
  *  - `--ink-light` / `--ink-dark`: pure white and black by design;
  *  - spacing, radii, type, motion and layout: nothing about them is themed.
  *
+ * Also declared for `[data-scheme="light"]`. A board with a background puts
+ * its bare controls (the toolbar icons, "Add a list") in whichever scheme
+ * reads best on that colour, by setting `data-scheme` on just those
+ * elements -- lists and cards stay in the app's theme. Everything inside
+ * such an element follows: text, hover, pills, shadcn buttons.
+ *
  * The neutral values below are mirrored in styles/surfaces.ts, which the
- * card-text contrast maths reads. Change them together.
+ * contrast maths reads. Change them together.
  */
-:root[data-theme="light"] {
+:root[data-theme="light"],
+[data-scheme="light"] {
   color-scheme: light;
 
   --surface-app: #eef0f4;
@@ -163,10 +180,41 @@
   --accent: #3b5bdb;
   --accent-hover: #364fc7;
   --focus-ring: rgba(59, 91, 219, 0.4);
+  /* Restated (not inherited): a custom property that reads another one is
+     resolved where it is declared, so a forced scheme must redeclare it. */
+  --text-link: var(--text-primary);
+  --text-link-underline: var(--accent-hover);
 
   /* Softer than the dark theme's: the same black at those opacities looks
      heavy on a pale surface. */
   --shadow-sm: 0 1px 2px rgba(20, 30, 50, 0.14);
   --shadow-md: 0 2px 6px rgba(20, 30, 50, 0.18);
   --shadow-lifted: 0 12px 28px rgba(20, 30, 50, 0.28);
+}
+
+/**
+ * Forced text colour, for a subtree drawn directly on a colour that neither
+ * scheme's own text reads on (a mid-tone board background; see
+ * domain/colors.ts `chromeOnColor`). Always paired with the `data-scheme`
+ * whose surfaces suit it, so pills and hover states inside stay legible.
+ * Every text token is re-pointed, so nothing inside needs its own rule;
+ * `--text-link` too, as it was resolved back at :root. `color` is restated
+ * because plain text inherits an already-computed colour.
+ */
+[data-scheme][data-ink="light"] {
+  color: var(--ink-light);
+  --text-primary: var(--ink-light);
+  --text-secondary: var(--ink-light);
+  --text-muted: var(--ink-light);
+  --text-link: var(--ink-light);
+  --text-link-underline: var(--ink-light);
+}
+
+[data-scheme][data-ink="dark"] {
+  color: var(--ink-dark);
+  --text-primary: var(--ink-dark);
+  --text-secondary: var(--ink-dark);
+  --text-muted: var(--ink-dark);
+  --text-link: var(--ink-dark);
+  --text-link-underline: var(--ink-dark);
 }

@@ -19,6 +19,7 @@ import {
   restoreListFromTrash,
 } from "../domain/trash";
 import type {
+  BoardBackground,
   BoardId,
   BoardState,
   BoardSummary,
@@ -98,6 +99,8 @@ export interface BoardActions {
   setListIcon: (listId: ListId, icon: IconKey | undefined) => void;
   setListWidths: (updates: Readonly<Record<ListId, ListWidth | undefined>>) => void;
   /** `undefined` makes it a normal card again. One undo step. */
+  /** `undefined` goes back to the theme's own background. One undo step. */
+  setBackground: (background: BoardBackground | undefined) => void;
   setCardKind: (cardId: CardId, kind: CardKind | undefined) => void;
   setCardColor: (cardId: CardId, color: ItemColor | undefined) => void;
   setCardDescription: (cardId: CardId, description: string | undefined) => void;
@@ -383,6 +386,8 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
       return withHistory(state, { lists });
     }),
 
+  setBackground: (background) => set((state) => withHistory(state, { background })),
+
   setCardKind: (cardId, kind) =>
     set((state) =>
       withHistory(state, {
@@ -455,7 +460,8 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
   // ever looked up within one board, so the copy can keep them as-is -- and
   // because the state is immutable, sharing the same `lists`/`cards`
   // references with the original is safe: the first edit to either board
-  // copies the slice it touches. Trash is not carried over; a fresh week
+  // copies the slice it touches. The background is carried over: a copy of a
+  // board should look like it. Trash is not carried over; a fresh week
   // should not inherit last week's deleted cards.
   //
   // Written to storage immediately rather than left to the subscriber below:
@@ -472,6 +478,7 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
         cardOrder: state.cardOrder,
         trash: [],
         trashedLists: [],
+        background: state.background,
       };
       const boards = [...state.boards, { id: boardId, name }];
       savePersistedBoardNow(board, boardId);
@@ -573,7 +580,8 @@ useBoardStore.subscribe((state, previous) => {
     state.listOrder !== previous.listOrder ||
     state.cardOrder !== previous.cardOrder ||
     state.trash !== previous.trash ||
-    state.trashedLists !== previous.trashedLists
+    state.trashedLists !== previous.trashedLists ||
+    state.background !== previous.background
   ) {
     schedulePersist(state, state.boardId);
   }

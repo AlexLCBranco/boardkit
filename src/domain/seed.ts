@@ -35,7 +35,9 @@ export function createBoard(blueprints: readonly ListBlueprint[]): BoardState {
     }
   }
 
-  return { lists, cards, listOrder, cardOrder, trash: [], trashedLists: [] };
+  // `background` is spelled out so that spreading a new board over the live
+  // store clears the previous board's background rather than keeping it.
+  return { lists, cards, listOrder, cardOrder, trash: [], trashedLists: [], background: undefined };
 }
 
 /** A board with no lists at all -- what a deliberately-created new board

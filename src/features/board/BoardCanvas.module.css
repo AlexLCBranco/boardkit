@@ -1,8 +1,26 @@
 .canvas {
+  /* `isolation` makes the canvas its own stacking context, so the backdrop's
+     negative z-index sends it behind the toolbar and lists but not behind the
+     page. */
+  position: relative;
+  isolation: isolate;
   display: flex;
   flex-direction: column;
   height: 100%;
   min-height: 0;
+}
+
+/* The board's background: one layer behind everything else on the canvas,
+   set by a custom property (see BoardBackdrop). With no background it is
+   transparent and the page's own surface shows through. It is a separate
+   element, never `background-attachment: fixed`, so scrolling and dragging
+   the lists paint nothing extra. */
+.backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--board-background, transparent);
+  pointer-events: none;
 }
 
 .toolbar {

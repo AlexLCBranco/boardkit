@@ -75,6 +75,15 @@ export type ListWidth = number;
 export const CARD_KINDS = ["divider", "note"] as const;
 export type CardKind = (typeof CARD_KINDS)[number];
 
+/**
+ * What is behind a board's lists. Per board, so boards can be told apart at a
+ * glance. A tagged union so a second kind (an image) is a new variant rather
+ * than a change to this one; `undefined` on the board means the theme's own
+ * background. The colour is applied as-is in both themes: it is the user's
+ * explicit choice, and the lists and cards sit on their own themed surfaces.
+ */
+export type BoardBackground = { readonly kind: "color"; readonly color: ItemColor };
+
 export interface Card {
   readonly id: CardId;
   readonly title: string;
@@ -137,6 +146,9 @@ export interface BoardState {
       `listOrder` loses the id -- so restoring is just putting the id back,
       list and cards intact, with no separate bookkeeping for the cards. */
   readonly trashedLists: readonly TrashedListEntry[];
+  /** Absent means the theme's default. Optional so boards saved before
+      backgrounds existed load unchanged (same approach as `trash`). */
+  readonly background?: BoardBackground;
 }
 
 /** One card sitting in the trash: which list to put it back into, and when
