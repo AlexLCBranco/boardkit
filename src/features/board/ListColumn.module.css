@@ -232,6 +232,29 @@
   font-size: var(--font-size-sm);
 }
 
+/* Offered above the composer while something is on the clipboard. Styled to
+   sit quietly next to "Add a card" rather than compete with it. */
+.pasteButton {
+  display: block;
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  color: var(--accent-hover);
+  font: inherit;
+  font-weight: var(--weight-medium);
+  text-align: left;
+  cursor: pointer;
+}
+
+.pasteButton:hover {
+  background: var(--surface-hover);
+}
+
+.pasteButton:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
 .emptyDropZone {
   min-height: 48px;
   border: 1px dashed transparent;

@@ -15,3 +15,8 @@ export const MAX_CARDS_PER_LIST = 50;
 export function isListFull(cardIds: readonly CardId[]): boolean {
   return cardIds.length >= MAX_CARDS_PER_LIST;
 }
+
+/** How many more cards a list can take before it is full. */
+export function cardRoom(cardIds: readonly CardId[]): number {
+  return Math.max(0, MAX_CARDS_PER_LIST - cardIds.length);
+}

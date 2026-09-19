@@ -40,6 +40,14 @@
   transform: translateY(-1px);
 }
 
+/* Picked by the marquee. A ring outside the card rather than a colour change,
+   so it reads on every tint and never fights the card's own colour. Only
+   box-shadow changes, and it already transitions above. */
+.selected,
+.selected:hover {
+  box-shadow: var(--shadow-md), 0 0 0 2px var(--accent);
+}
+
 /* The original card while it is the one being dragged: left in place as a
    placeholder (so the list doesn't collapse) but faded, since the lifted
    copy in the DragOverlay is the one the user is actually looking at. */

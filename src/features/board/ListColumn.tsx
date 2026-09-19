@@ -30,16 +30,18 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from "../../components/ui/context-menu";
-import { MAX_CARDS_PER_LIST } from "../../domain/limits";
+import { MAX_CARDS_PER_LIST, cardRoom } from "../../domain/limits";
 import type { ListId } from "../../domain/types";
 import {
   useAddCard,
   useCardCount,
   useCardIds,
+  useClipboardCount,
   useIsListFull,
   useDeleteList,
   useDuplicateList,
   useList,
+  usePasteInto,
   useRenameList,
   useSetListColor,
   useSetListIcon,
@@ -86,6 +88,8 @@ function ListColumnImpl({ listId }: ListColumnProps) {
   const deleteList = useDeleteList();
   const duplicateList = useDuplicateList();
   const addCard = useAddCard();
+  const clipboardCount = useClipboardCount();
+  const pasteInto = usePasteInto();
   const setListColor = useSetListColor();
   const setListIcon = useSetListIcon();
   const setListWidths = useSetListWidths();
@@ -399,6 +403,16 @@ function ListColumnImpl({ listId }: ListColumnProps) {
           <EmptyListDropZone listId={listId} />
         )}
         <div className={styles.composerSlot}>
+          {clipboardCount > 0 && !isFull && (
+            <button
+              type="button"
+              className={styles.pasteButton}
+              onClick={() => pasteInto(listId)}
+              data-capture-exclude="true"
+            >
+              {pasteLabel(clipboardCount, cardRoom(cardIds))}
+            </button>
+          )}
           {isFull ? (
             <p className={styles.fullNote} data-capture-exclude="true">
               List is full · {MAX_CARDS_PER_LIST} cards max
@@ -447,6 +461,13 @@ function EmptyListDropZone({ listId }: { readonly listId: ListId }) {
       className={`${styles.emptyDropZone} ${isOver ? styles.emptyDropZoneOver : ""}`}
     />
   );
+}
+
+/** "Paste 3 cards", or "Paste 2 of 5 cards" when the list can only take part
+    of the clipboard -- the paste says up front what it will leave out. */
+function pasteLabel(count: number, room: number): string {
+  const noun = count === 1 ? "card" : "cards";
+  return room >= count ? `Paste ${count} ${noun}` : `Paste ${room} of ${count} ${noun}`;
 }
 
 function clamp(value: number, min: number, max: number): number {

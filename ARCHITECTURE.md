@@ -523,3 +523,31 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   `--text-link` (body text colour) with an accent underline
   (`--text-link-underline`): a blue link text failed WCAG AA on the yellow,
   teal and green card tints (2.6-3.6:1), body text clears it everywhere.
+- **Marquee select, copy and paste of cards (v0.0.38).** Dragging on empty
+  canvas draws a box and selects every card it touches; the selection stays
+  after release and a floating bar offers Copy. Shift-drag adds to the
+  selection, a click on empty canvas or Esc clears it. Copied cards can be
+  pasted with a "Paste N cards" button at the bottom of each list, or Ctrl+V
+  into the list under the pointer. Cards only for now; lists are not
+  selectable. Where things live:
+  `store/selectionStore.ts` is a second Zustand store for the selection and
+  the clipboard -- transient UI state, so it stays out of `boardStore`'s
+  history and persistence, and the clipboard survives a board switch (paste
+  into another board works). A card reads `useIsCardSelected(id)`, a boolean,
+  so a marquee re-renders only the cards it gains or loses. The store prunes
+  ids that leave the board (deleted cards, board switch).
+  `domain/clipboard.ts` (pure) holds the rules: `cardsInBoardOrder` (copy in
+  board order, dropping trashed cards) and `pasteCardsIntoList` (fresh ids via
+  `copyCard`, bottom of the list, cut off at the 50-card limit -- the button
+  says "Paste 2 of 5 cards" when it will). `boardStore.pasteCards` puts it in
+  `withHistory`, so a paste is one undo step. The marquee itself is
+  `features/board/useMarqueeSelection.ts`: it writes the box's transform and
+  size straight to a fixed-position div (no React state per pointer move, like
+  the column resize) and hit-tests live `getBoundingClientRect`s, clipping each
+  card to its list's scroller so a card scrolled out of view is not selected.
+  It ignores presses on cards, headers and controls, on the scrollbar, and on
+  anything portalled out of the canvas (React bubbles those events through the
+  tree). dnd-kit is untouched: its sensor only listens on cards and headers.
+  Ctrl+C/V/Esc are in `useSelectionShortcuts.ts`, a stopgap beside
+  `useUndoRedoShortcuts` until the keyboard-shortcuts plan folds both into one
+  registry.

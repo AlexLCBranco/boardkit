@@ -10,6 +10,7 @@ import {
   useCard,
   useCardNumber,
   useDeleteCard,
+  useIsCardSelected,
   useRenameCard,
   useSetCardColor,
   useSetCardDescription,
@@ -53,6 +54,7 @@ function CardItemImpl({ cardId, listId, thotsMode }: CardItemProps) {
   const setCardDescription = useSetCardDescription();
   const setCardPostgameDescription = useSetCardPostgameDescription();
   const number = useCardNumber(listId, cardId);
+  const isSelected = useIsCardSelected(cardId);
 
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
   const customizeTriggerRef = useRef<HTMLButtonElement>(null);
@@ -115,7 +117,7 @@ function CardItemImpl({ cardId, listId, thotsMode }: CardItemProps) {
     <article
       ref={setNodeRef}
       style={style}
-      className={`${styles.card} ${isDragging ? styles.dragging : ""}`}
+      className={`${styles.card} ${isDragging ? styles.dragging : ""} ${isSelected ? styles.selected : ""}`}
       data-card-id={cardId}
       onContextMenu={handleCardContextMenu}
       {...attributes}

@@ -35,6 +35,21 @@
   min-width: 100%;
 }
 
+/* The selection box. Fixed to the viewport and positioned by the marquee
+   hook writing `transform` and size straight to the element; being fixed,
+   resizing it never reflows anything else. Hidden until a drag starts. */
+.marquee {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: var(--z-sticky);
+  display: none;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  background: color-mix(in oklab, var(--accent) 15%, transparent);
+  pointer-events: none;
+}
+
 .addListSlot {
   flex: 0 0 var(--list-width);
   width: var(--list-width);

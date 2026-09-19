@@ -8,8 +8,11 @@ import { CopyBoardButton } from "./CopyBoardButton";
 import { BoardDragContext } from "./DragContext";
 import { ListColumn } from "./ListColumn";
 import { SaveBoardButton } from "./SaveBoardButton";
+import { SelectionBar } from "./SelectionBar";
 import { ShortcutsDialog } from "./ShortcutsDialog";
 import { UndoRedoControls } from "./UndoRedoControls";
+import { useMarqueeSelection } from "./useMarqueeSelection";
+import { useSelectionShortcuts } from "./useSelectionShortcuts";
 import { useUndoRedoShortcuts } from "./useUndoRedoShortcuts";
 import { ZoomControls } from "./ZoomControls";
 
@@ -32,7 +35,10 @@ export function BoardCanvas() {
   const addList = useAddList();
   const [zoom, setZoom] = useState(1);
   const railRef = useRef<HTMLDivElement>(null);
+  const marqueeRef = useRef<HTMLDivElement>(null);
+  const handleCanvasPointerDown = useMarqueeSelection(marqueeRef);
   useUndoRedoShortcuts();
+  useSelectionShortcuts();
 
   return (
     <div className={styles.canvas}>
@@ -43,7 +49,7 @@ export function BoardCanvas() {
         <CopyBoardButton railRef={railRef} />
         <SaveBoardButton railRef={railRef} />
       </div>
-      <div className={styles.scrollArea} data-board-canvas>
+      <div className={styles.scrollArea} data-board-canvas onPointerDown={handleCanvasPointerDown}>
         <BoardDragContext>
           <div ref={railRef} className={styles.rail} style={{ zoom }}>
             <SortableContext items={[...listOrder]} strategy={horizontalListSortingStrategy}>
@@ -57,6 +63,8 @@ export function BoardCanvas() {
           </div>
         </BoardDragContext>
       </div>
+      <div ref={marqueeRef} className={styles.marquee} aria-hidden="true" />
+      <SelectionBar />
     </div>
   );
 }

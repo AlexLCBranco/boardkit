@@ -37,6 +37,16 @@ const SHORTCUT_GROUPS: ShortcutGroup[] = [
     ],
   },
   {
+    title: "Selecting cards (drag on empty space)",
+    entries: [
+      { keys: ["Drag"], description: "Draw a box to select every card it touches" },
+      { keys: ["Shift", "Drag"], description: "Add to the current selection" },
+      { keys: ["Ctrl", "C"], description: "Copy the selected cards" },
+      { keys: ["Ctrl", "V"], description: "Paste into the list under the pointer" },
+      { keys: ["Esc"], description: "Clear the selection" },
+    ],
+  },
+  {
     title: "Drag and drop",
     entries: [
       { keys: ["Tab"], description: "Focus a card or list to move it by keyboard" },

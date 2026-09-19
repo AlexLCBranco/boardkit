@@ -1,5 +1,6 @@
 import { create } from "zustand";
 
+import { pasteCardsIntoList } from "../domain/clipboard";
 import { duplicateList as duplicateListState, layoutOnly } from "../domain/duplicate";
 import { createBoardId, createCardId, createListId } from "../domain/ids";
 import { EMPTY_HISTORY, pushEntry, stepRedo, stepUndo, type BoardPatch, type History } from "../domain/history";
@@ -21,6 +22,7 @@ import type {
   BoardId,
   BoardState,
   BoardSummary,
+  Card,
   CardId,
   IconKey,
   ListId,
@@ -71,6 +73,9 @@ export interface BoardActions {
   deleteList: (listId: ListId) => void;
   duplicateList: (listId: ListId) => void;
   deleteCard: (listId: ListId, cardId: CardId) => void;
+  /** Pastes copies of `cards` at the bottom of a list, as far as the card
+      limit allows. One undo step. */
+  pasteCards: (listId: ListId, cards: readonly Card[]) => void;
   restoreCard: (cardId: CardId) => void;
   permanentlyDeleteCard: (cardId: CardId) => void;
   emptyTrash: () => void;
@@ -255,6 +260,12 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
   // deleted forever.
   deleteCard: (listId, cardId) =>
     set((state) => withHistory(state, moveCardToTrash(state, listId, cardId, Date.now()))),
+
+  pasteCards: (listId, cards) =>
+    set((state) => {
+      const patch = pasteCardsIntoList(state, listId, cards);
+      return patch ? withHistory(state, patch) : state;
+    }),
 
   restoreCard: (cardId) =>
     set((state) => {

@@ -1,0 +1,58 @@
+/* Fixed to the viewport so it stays put while the board scrolls under it.
+   The entrance animates opacity and a small rise; the keyframes repeat the
+   centring translateX because an animated `transform` replaces the static one. */
+.bar {
+  position: fixed;
+  bottom: var(--space-5);
+  left: 50%;
+  z-index: var(--z-sticky);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-lifted);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  animation: selection-bar-in var(--duration-fast) var(--ease-out);
+  transform: translateX(-50%);
+}
+
+@keyframes selection-bar-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.count {
+  padding-right: var(--space-1);
+  color: var(--text-secondary);
+}
+
+.button {
+  min-width: 28px;
+  height: 28px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--surface-hover);
+  color: var(--text-primary);
+  font: inherit;
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+}
+
+.button:hover {
+  background: var(--surface-active);
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}

@@ -13,6 +13,7 @@ import type {
 } from "../domain/types";
 import { useBackupStore } from "./backupStore";
 import { useBoardStore } from "./boardStore";
+import { useSelectionStore } from "./selectionStore";
 
 /**
  * The selector layer: every subscription the UI makes, in one reviewable file.
@@ -292,6 +293,52 @@ export function useSendCardToBoard() {
 
 export function useSendListToBoard() {
   return useBoardStore((state) => state.sendListToBoard);
+}
+
+/* Selection and the copy clipboard live in their own store
+   (`selectionStore.ts`): transient UI state, never saved or undoable. */
+
+/** Whether one card is selected. A boolean, so sweeping a marquee re-renders
+    only the cards it actually gains or loses. */
+export function useIsCardSelected(cardId: CardId): boolean {
+  return useSelectionStore((state) => state.selected[cardId] === true);
+}
+
+export function useSelectedCount(): number {
+  return useSelectionStore((state) => Object.keys(state.selected).length);
+}
+
+/** How many cards a paste would bring in. */
+export function useClipboardCount(): number {
+  return useSelectionStore((state) => state.clipboard.length);
+}
+
+/** Changes on every copy, even of the same cards -- what "Copied" keys off. */
+export function useClipboard(): readonly Card[] {
+  return useSelectionStore((state) => state.clipboard);
+}
+
+export function useSetSelectedCards() {
+  return useSelectionStore((state) => state.setSelected);
+}
+
+export function useClearSelection() {
+  return useSelectionStore((state) => state.clearSelection);
+}
+
+export function useCopySelection() {
+  return useSelectionStore((state) => state.copySelection);
+}
+
+export function usePasteInto() {
+  return useSelectionStore((state) => state.pasteInto);
+}
+
+/** A one-off read for event handlers (a marquee starting with Shift held).
+    Deliberately not a hook: subscribing would re-render the caller on every
+    selection change. */
+export function readSelectedCardIds(): CardId[] {
+  return Object.keys(useSelectionStore.getState().selected) as CardId[];
 }
 
 /* Backups live in their own store (`backupStore.ts`): they are per browser,
