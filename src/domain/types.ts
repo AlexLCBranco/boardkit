@@ -24,6 +24,8 @@ type Brand<T, TBrand extends string> = T & { readonly [brand]: TBrand };
 export type ListId = Brand<string, "ListId">;
 export type CardId = Brand<string, "CardId">;
 export type BoardId = Brand<string, "BoardId">;
+/** Names a background image kept in IndexedDB (store/imageStore.ts). */
+export type ImageId = Brand<string, "ImageId">;
 
 /**
  * The customisation vocabulary.
@@ -77,12 +79,30 @@ export type CardKind = (typeof CARD_KINDS)[number];
 
 /**
  * What is behind a board's lists. Per board, so boards can be told apart at a
- * glance. A tagged union so a second kind (an image) is a new variant rather
- * than a change to this one; `undefined` on the board means the theme's own
- * background. The colour is applied as-is in both themes: it is the user's
- * explicit choice, and the lists and cards sit on their own themed surfaces.
+ * glance; `undefined` on the board means the theme's own background. A tagged
+ * union, so each kind is its own shape.
+ *
+ * A colour is applied as-is in both themes: it is the user's explicit choice,
+ * and the lists and cards sit on their own themed surfaces.
+ *
+ * An image is *not* stored on the board: boards live in `localStorage`
+ * (about 5 MB for the whole app) and one photo would fill it. The board holds
+ * only a reference, `imageId`, and the picture itself sits in IndexedDB.
  */
-export type BoardBackground = { readonly kind: "color"; readonly color: ItemColor };
+export type BoardBackground =
+  | { readonly kind: "color"; readonly color: ItemColor }
+  | {
+      readonly kind: "image";
+      readonly imageId: ImageId;
+      /** How strongly the theme's own surface colour is laid over the image
+          so the lists stay readable: 0 (none) to `MAX_WASH`
+          (domain/background.ts). Dark theme dims, light theme lightens. */
+      readonly wash: number;
+      /** The image's average colour, measured once when it was chosen. The
+          toolbar's text is picked against it, and it is what the board falls
+          back on while the picture itself is still loading. */
+      readonly average: HexColor;
+    };
 
 export interface Card {
   readonly id: CardId;

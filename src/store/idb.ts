@@ -43,3 +43,12 @@ export async function idbSet(key: string, value: unknown): Promise<void> {
 export async function idbDelete(key: string): Promise<void> {
   await run("readwrite", (store) => store.delete(key));
 }
+
+/** Every key that starts with `prefix`, for callers that keep a family of
+    records under one prefix (see `imageStore.ts`). */
+export function idbKeys(prefix: string): Promise<string[]> {
+  return run(
+    "readonly",
+    (store) => store.getAllKeys(IDBKeyRange.bound(prefix, `${prefix}￿`)) as IDBRequest<string[]>,
+  );
+}

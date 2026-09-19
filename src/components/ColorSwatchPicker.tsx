@@ -20,6 +20,10 @@ interface ColorSwatchPickerProps {
   readonly onForget: (color: HexColor) => void;
   /** What the "no colour" swatch is called, for screen readers. */
   readonly noneLabel?: string;
+  /** Whether "no colour" is the current choice. Normally the same as `value`
+      being undefined; a host whose choice is something else entirely (a
+      background image) says otherwise, so no swatch looks selected wrongly. */
+  readonly noneIsSelected?: boolean;
 }
 
 /**
@@ -53,6 +57,7 @@ export function ColorSwatchPicker({
   onDraftChange,
   onForget,
   noneLabel = "No colour",
+  noneIsSelected = true,
 }: ColorSwatchPickerProps) {
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [start] = useState(() => startingColor(value));
@@ -61,7 +66,8 @@ export function ColorSwatchPicker({
   // of (or never reached) this browser's recent list, e.g. after an import.
   const customSwatches =
     value !== undefined && isHexColor(value) && !recent.includes(value) ? [value, ...recent] : recent;
-  const isSelected = (color: ItemColor | undefined) => draft === null && value === color;
+  const isSelected = (color: ItemColor | undefined) =>
+    draft === null && value === color && (color !== undefined || noneIsSelected);
 
   return (
     <div className={styles.wrapper}>

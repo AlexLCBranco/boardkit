@@ -141,12 +141,15 @@ async function writeBackupFile(target: Folder): Promise<void> {
   if (signature === lastWritten) return;
 
   const name = backupFileName(now);
+  // Built before the try: a failure reading a picture is not a folder problem
+  // and must not be reported as one below.
+  const text = JSON.stringify(await buildBackup(boards, now), null, 2);
   try {
     // `createWritable` writes to a temporary file and only replaces the real
     // one on `close()`, so a crash mid-write cannot leave half a backup.
     const file = await target.getFileHandle(name, { create: true });
     const writable = await file.createWritable();
-    await writable.write(JSON.stringify(buildBackup(boards, now), null, 2));
+    await writable.write(text);
     await writable.close();
   } catch (error) {
     // The folder was deleted or moved, or the permission was withdrawn.

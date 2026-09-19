@@ -14,7 +14,7 @@ import { ListColumn } from "./ListColumn";
 import { SaveBoardButton } from "./SaveBoardButton";
 import { SelectionBar } from "./SelectionBar";
 import { UndoRedoControls } from "./UndoRedoControls";
-import { useBackgroundChrome } from "./useBackgroundScheme";
+import { useBackgroundChrome } from "./useBoardBackdrop";
 import { useMarqueeSelection } from "./useMarqueeSelection";
 import { ZoomControls } from "./ZoomControls";
 

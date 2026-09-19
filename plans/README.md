@@ -50,7 +50,7 @@ The build chat should:
 | 3 | Search across all boards | Built (v0.0.42) |
 | 4 | Special card types | Built (v0.0.43: divider + note) |
 | 5 | Custom colours | Built (v0.0.44) |
-| 6 | Light theme, backgrounds | Not started |
+| 6 | Light theme, backgrounds | Built (v0.0.48 light theme, v0.0.49 colour, v0.0.50 image) |
 | 7 | Collapse a list | Not started |
 | 8 | Clickable links in thots | Built (v0.0.37) |
 | 9 | Keyboard shortcut system | Built (v0.0.41) |

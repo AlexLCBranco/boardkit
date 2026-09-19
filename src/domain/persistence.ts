@@ -114,15 +114,61 @@ export interface BackupBoard {
   readonly board: BoardState;
 }
 
+/** A board background image inside a backup: JSON cannot hold bytes, so the
+    picture travels as base64 text (about a third larger than the file). */
+export interface BackupImage {
+  readonly type: string;
+  readonly data: string;
+}
+
 export interface BackupFileV1 {
   readonly format: typeof BACKUP_FORMAT;
   readonly version: 1;
   readonly exportedAt: string;
   readonly boards: readonly BackupBoard[];
+  /** Background images the boards refer to, by `imageId`. Absent from
+      backups made before images existed, and when no board has one: that is
+      why it needs no version bump. */
+  readonly images?: Readonly<Record<string, BackupImage>>;
 }
 
-export function serializeBackup(boards: readonly BackupBoard[], exportedAt: string): BackupFileV1 {
-  return { format: BACKUP_FORMAT, version: 1, exportedAt, boards };
+export function serializeBackup(
+  boards: readonly BackupBoard[],
+  exportedAt: string,
+  images: Readonly<Record<string, BackupImage>> = {},
+): BackupFileV1 {
+  return {
+    format: BACKUP_FORMAT,
+    version: 1,
+    exportedAt,
+    boards,
+    ...(Object.keys(images).length > 0 ? { images } : {}),
+  };
+}
+
+/**
+ * The images in a backup file, or an empty record when it has none. Entries
+ * that are not `{ type, data }` strings are skipped rather than failing the
+ * import: a board whose image is missing falls back to the default
+ * background, which is all a lost image ever costs.
+ */
+export function deserializeBackupImages(data: unknown): Record<string, BackupImage> {
+  const images: Record<string, BackupImage> = {};
+  if (typeof data !== "object" || data === null) {
+    return images;
+  }
+  const raw = (data as Record<string, unknown>).images;
+  if (typeof raw !== "object" || raw === null) {
+    return images;
+  }
+  for (const [id, entry] of Object.entries(raw)) {
+    if (typeof entry !== "object" || entry === null) continue;
+    const { type, data: encoded } = entry as Record<string, unknown>;
+    if (typeof type === "string" && type.startsWith("image/") && typeof encoded === "string") {
+      images[id] = { type, data: encoded };
+    }
+  }
+  return images;
 }
 
 /**

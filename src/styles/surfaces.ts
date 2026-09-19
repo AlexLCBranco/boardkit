@@ -12,6 +12,8 @@ export type ThemeName = "dark" | "light";
 
 /** What a card is drawn from in one theme. */
 export interface ThemeSurface {
+  /** `--surface-app`: the page itself, and the colour an image's wash uses. */
+  readonly app: string;
   /** `--surface-raised`: what a card's tint is laid over. */
   readonly raised: string;
   /** `--text-primary`: the text colour a card uses unless told otherwise. */
@@ -22,8 +24,8 @@ export interface ThemeSurface {
 
 /** Mirrors `:root` and `:root[data-theme="light"]` in `tokens.css`. */
 export const THEME_SURFACES: Readonly<Record<ThemeName, ThemeSurface>> = {
-  dark: { raised: "#1d2026", text: "#e8eaee", textSecondary: "#a3abb9" },
-  light: { raised: "#ffffff", text: "#1a1d23", textSecondary: "#464e5c" },
+  dark: { app: "#14161b", raised: "#1d2026", text: "#e8eaee", textSecondary: "#a3abb9" },
+  light: { app: "#eef0f4", raised: "#ffffff", text: "#1a1d23", textSecondary: "#464e5c" },
 };
 
 /** `--palette-*`, by palette name. The palette is the same in both themes, so

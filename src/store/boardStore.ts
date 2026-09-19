@@ -1,5 +1,6 @@
 import { create } from "zustand";
 
+import { imageIdOf } from "../domain/background";
 import { pasteCardsIntoList } from "../domain/clipboard";
 import { duplicateList as duplicateListState, layoutOnly } from "../domain/duplicate";
 import { createBoardId, createCardId, createListId } from "../domain/ids";
@@ -31,6 +32,7 @@ import type {
   ListWidth,
   ItemColor,
 } from "../domain/types";
+import { releaseImageIfUnused } from "./imageStore";
 import {
   flushPersist,
   loadLegacyPersistedBoard,
@@ -98,9 +100,9 @@ export interface BoardActions {
   setListColor: (listId: ListId, color: ItemColor | undefined) => void;
   setListIcon: (listId: ListId, icon: IconKey | undefined) => void;
   setListWidths: (updates: Readonly<Record<ListId, ListWidth | undefined>>) => void;
-  /** `undefined` makes it a normal card again. One undo step. */
   /** `undefined` goes back to the theme's own background. One undo step. */
   setBackground: (background: BoardBackground | undefined) => void;
+  /** `undefined` makes it a normal card again. One undo step. */
   setCardKind: (cardId: CardId, kind: CardKind | undefined) => void;
   setCardColor: (cardId: CardId, color: ItemColor | undefined) => void;
   setCardDescription: (cardId: CardId, description: string | undefined) => void;
@@ -549,6 +551,10 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
       flushPersist();
       removePersistedBoard(state.boardId);
       const boards = state.boards.filter((board) => board.id !== state.boardId);
+      // Its background image goes too, unless a duplicate of this board still
+      // shows it. (Not undoable, unlike replacing an image, so no need to wait.)
+      const orphanedImage = imageIdOf(state.background);
+      if (orphanedImage !== undefined) void releaseImageIfUnused(orphanedImage, boards);
       const nextId = boards[boards.length - 1].id;
       const board = loadPersistedBoard(nextId) ?? createEmptyBoard();
       return { ...board, boardId: nextId, boards, history: EMPTY_HISTORY };

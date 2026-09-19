@@ -11,3 +11,10 @@
   text-transform: uppercase;
   letter-spacing: 0.02em;
 }
+
+/* Wraps at the panel's width instead of stretching it. */
+.hint {
+  max-width: 220px;
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}

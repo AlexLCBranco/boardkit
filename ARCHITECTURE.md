@@ -792,3 +792,54 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   - **Export.** The backdrop is not inside the captured rail, so PNG/PDF save
     and copy-as-image fill behind it explicitly (`exportBackground.ts`). Copy
     stays transparent when the board has no background, as before.
+
+- **Board background image (v0.0.50).** "Background…" also takes a picture,
+  with a dimming slider. The third `BoardBackground` variant is
+  `{ kind: "image", imageId, wash, average }`.
+  - **Storage.** `localStorage` holds about 5 MB for the whole app, so the
+    picture is never on the board: it is a `Blob` in IndexedDB
+    (`store/imageStore.ts`, on the existing `store/idb.ts` key-value store,
+    keys `boardImage:<id>`), and the board keeps only the id. Choosing a file
+    goes `prepareBackgroundImage` (`features/board/backgroundImage.ts`: canvas
+    resize to at most 2560px, WebP at 0.8 with a JPEG fallback, plus the
+    average colour) -> `saveImage` -> only then `setBackground`, so a board
+    never points at an image that failed to save. A 6.5 MB test PNG stored as
+    290 KB.
+  - **A missing image is not an error.** `store/imageUrlStore.ts` caches one
+    object URL per image (`undefined` = not looked yet, `null` = not there).
+    `useBackdrop` treats `null` as no background at all, so the board and the
+    toolbar fall back to the theme's default.
+  - **Clean-up has two halves, on purpose.** Deleting a board releases its
+    image unless another board still shows it (duplicates share an `imageId`);
+    the remaining boards are passed in, because the registry in storage is
+    saved on a delay and still names the deleted one. Replacing or removing an
+    image does **not** delete it: undo can bring that background straight
+    back. `sweepUnusedImages` (run from `main.tsx`) deletes every unreferenced
+    image at start-up, when history is empty. Both refuse to delete anything if
+    any board fails to load -- that board may use the image.
+  - **Backups.** `BackupFileV1` gained an optional `images` record
+    (`imageId -> { type, base64 }`), so no version bump and old files still
+    import. `buildBackup` is async and includes only images the boards use, once
+    each; import writes them back into IndexedDB *before* adding the boards,
+    skipping any already stored. Automatic folder backups include them too.
+    Backups with images are larger (base64 is a third bigger than the file);
+    the panel says so.
+  - **Rendering.** Two static layers in `BoardBackdrop`: the picture
+    (`background-size: cover`, `will-change: transform`) and a `--surface-app`
+    layer whose `opacity` is `wash` -- dark theme dims, light theme lightens,
+    and only `opacity` is ever set. The canvas does not scroll (the lists do,
+    above it), so scrolling and dragging repaint nothing here; it is not
+    `background-attachment: fixed`. Frame times were not measured (the
+    browser pane was hidden); the design is what keeps it cheap. The slider
+    follows the picker's rule: preview live via `backgroundPreviewStore`, one
+    write on release.
+  - **Toolbar tone.** A picture has no single colour, so `washedColor` blends
+    the stored average toward the theme's page colour by `wash`, and
+    `chromeOnColor` picks the toolbar's scheme/ink from that. An average can
+    hide a bright or dark corner; toolbar pills keep their own surfaces, so
+    only the bare icons are affected.
+  - **Export.** The backdrop is not in the captured rail, so
+    `exportBackground.ts` `withBackdrop` paints the colour, or the picture
+    cropped to cover plus the wash (reading the same `--surface-app`), behind
+    it. Saves pass the page colour as a fallback for boards with no background;
+    copy passes none and stays transparent.

@@ -123,7 +123,7 @@ export function BoardSwitcher() {
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <BackupStatusLine />
-          <DropdownMenuItem onSelect={exportBackup}>Export all boards…</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => void exportBackup()}>Export all boards…</DropdownMenuItem>
           <DropdownMenuItem onSelect={() => fileInput.current?.click()}>Import boards…</DropdownMenuItem>
           <AutomaticBackupItems />
         </DropdownMenuContent>

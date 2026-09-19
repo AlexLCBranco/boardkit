@@ -141,6 +141,18 @@ export function solidHex(color: ItemColor): string {
   return isHexColor(color) ? color : PALETTE_HEX[color];
 }
 
+/**
+ * What a board image looks like on average once the theme's wash is laid over
+ * it: the image's own average colour, blended toward the theme's page colour
+ * by `wash`. Stands in for the image wherever text has to be checked against
+ * it, since a picture has no single colour.
+ */
+export function washedColor(average: HexColor, wash: number, theme: ThemeName): HexColor {
+  const [red, green, blue] = blend(toRgb(THEME_SURFACES[theme].app), wash, toRgb(average));
+  const hex = ((1 << 24) | (red << 16) | (green << 8) | blue).toString(16).slice(1);
+  return `#${hex}` as HexColor;
+}
+
 /** How bare controls should be drawn to stay readable on a colour: which
     scheme's surfaces to use, and whether to force pure black or white text. */
 export interface Chrome {

@@ -21,6 +21,29 @@
   z-index: -1;
   background: var(--board-background, transparent);
   pointer-events: none;
+  overflow: hidden;
+}
+
+/* An image background: the picture, filling the canvas ("cover" crops rather
+   than stretches). Promoted to its own compositor layer so it is drawn once
+   and never repainted while the lists scroll or drag above it. */
+.image {
+  position: absolute;
+  inset: 0;
+  background-image: var(--board-image);
+  background-size: cover;
+  background-position: center;
+  will-change: transform;
+}
+
+/* The wash over an image: the theme's page colour (dark in the dark theme,
+   pale in the light one), at the strength the user chose -- set inline as
+   `opacity`, the one property that is free to change. Keeps the lists
+   readable on a busy picture. */
+.wash {
+  position: absolute;
+  inset: 0;
+  background: var(--surface-app);
 }
 
 .toolbar {

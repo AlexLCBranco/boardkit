@@ -1,5 +1,5 @@
 import { canvasToBlob, renderToCanvas } from "./copyAsImage";
-import { exportBackgroundColor } from "./exportBackground";
+import { withBackdrop } from "./exportBackground";
 import { jpegToPdf } from "./imagePdf";
 
 /**
@@ -13,14 +13,10 @@ import { jpegToPdf } from "./imagePdf";
 const PIXEL_RATIO = 2;
 const JPEG_QUALITY = 0.92;
 
-/** What to fill behind the rail: the board's own background if it has one,
-    else the first opaque background at or above `node`. The rail itself is
-    transparent, and a JPEG would otherwise render that as black. */
+/** The first opaque background at or above `node`: what shows behind a board
+    with no background of its own. The rail itself is transparent, and a JPEG
+    would otherwise render that as black. */
 function backgroundBehind(node: HTMLElement): string {
-  const own = exportBackgroundColor();
-  if (own !== undefined) {
-    return own;
-  }
   for (let el: HTMLElement | null = node; el; el = el.parentElement) {
     const color = getComputedStyle(el).backgroundColor;
     if (color !== "rgba(0, 0, 0, 0)" && color !== "transparent") {
@@ -44,21 +40,19 @@ function download(blob: Blob, name: string): void {
   URL.revokeObjectURL(url);
 }
 
+/** The whole rail, over the board's background (or the page's, if it has none). */
+async function renderBoard(rail: HTMLElement): Promise<HTMLCanvasElement> {
+  const canvas = await renderToCanvas(rail, { pixelRatio: PIXEL_RATIO, zoom: 1 });
+  return withBackdrop(canvas, backgroundBehind(rail));
+}
+
 export async function saveBoardAsPng(rail: HTMLElement, boardName: string): Promise<void> {
-  const canvas = await renderToCanvas(rail, {
-    pixelRatio: PIXEL_RATIO,
-    zoom: 1,
-    backgroundColor: backgroundBehind(rail),
-  });
+  const canvas = await renderBoard(rail);
   download(await canvasToBlob(canvas, "image/png"), fileName(boardName, "png"));
 }
 
 export async function saveBoardAsPdf(rail: HTMLElement, boardName: string): Promise<void> {
-  const canvas = await renderToCanvas(rail, {
-    pixelRatio: PIXEL_RATIO,
-    zoom: 1,
-    backgroundColor: backgroundBehind(rail),
-  });
+  const canvas = await renderBoard(rail);
   const jpeg = new Uint8Array(await (await canvasToBlob(canvas, "image/jpeg", JPEG_QUALITY)).arrayBuffer());
   // Page size is the board's on-screen size (1 CSS px = 1 pt), not the pixel
   // size, so the PDF opens at a sensible zoom and the extra pixels sharpen it.

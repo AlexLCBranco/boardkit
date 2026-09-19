@@ -15,7 +15,7 @@ files.
 
 | Item | Owner |
 |------|-------|
-| Backgrounds and themes (`plans/backgrounds-and-themes.md`): light theme, board background colour, board background image. Touches `tokens.css`, `types.ts`, persistence, backup | Claude |
+| _nothing_ | — |
 
 ## Queued
 

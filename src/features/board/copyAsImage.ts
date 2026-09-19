@@ -35,9 +35,18 @@ export function renderToCanvas(node: HTMLElement, options: RenderOptions): Promi
   });
 }
 
-/** Rasterises `node` and puts the PNG on the clipboard. */
-export async function copyAsImage(node: HTMLElement, options: RenderOptions): Promise<void> {
-  const canvas = await renderToCanvas(node, options);
+/**
+ * Rasterises `node` and puts the PNG on the clipboard. `finish`, if given,
+ * gets the captured canvas first and returns the one to copy -- how the board
+ * copy adds its background behind the lists.
+ */
+export async function copyAsImage(
+  node: HTMLElement,
+  options: RenderOptions,
+  finish?: (captured: HTMLCanvasElement) => Promise<HTMLCanvasElement>,
+): Promise<void> {
+  const captured = await renderToCanvas(node, options);
+  const canvas = finish ? await finish(captured) : captured;
   const blob = await canvasToBlob(canvas, "image/png");
   await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
 }
