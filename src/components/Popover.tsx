@@ -9,6 +9,37 @@ interface PopoverProps {
   readonly children: ReactNode;
 }
 
+interface PopoverPosition {
+  readonly top: number;
+  readonly left: number;
+  readonly maxHeight: number;
+}
+
+/** Gap between the panel and its anchor, and the minimum clearance kept from
+    the viewport's edges. Layout geometry, not a visual token. */
+const ANCHOR_GAP = 4;
+const EDGE_MARGIN = 8;
+
+/**
+ * Where to put a panel of the given size so it stays fully on screen: below
+ * the anchor when it fits there, otherwise above it when there is more room
+ * there, and never past the viewport's edges. `maxHeight` is the room left
+ * on the chosen side, so a panel taller than that scrolls inside itself
+ * (`Popover.module.css`) instead of running off the page.
+ */
+function placePanel(anchor: DOMRect, width: number, height: number): PopoverPosition {
+  const roomBelow = window.innerHeight - anchor.bottom - ANCHOR_GAP - EDGE_MARGIN;
+  const roomAbove = anchor.top - ANCHOR_GAP - EDGE_MARGIN;
+  const placeAbove = height > roomBelow && roomAbove > roomBelow;
+  const maxHeight = Math.max(placeAbove ? roomAbove : roomBelow, 0);
+  const shownHeight = Math.min(height, maxHeight);
+
+  const top = placeAbove ? anchor.top - ANCHOR_GAP - shownHeight : anchor.bottom + ANCHOR_GAP;
+  const maxLeft = window.innerWidth - width - EDGE_MARGIN;
+  const left = Math.max(EDGE_MARGIN, Math.min(anchor.left, maxLeft));
+  return { top, left, maxHeight };
+}
+
 /**
  * A small positioned popover, portalled to `document.body` and placed just
  * below whatever `anchorRef` points at.
@@ -32,21 +63,34 @@ interface PopoverProps {
  */
 export function Popover({ anchorRef, onClose, children }: PopoverProps) {
   const panelRef = useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState<{ top: number; left: number } | null>(null);
+  const [position, setPosition] = useState<PopoverPosition | null>(null);
 
+  // Runs before paint, so the panel is measured and placed without ever
+  // showing at a provisional spot.
   useLayoutEffect(() => {
     const anchor = anchorRef.current;
-    if (!anchor) {
+    const panel = panelRef.current;
+    if (!anchor || !panel) {
       return;
     }
-    const rect = anchor.getBoundingClientRect();
-    setPosition({ top: rect.bottom + 4, left: rect.left });
+    setPosition(
+      placePanel(anchor.getBoundingClientRect(), panel.offsetWidth, panel.offsetHeight),
+    );
   }, [anchorRef]);
 
   useEffect(() => {
     function handlePointerDown(event: PointerEvent) {
       const target = event.target as Node;
       if (panelRef.current?.contains(target) || anchorRef.current?.contains(target)) {
+        return;
+      }
+      onClose();
+    }
+
+    // The panel can scroll itself when it is taller than the space it has;
+    // that must not count as the board scrolling underneath it.
+    function handleScroll(event: Event) {
+      if (event.target instanceof Node && panelRef.current?.contains(event.target)) {
         return;
       }
       onClose();
@@ -63,23 +107,21 @@ export function Popover({ anchorRef, onClose, children }: PopoverProps) {
     // board-wide scroll.
     document.addEventListener("pointerdown", handlePointerDown);
     document.addEventListener("keydown", handleKeyDown);
-    document.addEventListener("scroll", onClose, true);
+    document.addEventListener("scroll", handleScroll, true);
     return () => {
       document.removeEventListener("pointerdown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
-      document.removeEventListener("scroll", onClose, true);
+      document.removeEventListener("scroll", handleScroll, true);
     };
   }, [anchorRef, onClose]);
-
-  if (!position) {
-    return null;
-  }
 
   return createPortal(
     <div
       ref={panelRef}
       className={styles.panel}
-      style={{ top: position.top, left: position.left }}
+      // Until measured the panel is rendered hidden at the origin, so its size
+      // can be read.
+      style={position ?? { top: 0, left: 0, visibility: "hidden" }}
       role="dialog"
       onPointerDown={(event) => event.stopPropagation()}
     >

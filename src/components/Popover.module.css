@@ -5,6 +5,10 @@
   flex-direction: column;
   gap: var(--space-3);
   min-width: 200px;
+  /* `maxHeight` is set inline to the room left on screen; a taller panel
+     scrolls inside itself rather than running off the page. */
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: var(--space-3);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
