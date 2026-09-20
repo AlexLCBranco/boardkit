@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import styles from "./Composer.module.css";
 
@@ -18,6 +18,11 @@ interface ComposerProps {
  * textarea node just has more siblings above it as the list grows, and focus
  * stays with the DOM node React keeps re-using.
  *
+ * Each Enter also scrolls the composer back into view. The new card lands
+ * above it and pushes it down, and a focused field doesn't follow its own
+ * layout shifts, so without this a full-height list would leave the field --
+ * and the cards being typed -- below the fold.
+ *
  * Escape or blur closes the composer and discards the draft. Only Enter (or
  * the Add button) creates something, so a stray click elsewhere can't leave
  * behind an accidental card. The title may be blank.
@@ -25,7 +30,18 @@ interface ComposerProps {
 export function Composer({ label, placeholder, onSubmit }: ComposerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [draft, setDraft] = useState("");
+  const [submitCount, setSubmitCount] = useState(0);
+  const composerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Runs in the same commit as the new card (the store write and this state
+  // change are batched), so the layout it measures already includes the card.
+  // `nearest` scrolls only as far as needed, and not at all if already visible.
+  useLayoutEffect(() => {
+    if (submitCount > 0) {
+      composerRef.current?.scrollIntoView({ block: "nearest" });
+    }
+  }, [submitCount]);
 
   useEffect(() => {
     if (isOpen) {
@@ -48,6 +64,7 @@ export function Composer({ label, placeholder, onSubmit }: ComposerProps) {
     // or list. Escape, blur and × are how you close without adding.
     onSubmit(draft.trim());
     setDraft("");
+    setSubmitCount((count) => count + 1);
     textareaRef.current?.focus();
   }
 
@@ -60,7 +77,7 @@ export function Composer({ label, placeholder, onSubmit }: ComposerProps) {
   }
 
   return (
-    <div className={styles.composer}>
+    <div ref={composerRef} className={styles.composer}>
       <span className={styles.autosize} data-value={draft}>
         <textarea
           ref={textareaRef}
