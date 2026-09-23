@@ -910,6 +910,12 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   - **Pulse animates opacity only**, on a `::before` overlay drawn once, and
     is held still under `prefers-reduced-motion` (the global rule would
     otherwise shorten the endless loop into a strobe).
+  - **Many cards at once (v0.0.59).** The selection bar's "Highlight" menu
+    sets a colour (palette, recent custom colours, or none) or a style on
+    every selected card in one undo step. The store actions take a list of
+    ids (`setCardsHighlight`, `setCardsHighlightStyle`), and a single card's
+    panel passes a list of one -- the same shape as `setCardsNumberEmphasis`.
+    All three share `patchCards` in `boardStore.ts`.
   - Dividers have no border to draw on, so `CardKindSpec.highlightable` is
     false for them: the highlight is kept, hidden, and offered again when the
     card switches back to a type that has one.

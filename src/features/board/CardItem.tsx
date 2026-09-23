@@ -17,8 +17,8 @@ import {
   useListColor,
   useRenameCard,
   useSetCardColor,
-  useSetCardHighlight,
-  useSetCardHighlightStyle,
+  useSetCardsHighlight,
+  useSetCardsHighlightStyle,
   useSetCardKind,
   useSetCardsNumberEmphasis,
   useSetCardDescription,
@@ -81,8 +81,8 @@ function CardItemImpl({
   const deleteCard = useDeleteCard();
   const setCardColor = useSetCardColor();
   const setCardKind = useSetCardKind();
-  const setCardHighlight = useSetCardHighlight();
-  const setCardHighlightStyle = useSetCardHighlightStyle();
+  const setCardsHighlight = useSetCardsHighlight();
+  const setCardsHighlightStyle = useSetCardsHighlightStyle();
   const setCardsNumberEmphasis = useSetCardsNumberEmphasis();
   const setCardDescription = useSetCardDescription();
   const setCardPostgameDescription = useSetCardPostgameDescription();
@@ -321,10 +321,10 @@ function CardItemImpl({
               : undefined
           }
           highlight={card.highlight}
-          onHighlightChange={spec.highlightable ? (next) => setCardHighlight(cardId, next) : undefined}
+          onHighlightChange={spec.highlightable ? (next) => setCardsHighlight([cardId], next) : undefined}
           onHighlightPreview={setPreviewHighlight}
           highlightStyle={card.highlightStyle}
-          onHighlightStyleChange={(style) => setCardHighlightStyle(cardId, style)}
+          onHighlightStyleChange={(style) => setCardsHighlightStyle([cardId], style)}
           onClose={() => setIsCustomizeOpen(false)}
         />
       )}

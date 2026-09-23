@@ -116,10 +116,11 @@ export interface BoardActions {
       panel, or a whole marquee selection -- in one undo step. `undefined`
       goes back to normal. */
   setCardsNumberEmphasis: (cardIds: readonly CardId[], emphasis: NumberEmphasis | undefined) => void;
-  /** A card's highlight colour. `undefined` removes the highlight. */
-  setCardHighlight: (cardId: CardId, highlight: ItemColor | undefined) => void;
-  /** How a card's highlight is drawn. `undefined` goes back to a ring. */
-  setCardHighlightStyle: (cardId: CardId, style: HighlightStyle | undefined) => void;
+  /** Highlight colour for every card given, in one undo step, like
+      `setCardsNumberEmphasis`. `undefined` removes the highlight. */
+  setCardsHighlight: (cardIds: readonly CardId[], highlight: ItemColor | undefined) => void;
+  /** How the given cards' highlights are drawn. `undefined` goes back to a ring. */
+  setCardsHighlightStyle: (cardIds: readonly CardId[], style: HighlightStyle | undefined) => void;
   setCardDescription: (cardId: CardId, description: string | undefined) => void;
   setCardPostgameDescription: (cardId: CardId, description: string | undefined) => void;
   undo: () => void;
@@ -172,6 +173,22 @@ function withHistory(state: BoardStore, patch: BoardPatch): Partial<BoardStore> 
     (before as Record<string, unknown>)[key] = state[key];
   }
   return { ...patch, history: pushEntry(state.history, before, patch) };
+}
+
+/**
+ * The same fields set on several cards, as one `cards` patch -- the shape
+ * every "one card from its panel, or the whole marquee selection" action
+ * shares. Ids no longer on the board (a selection that outlived a delete)
+ * are skipped rather than recreated as half-empty cards.
+ */
+function patchCards(state: BoardStore, cardIds: readonly CardId[], fields: Partial<Card>): BoardPatch {
+  const cards = { ...state.cards };
+  for (const cardId of cardIds) {
+    if (cards[cardId]) {
+      cards[cardId] = { ...cards[cardId], ...fields };
+    }
+  }
+  return { cards };
 }
 
 /**
@@ -438,32 +455,14 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
       }),
     ),
 
-  // Ids no longer on the board (a selection that outlived a delete) are
-  // skipped rather than recreated as half-empty cards.
-  setCardsNumberEmphasis: (cardIds, emphasis) =>
-    set((state) => {
-      const cards = { ...state.cards };
-      for (const cardId of cardIds) {
-        if (cards[cardId]) {
-          cards[cardId] = { ...cards[cardId], numberEmphasis: emphasis };
-        }
-      }
-      return withHistory(state, { cards });
-    }),
+  setCardsNumberEmphasis: (cardIds, numberEmphasis) =>
+    set((state) => withHistory(state, patchCards(state, cardIds, { numberEmphasis }))),
 
-  setCardHighlight: (cardId, highlight) =>
-    set((state) =>
-      withHistory(state, {
-        cards: { ...state.cards, [cardId]: { ...state.cards[cardId], highlight } },
-      }),
-    ),
+  setCardsHighlight: (cardIds, highlight) =>
+    set((state) => withHistory(state, patchCards(state, cardIds, { highlight }))),
 
-  setCardHighlightStyle: (cardId, highlightStyle) =>
-    set((state) =>
-      withHistory(state, {
-        cards: { ...state.cards, [cardId]: { ...state.cards[cardId], highlightStyle } },
-      }),
-    ),
+  setCardsHighlightStyle: (cardIds, highlightStyle) =>
+    set((state) => withHistory(state, patchCards(state, cardIds, { highlightStyle }))),
 
   setCardDescription: (cardId, description) =>
     set((state) =>

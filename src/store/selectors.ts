@@ -299,12 +299,12 @@ export function useSetCardColor() {
   return useBoardStore((state) => state.setCardColor);
 }
 
-export function useSetCardHighlight() {
-  return useBoardStore((state) => state.setCardHighlight);
+export function useSetCardsHighlight() {
+  return useBoardStore((state) => state.setCardsHighlight);
 }
 
-export function useSetCardHighlightStyle() {
-  return useBoardStore((state) => state.setCardHighlightStyle);
+export function useSetCardsHighlightStyle() {
+  return useBoardStore((state) => state.setCardsHighlightStyle);
 }
 
 export function useSetCardsNumberEmphasis() {
