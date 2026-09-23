@@ -15,7 +15,7 @@ files.
 
 | Item | Owner |
 |------|-------|
-| _nothing_ | — |
+| Continued numbering across lists (+ queued item 1, quadratic numbering) | Claude |
 
 ## Queued
 
