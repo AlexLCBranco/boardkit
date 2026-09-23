@@ -15,20 +15,17 @@ files.
 
 | Item | Owner |
 |------|-------|
-| Continued numbering across lists (+ queued item 1, quadratic numbering) | Claude |
+| _nothing_ | — |
 
 ## Queued
 
 From a code review of the milestone-9 codebase. Order is by severity, not by
 effort.
 
-1. **Card numbering is quadratic.** Every card subscribes to a selector that
-   runs `indexOf` over its whole list (`store/selectors.ts` `useCardNumber`,
-   `domain/numbering.ts`). Zustand re-runs every subscribed selector on every
-   store update, and `onDragOver` fires many times per second — so this sits
-   directly on the drag hot path, which is priority 1. Fix: number the cards
-   in one pass in `ListColumn`'s existing `cardIds.map` and pass the number
-   into `CardItem` as a prop. `computeCardNumber` leaves the render path.
+1. ~~**Card numbering is quadratic.**~~ Done in v0.0.53, alongside continued
+   numbering: each list is numbered in one pass (`useCardNumbers`) and each
+   card gets its number as a prop. Kept here so the item numbers below, which
+   other docs cite, stay stable.
 
 2. **A cross-list drag is not atomic.** `handleDragOver` commits the move as
    soon as the pointer crosses a list boundary, but `onDragCancel` only

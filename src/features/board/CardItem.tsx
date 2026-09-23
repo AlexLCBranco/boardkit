@@ -10,7 +10,6 @@ import { accentCss } from "../../domain/colors";
 import type { CardId, ItemColor, ListId } from "../../domain/types";
 import {
   useCard,
-  useCardNumber,
   useDeleteCard,
   useIsCardSelected,
   useListColor,
@@ -33,6 +32,15 @@ interface CardItemProps {
       whenever the list-wide control changes, without taking away this
       card's ability to be toggled individually the rest of the time. */
   readonly thotsMode: "hidden" | "pregame" | "postgame";
+  /** This card's display number, or `null` for a type that isn't numbered.
+      Numbered by the column in one pass (domain/numbering.ts) and handed
+      down as a primitive, so only cards whose number changed re-render. */
+  readonly number: number | null;
+  /** Set on a list's first numbered card only: clicking its number toggles
+      whether the list continues the previous list's numbering. Must be a
+      stable function, or every render would defeat `memo`. */
+  readonly onNumberClick?: () => void;
+  readonly continuesNumbering?: boolean;
 }
 
 /**
@@ -51,7 +59,14 @@ interface CardItemProps {
  * the column re-renders for an unrelated reason every untouched card bails
  * out on a shallow prop comparison.
  */
-function CardItemImpl({ cardId, listId, thotsMode }: CardItemProps) {
+function CardItemImpl({
+  cardId,
+  listId,
+  thotsMode,
+  number,
+  onNumberClick,
+  continuesNumbering,
+}: CardItemProps) {
   const card = useCard(cardId);
   const renameCard = useRenameCard();
   const deleteCard = useDeleteCard();
@@ -59,7 +74,6 @@ function CardItemImpl({ cardId, listId, thotsMode }: CardItemProps) {
   const setCardKind = useSetCardKind();
   const setCardDescription = useSetCardDescription();
   const setCardPostgameDescription = useSetCardPostgameDescription();
-  const number = useCardNumber(listId, cardId);
   const isSelected = useIsCardSelected(cardId);
 
   const listColor = useListColor(listId);
@@ -150,7 +164,26 @@ function CardItemImpl({ cardId, listId, thotsMode }: CardItemProps) {
       {...listeners}
     >
       <p className={styles.title} data-card-title>
-        {number !== null && <span className={styles.number}>{number}</span>}
+        {number !== null &&
+          (onNumberClick ? (
+            <button
+              type="button"
+              className={`${styles.number} ${styles.numberButton}`}
+              onClick={onNumberClick}
+              // Keeps the click a click: without this the card's drag
+              // listeners also see the pointer-down.
+              onPointerDown={(event) => event.stopPropagation()}
+              title={
+                continuesNumbering
+                  ? "Restart numbering at 1"
+                  : "Continue numbering from the previous list"
+              }
+            >
+              {number}
+            </button>
+          ) : (
+            <span className={styles.number}>{number}</span>
+          ))}
         <InlineEditable
           value={card.title}
           onCommit={(title) => renameCard(cardId, title)}

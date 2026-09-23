@@ -3,6 +3,7 @@ import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-
 import { CSS } from "@dnd-kit/utilities";
 import {
   memo,
+  useCallback,
   useRef,
   useState,
   type CSSProperties,
@@ -26,6 +27,7 @@ import {
 } from "../../components/ui/alert-dialog";
 import {
   ContextMenu,
+  ContextMenuCheckboxItem,
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuTrigger,
@@ -37,8 +39,10 @@ import {
   useAddCard,
   useCardCount,
   useCardIds,
+  useCardNumbers,
   useClearClipboard,
   useClipboardCount,
+  useIsFirstList,
   useIsListFull,
   useDeleteList,
   useDuplicateList,
@@ -46,6 +50,7 @@ import {
   usePasteInto,
   useRenameList,
   useSetListColor,
+  useSetListContinuesNumbering,
   useSetListIcon,
   useSetListWidths,
 } from "../../store/selectors";
@@ -96,6 +101,20 @@ function ListColumnImpl({ listId }: ListColumnProps) {
   const setListColor = useSetListColor();
   const setListIcon = useSetListIcon();
   const setListWidths = useSetListWidths();
+  const cardNumbers = useCardNumbers(listId);
+  const isFirstList = useIsFirstList(listId);
+  const setListContinuesNumbering = useSetListContinuesNumbering();
+  // Continuing only means anything with a list to the left. A leftmost list
+  // that was set to continue keeps the flag (so moving it back restores the
+  // link) but shows and behaves as if it weren't.
+  const continuesNumbering = !isFirstList && list.continuesNumbering === true;
+  // Memoised so the first card gets the same function every render and its
+  // `memo` still holds; it only changes when the flag itself does.
+  const toggleContinuesNumbering = useCallback(
+    () => setListContinuesNumbering(listId, !continuesNumbering),
+    [setListContinuesNumbering, listId, continuesNumbering],
+  );
+  const firstNumberedIndex = cardNumbers.findIndex((number) => number !== null);
 
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
   // A colour being tried in the customise panel's picker, shown before it is
@@ -305,6 +324,15 @@ function ListColumnImpl({ listId }: ListColumnProps) {
       <ContextMenu>
         <ContextMenuTrigger asChild>
       <header className={styles.header} data-list-header {...attributes} {...listeners}>
+        {continuesNumbering && (
+          <span
+            className={styles.continuesMark}
+            title="Numbering continues from the previous list"
+            aria-label="Numbering continues from the previous list"
+          >
+            ↳
+          </span>
+        )}
         {list.icon && <Icon name={list.icon} className={styles.headerIcon} />}
         <h2 className={styles.title}>
           <InlineEditable
@@ -363,6 +391,13 @@ function ListColumnImpl({ listId }: ListColumnProps) {
         </ContextMenuTrigger>
         <ContextMenuContent>
           <ContextMenuItem onSelect={() => duplicateList(listId)}>Duplicate list</ContextMenuItem>
+          <ContextMenuCheckboxItem
+            checked={continuesNumbering}
+            disabled={isFirstList}
+            onCheckedChange={(checked) => setListContinuesNumbering(listId, checked)}
+          >
+            Continue numbering from previous list
+          </ContextMenuCheckboxItem>
           <ListTransferItems listId={listId} />
         </ContextMenuContent>
       </ContextMenu>
@@ -401,9 +436,20 @@ function ListColumnImpl({ listId }: ListColumnProps) {
         {cardIds.length > 0 ? (
           <SortableContext items={[...cardIds]} strategy={verticalListSortingStrategy}>
             <ul className={styles.cards}>
-              {cardIds.map((cardId) => (
+              {cardIds.map((cardId, index) => (
                 <li key={cardId}>
-                  <CardItem cardId={cardId} listId={listId} thotsMode={columnThotsMode} />
+                  <CardItem
+                    cardId={cardId}
+                    listId={listId}
+                    thotsMode={columnThotsMode}
+                    number={cardNumbers[index] ?? null}
+                    onNumberClick={
+                      !isFirstList && index === firstNumberedIndex
+                        ? toggleContinuesNumbering
+                        : undefined
+                    }
+                    continuesNumbering={continuesNumbering}
+                  />
                 </li>
               ))}
             </ul>

@@ -99,6 +99,8 @@ export interface BoardActions {
   reorderLists: (activeId: ListId, overId: ListId) => void;
   setListColor: (listId: ListId, color: ItemColor | undefined) => void;
   setListIcon: (listId: ListId, icon: IconKey | undefined) => void;
+  /** One undo step. */
+  setListContinuesNumbering: (listId: ListId, continues: boolean) => void;
   setListWidths: (updates: Readonly<Record<ListId, ListWidth | undefined>>) => void;
   /** `undefined` goes back to the theme's own background. One undo step. */
   setBackground: (background: BoardBackground | undefined) => void;
@@ -372,6 +374,18 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
     set((state) =>
       withHistory(state, {
         lists: { ...state.lists, [listId]: { ...state.lists[listId], icon } },
+      }),
+    ),
+
+  // `false` is stored as absent, so lists that never touched this keep the
+  // same shape as boards saved before it existed.
+  setListContinuesNumbering: (listId, continues) =>
+    set((state) =>
+      withHistory(state, {
+        lists: {
+          ...state.lists,
+          [listId]: { ...state.lists[listId], continuesNumbering: continues || undefined },
+        },
       }),
     ),
 

@@ -647,8 +647,8 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   - **Not numbered means not counted.** `computeCardNumber` counts only
     numbered cards, so "1, 2, divider, 3". It now also reads `state.cards`,
     still one primitive per card, so `useCardNumber` keeps its `Object.is`
-    bail-out. (Still the quadratic per-card selector `PLAN.md` queues item 1
-    to remove; that fix should keep the "count numbered cards only" rule.)
+    bail-out. (Since v0.0.53 numbering is one pass per list, still counting
+    numbered cards only -- see "Continued numbering" below.)
   - **Switching type loses nothing.** `setCardKind` (through `withHistory`,
     one undo step) only sets `kind`; colour and both thots stay on the
     record. A type without thots hides them and search skips them; switching
@@ -843,3 +843,23 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
     cropped to cover plus the wash (reading the same `--surface-app`), behind
     it. Saves pass the page colour as a fallback for boards with no background;
     copy passes none and stays transparent.
+- **Continued numbering (v0.0.53).** A list can continue the numbering of the
+  list to its left instead of starting at 1: right-click its header, or click
+  the number on its first card. A "↳" in the header marks it.
+  - **One flag, linked by position.** `List.continuesNumbering` is a boolean,
+    not a pointer to another list. The link follows board order, so moving or
+    deleting lists can't leave a dangling reference, and chains (C continues
+    B continues A) fall out of `numberingOffset` walking left. The leftmost
+    list ignores the flag but keeps it, so moving it back restores the link.
+    Duplicate and move-to-board copy the flag with the rest of the list.
+  - **Numbered per list, not per card.** `useCardNumbers(listId)` returns the
+    whole list's numbers in one pass, compared with `useShallow`, and
+    `ListColumn` passes each card its number as a prop. This replaced the
+    per-card `useCardNumber`, which scanned the list once per card on every
+    store update (`PLAN.md` item 1). A card whose number didn't change still
+    bails out of `memo`. The cost now is one pass over the list and the lists
+    it continues, per list, per update -- short by design.
+  - **The number as a toggle.** Only the first numbered card's number is a
+    button, with a stable `useCallback` handler so `memo` holds. It stops
+    `pointerdown` from reaching the card's drag listeners, so clicking it is
+    never the start of a drag.

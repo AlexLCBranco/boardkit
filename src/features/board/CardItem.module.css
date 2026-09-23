@@ -232,6 +232,26 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* A list's first number doubles as the "continue numbering" toggle. It looks
+   exactly like the plain number until hovered, so it adds no chrome. */
+.numberButton {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}
+
+.numberButton:hover {
+  color: var(--text-primary);
+  text-decoration: underline dotted;
+}
+
+.numberButton:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
 /* Not in the DOM at all until opened (see CardItem.tsx's isDescriptionOpen
    check) -- a collapsed card ends right after its title, no reserved gap
    for a control most cards never use. Opened by right-clicking the card;

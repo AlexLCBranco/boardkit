@@ -1,6 +1,8 @@
+import { useShallow } from "zustand/react/shallow";
+
 import type { AutoBackupStatus } from "../domain/backupStatus";
 import { isListFull } from "../domain/limits";
-import { computeCardNumber } from "../domain/numbering";
+import { numberCards, numberingOffset } from "../domain/numbering";
 import type {
   BoardBackground,
   BoardId,
@@ -202,16 +204,37 @@ export function useReorderLists() {
 }
 
 /**
- * A card's display number (its 1-based position within its own list).
+ * Every card's display number in one list, in card order (`null` for a card
+ * type that isn't numbered).
  *
- * This is the one selector in this file that returns a value computed fresh
- * on every call rather than read straight from the store -- a number is a
- * primitive, so rule 1 still holds: `Object.is` compares it by value, not by
- * reference, so a card only re-renders for this when its actual position
- * changes.
+ * Computed fresh on every store update, so it is compared with `useShallow`:
+ * the column re-renders only when a number actually changes, not whenever a
+ * new-but-equal array comes back. Its cost is one pass over this list plus
+ * the lists it continues from -- short by design, so cheap even mid-drag.
+ * Each card still gets its number as a primitive prop, so only the cards
+ * whose number changed re-render.
  */
-export function useCardNumber(listId: ListId, cardId: CardId): number | null {
-  return useBoardStore((state) => computeCardNumber(state.cardOrder, state.cards, listId, cardId));
+export function useCardNumbers(listId: ListId): readonly (number | null)[] {
+  return useBoardStore(
+    useShallow((state) =>
+      numberCards(
+        state.cardOrder[listId],
+        state.cards,
+        numberingOffset(state.listOrder, state.lists, state.cardOrder, state.cards, listId),
+      ),
+    ),
+  );
+}
+
+/** Whether this is the leftmost list -- the one list with nothing to
+    continue numbering from. A boolean, so reordering other lists never
+    re-renders this one. */
+export function useIsFirstList(listId: ListId): boolean {
+  return useBoardStore((state) => state.listOrder[0] === listId);
+}
+
+export function useSetListContinuesNumbering() {
+  return useBoardStore((state) => state.setListContinuesNumbering);
 }
 
 export function useSetListColor() {

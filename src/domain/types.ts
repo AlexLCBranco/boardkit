@@ -130,6 +130,9 @@ export interface List {
   /** Column width, as a card-line-length control. Undefined means the
       default `--list-width` from tokens.css. */
   readonly width?: ListWidth;
+  /** Start card numbers where the list to the left finished, instead of at
+      1 (domain/numbering.ts). Absent means false. */
+  readonly continuesNumbering?: boolean;
 }
 
 /**
