@@ -43,6 +43,7 @@ import {
   useClearClipboard,
   useClipboardCount,
   useIsFirstList,
+  useIsNumberingContinued,
   useIsListFull,
   useDeleteList,
   useDuplicateList,
@@ -103,6 +104,9 @@ function ListColumnImpl({ listId }: ListColumnProps) {
   const setListWidths = useSetListWidths();
   const cardNumbers = useCardNumbers(listId);
   const isFirstList = useIsFirstList(listId);
+  // True when the list to the right continues from this one, so this list
+  // opens (or sits inside) a numbering run and shows its range as well.
+  const isNumberingContinued = useIsNumberingContinued(listId);
   const setListContinuesNumbering = useSetListContinuesNumbering();
   // Continuing only means anything with a list to the left. A leftmost list
   // that was set to continue keeps the flag (so moving it back restores the
@@ -333,10 +337,12 @@ function ListColumnImpl({ listId }: ListColumnProps) {
             allowEmpty
           />
         </h2>
-        {continuesNumbering ? (
+        {continuesNumbering || isNumberingContinued ? (
           <span
             className={styles.count}
-            title={`${cardCount} card${cardCount === 1 ? "" : "s"}, numbered on from the previous list`}
+            title={`${cardCount} card${cardCount === 1 ? "" : "s"}, numbered ${
+              continuesNumbering ? "on from the previous list" : "on into the next list"
+            }`}
           >
             {numberRange(cardNumbers) ?? cardCount}
           </span>
@@ -528,7 +534,7 @@ function EmptyListDropZone({ listId }: { readonly listId: ListId }) {
   );
 }
 
-/** A continuing list's pill: "5–7", or just "5" for a single numbered card.
+/** The pill of a list in a numbering run: "5–7", or just "5" for a single numbered card.
     `null` when nothing in the list is numbered, so the pill falls back to
     the plain count. Numbers only ever go up, so the first and last non-null
     entries are the range. */

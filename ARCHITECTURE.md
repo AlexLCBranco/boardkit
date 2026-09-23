@@ -848,7 +848,10 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   the number on its first card. Its header's count pill then shows the
   range it covers ("5–7") instead of the card count, which moves to the
   pill's tooltip -- no extra header chrome, and it says where the list sits
-  in the sequence rather than only that it continues.
+  in the sequence rather than only that it continues. The list a run starts
+  from shows its range too ("1–10"), via `useIsNumberingContinued` -- a
+  boolean selector on the next list's flag, so it only re-renders when that
+  link changes.
   - **One flag, linked by position.** `List.continuesNumbering` is a boolean,
     not a pointer to another list. The link follows board order, so moving or
     deleting lists can't leave a dangling reference, and chains (C continues

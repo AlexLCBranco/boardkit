@@ -233,6 +233,15 @@ export function useIsFirstList(listId: ListId): boolean {
   return useBoardStore((state) => state.listOrder[0] === listId);
 }
 
+/** Whether the list to the right continues this one's numbering -- so this
+    list is the start (or middle) of a run and shows its number range too. */
+export function useIsNumberingContinued(listId: ListId): boolean {
+  return useBoardStore((state) => {
+    const next = state.listOrder[state.listOrder.indexOf(listId) + 1];
+    return next !== undefined && state.lists[next]?.continuesNumbering === true;
+  });
+}
+
 export function useSetListContinuesNumbering() {
   return useBoardStore((state) => state.setListContinuesNumbering);
 }
