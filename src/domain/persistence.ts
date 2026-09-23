@@ -1,6 +1,7 @@
 import { knownBackground } from "./background";
 import { withKnownKinds } from "./cardKinds";
 import { withKnownColors } from "./colors";
+import { withKnownHighlights } from "./highlight";
 import type { BoardId, BoardState, BoardSummary } from "./types";
 
 /**
@@ -67,7 +68,8 @@ export function deserializeBoard(data: unknown): BoardState | null {
   // loads as a normal one instead of breaking the board.
   // Colours get the same treatment: one this build can't read is dropped, so
   // the list or card loads uncoloured instead of breaking the board.
-  const cards = withKnownColors(withKnownKinds(data.board.cards));
+  // Highlights too: an unreadable colour or style is dropped on its own.
+  const cards = withKnownHighlights(withKnownColors(withKnownKinds(data.board.cards)));
   const lists = withKnownColors(data.board.lists);
   // A background this build can't read is dropped the same way.
   const background = knownBackground(data.board.background);

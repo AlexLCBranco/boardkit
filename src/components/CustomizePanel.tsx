@@ -1,13 +1,21 @@
 import type { RefObject } from "react";
 
 import { CARD_KIND_CHOICES, CARD_KIND_SPECS, NORMAL_KIND } from "../domain/cardKinds";
+import { HIGHLIGHT_STYLE_LABELS, RING_HIGHLIGHT } from "../domain/highlight";
 import {
   NORMAL_EMPHASIS,
   NUMBER_EMPHASIS_LABELS,
   NUMBER_FORMAT_LABELS,
   PLAIN_FORMAT,
 } from "../domain/numberStyle";
-import type { CardKind, IconKey, ItemColor, NumberEmphasis, NumberFormat } from "../domain/types";
+import type {
+  CardKind,
+  HighlightStyle,
+  IconKey,
+  ItemColor,
+  NumberEmphasis,
+  NumberFormat,
+} from "../domain/types";
 import { useForgetColor, useRecentColors } from "../store/selectors";
 import { ColorSwatchPicker } from "./ColorSwatchPicker";
 import styles from "./CustomizePanel.module.css";
@@ -40,7 +48,17 @@ interface CustomizePanelProps {
       `undefined` means normal. */
   readonly numberEmphasis?: NumberEmphasis;
   readonly onNumberEmphasisChange?: (emphasis: NumberEmphasis | undefined) => void;
+  /** Cards only: a border colour separate from `color`, and how it is
+      drawn. Omit `onHighlightChange` and there is no "Highlight" section.
+      The preview works like `onColorPreview`. */
+  readonly highlight?: ItemColor;
+  readonly onHighlightChange?: (highlight: ItemColor | undefined) => void;
+  readonly onHighlightPreview?: (highlight: ItemColor | null) => void;
+  readonly highlightStyle?: HighlightStyle;
+  readonly onHighlightStyleChange?: (style: HighlightStyle | undefined) => void;
 }
+
+function ignore() {}
 
 /**
  * The colour (and, for a list, icon; for a card, type) popover. Cards and
@@ -73,13 +91,23 @@ export function CustomizePanel({
   onNumberFormatChange,
   numberEmphasis,
   onNumberEmphasisChange,
+  highlight,
+  onHighlightChange,
+  onHighlightPreview,
+  highlightStyle,
+  onHighlightStyleChange,
 }: CustomizePanelProps) {
   const recent = useRecentColors();
   const forgetColor = useForgetColor();
   const { draft, updateDraft, commit, finish } = useColorDraft(onColorChange, onColorPreview);
+  // The highlight has a picker of its own, so it gets its own draft: a drag
+  // in one picker must never save into the other. Hooks can't be skipped, so
+  // a host with no highlight gets a draft wired to nothing.
+  const highlightDraft = useColorDraft(onHighlightChange ?? ignore, onHighlightPreview ?? ignore);
 
   function handleClose() {
     finish();
+    highlightDraft.finish();
     onClose();
   }
 
@@ -96,6 +124,30 @@ export function CustomizePanel({
           onDraftChange={updateDraft}
         />
       </div>
+      {onHighlightChange && (
+        <div className={styles.section}>
+          <span className={styles.label}>Highlight</span>
+          <ColorSwatchPicker
+            value={highlight}
+            draft={highlightDraft.draft}
+            recent={recent}
+            onChange={highlightDraft.commit}
+            onForget={forgetColor}
+            onDraftChange={highlightDraft.updateDraft}
+            noneLabel="No highlight"
+          />
+        </div>
+      )}
+      {onHighlightStyleChange && (highlight !== undefined || highlightDraft.draft !== null) && (
+        <ChoiceSection
+          label="Highlight style"
+          choices={Object.keys(HIGHLIGHT_STYLE_LABELS) as (keyof typeof HIGHLIGHT_STYLE_LABELS)[]}
+          labels={HIGHLIGHT_STYLE_LABELS}
+          value={highlightStyle}
+          absent={RING_HIGHLIGHT}
+          onChange={onHighlightStyleChange}
+        />
+      )}
       {onIconChange && (
         <div className={styles.section}>
           <span className={styles.label}>Icon</span>
@@ -138,8 +190,8 @@ export function CustomizePanel({
 
 /**
  * One row of pill choices over a closed set where one member (`absent`)
- * is stored as `undefined` -- card type, number format and number emphasis
- * all work this way, so boards saved before each existed load unchanged.
+ * is stored as `undefined` -- card type, number format, number emphasis and
+ * highlight style all work this way, so boards saved before each existed load unchanged.
  */
 function ChoiceSection<T extends string, A extends string>({
   label,

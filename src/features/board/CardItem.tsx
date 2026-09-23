@@ -7,6 +7,7 @@ import { InlineEditable } from "../../components/InlineEditable";
 import { DropdownMenu, DropdownMenuTrigger } from "../../components/ui/dropdown-menu";
 import { inkOf, specOf } from "../../domain/cardKinds";
 import { accentCss } from "../../domain/colors";
+import { highlightStyleOf } from "../../domain/highlight";
 import { formatNumber } from "../../domain/numberStyle";
 import type { CardId, ItemColor, ListId, NumberFormat } from "../../domain/types";
 import {
@@ -16,6 +17,8 @@ import {
   useListColor,
   useRenameCard,
   useSetCardColor,
+  useSetCardHighlight,
+  useSetCardHighlightStyle,
   useSetCardKind,
   useSetCardsNumberEmphasis,
   useSetCardDescription,
@@ -78,6 +81,8 @@ function CardItemImpl({
   const deleteCard = useDeleteCard();
   const setCardColor = useSetCardColor();
   const setCardKind = useSetCardKind();
+  const setCardHighlight = useSetCardHighlight();
+  const setCardHighlightStyle = useSetCardHighlightStyle();
   const setCardsNumberEmphasis = useSetCardsNumberEmphasis();
   const setCardDescription = useSetCardDescription();
   const setCardPostgameDescription = useSetCardPostgameDescription();
@@ -90,6 +95,8 @@ function CardItemImpl({
   // saved. Local to this card, so previewing re-renders this card alone and
   // never touches the store, the undo stack or the disk.
   const [previewColor, setPreviewColor] = useState<ItemColor | null>(null);
+  // The same, for the highlight picker.
+  const [previewHighlight, setPreviewHighlight] = useState<ItemColor | null>(null);
   const customizeTriggerRef = useRef<HTMLButtonElement>(null);
   // Collapsed by default so a description doesn't inflate every card's
   // height on a board with hundreds of them -- purely local, ephemeral
@@ -149,10 +156,16 @@ function CardItemImpl({
   // fallback in CardItem.module.css tints the card with the list's accent
   // instead.
   const color = previewColor ?? card.color;
+  // A highlight is a border colour plus a style; `data-highlight` picks the
+  // style's CSS, `--card-highlight` feeds it the colour. A type with no
+  // border to draw on (a divider) keeps its highlight but doesn't show it.
+  const highlight = previewHighlight ?? card.highlight;
+  const highlightStyle = spec.highlightable ? highlightStyleOf({ ...card, highlight }) : undefined;
   const style: CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
     ...(color ? ({ "--card-accent": accentCss(color) } as CSSProperties) : {}),
+    ...(highlight ? ({ "--card-highlight": accentCss(highlight) } as CSSProperties) : {}),
   };
   // A custom colour can leave the theme's text unreadable; `data-ink` swaps
   // the card to white or black text when it does (see CardItem.module.css).
@@ -170,6 +183,7 @@ function CardItemImpl({
       data-numbered={number !== null ? "" : undefined}
       // Styles the number (see CardItem.module.css's emphasis rules).
       data-number-emphasis={card.numberEmphasis}
+      data-highlight={highlightStyle}
       onContextMenu={handleCardContextMenu}
       {...attributes}
       {...listeners}
@@ -306,6 +320,11 @@ function CardItemImpl({
               ? (emphasis) => setCardsNumberEmphasis([cardId], emphasis)
               : undefined
           }
+          highlight={card.highlight}
+          onHighlightChange={spec.highlightable ? (next) => setCardHighlight(cardId, next) : undefined}
+          onHighlightPreview={setPreviewHighlight}
+          highlightStyle={card.highlightStyle}
+          onHighlightStyleChange={(style) => setCardHighlightStyle(cardId, style)}
           onClose={() => setIsCustomizeOpen(false)}
         />
       )}

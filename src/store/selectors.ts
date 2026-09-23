@@ -299,6 +299,14 @@ export function useSetCardColor() {
   return useBoardStore((state) => state.setCardColor);
 }
 
+export function useSetCardHighlight() {
+  return useBoardStore((state) => state.setCardHighlight);
+}
+
+export function useSetCardHighlightStyle() {
+  return useBoardStore((state) => state.setCardHighlightStyle);
+}
+
 export function useSetCardsNumberEmphasis() {
   return useBoardStore((state) => state.setCardsNumberEmphasis);
 }

@@ -89,6 +89,11 @@ export type NumberFormat = (typeof NUMBER_FORMATS)[number];
 export const NUMBER_EMPHASES = ["badge", "ring", "bold", "muted"] as const;
 export type NumberEmphasis = (typeof NUMBER_EMPHASES)[number];
 
+/** How a highlighted card draws its highlight colour (domain/highlight.ts).
+    A card with a highlight colour but no style uses a plain ring. */
+export const HIGHLIGHT_STYLES = ["outline", "dashed", "double", "bar", "pulse"] as const;
+export type HighlightStyle = (typeof HIGHLIGHT_STYLES)[number];
+
 /**
  * What is behind a board's lists. Per board, so boards can be told apart at a
  * glance; `undefined` on the board means the theme's own background. A tagged
@@ -136,6 +141,13 @@ export interface Card {
       means normal. Kept when the card switches to an unnumbered type, so
       switching back restores it. */
   readonly numberEmphasis?: NumberEmphasis;
+  /** A border colour that picks the card out, separate from `color` (which
+      tints the whole card), so a red card can still wear a blue ring.
+      Absent means no highlight. */
+  readonly highlight?: ItemColor;
+  /** How the highlight is drawn. Absent means a plain ring. Kept when the
+      highlight colour is cleared, so turning it back on restores the style. */
+  readonly highlightStyle?: HighlightStyle;
 }
 
 export interface List {

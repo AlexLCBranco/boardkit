@@ -892,3 +892,24 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
     the variable again itself, just as it does for `--list-accent`.
   - The format comes down to `CardItem` as a primitive prop next to `number`,
     so changing it re-renders that list's cards and nothing else.
+
+- **Card highlights (v0.0.58).** A card can wear a border colour of its own,
+  set in its customise panel under "Highlight":
+  - **Separate from `color`.** `Card.highlight` is its own `ItemColor`, so a
+    red-tinted card can still get a blue ring. `Card.highlightStyle` (ring,
+    outline, dashed, double, top bar, pulse; absent = ring) is kept when the
+    colour is cleared, so turning the highlight back on restores it. Both
+    are cleaned on load by `withKnownHighlights` (`domain/highlight.ts`).
+  - **Paint only, never size.** Every style is box-shadow or `outline`,
+    never border width or padding, so a highlighted card is exactly the size
+    of its neighbours and switching styles never shifts the list. The card's
+    shadow is `var(--highlight-ring), <whatever else>` everywhere (rest,
+    hover, selected, dragging, overlay), so those states stack on top of
+    the highlight instead of wiping it. `--highlight-reach` says how far a
+    style sticks out, and the selection ring sits just outside that.
+  - **Pulse animates opacity only**, on a `::before` overlay drawn once, and
+    is held still under `prefers-reduced-motion` (the global rule would
+    otherwise shorten the endless loop into a strobe).
+  - Dividers have no border to draw on, so `CardKindSpec.highlightable` is
+    false for them: the highlight is kept, hidden, and offered again when the
+    card switches back to a type that has one.

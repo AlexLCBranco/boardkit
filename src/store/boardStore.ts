@@ -27,6 +27,7 @@ import type {
   Card,
   CardId,
   CardKind,
+  HighlightStyle,
   IconKey,
   ListId,
   ListWidth,
@@ -115,6 +116,10 @@ export interface BoardActions {
       panel, or a whole marquee selection -- in one undo step. `undefined`
       goes back to normal. */
   setCardsNumberEmphasis: (cardIds: readonly CardId[], emphasis: NumberEmphasis | undefined) => void;
+  /** A card's highlight colour. `undefined` removes the highlight. */
+  setCardHighlight: (cardId: CardId, highlight: ItemColor | undefined) => void;
+  /** How a card's highlight is drawn. `undefined` goes back to a ring. */
+  setCardHighlightStyle: (cardId: CardId, style: HighlightStyle | undefined) => void;
   setCardDescription: (cardId: CardId, description: string | undefined) => void;
   setCardPostgameDescription: (cardId: CardId, description: string | undefined) => void;
   undo: () => void;
@@ -445,6 +450,20 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
       }
       return withHistory(state, { cards });
     }),
+
+  setCardHighlight: (cardId, highlight) =>
+    set((state) =>
+      withHistory(state, {
+        cards: { ...state.cards, [cardId]: { ...state.cards[cardId], highlight } },
+      }),
+    ),
+
+  setCardHighlightStyle: (cardId, highlightStyle) =>
+    set((state) =>
+      withHistory(state, {
+        cards: { ...state.cards, [cardId]: { ...state.cards[cardId], highlightStyle } },
+      }),
+    ),
 
   setCardDescription: (cardId, description) =>
     set((state) =>

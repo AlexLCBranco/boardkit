@@ -18,7 +18,13 @@
     var(--surface-raised);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
+  /* A highlight's own shadow (see "Card highlights" below), listed first in
+     every box-shadow on the card so hover, selection and lifting stack on
+     top of it instead of replacing it. `--highlight-reach` is how far it
+     sticks out, so the selection ring can sit just outside it. */
+  --highlight-ring: 0 0 transparent;
+  --highlight-reach: 0px;
+  box-shadow: var(--highlight-ring), var(--shadow-sm);
   padding: var(--space-2) var(--space-3);
   cursor: grab;
   /* Required by dnd-kit's pointer sensor: without it, a touch drag scrolls
@@ -36,7 +42,7 @@
 }
 
 .card:hover {
-  box-shadow: var(--shadow-md), inset 0 0 0 1px var(--accent);
+  box-shadow: var(--highlight-ring), var(--shadow-md), inset 0 0 0 1px var(--accent);
   transform: translateY(-1px);
 }
 
@@ -144,7 +150,85 @@
    box-shadow changes, and it already transitions above. */
 .selected,
 .selected:hover {
-  box-shadow: var(--shadow-md), 0 0 0 2px var(--accent);
+  box-shadow:
+    var(--highlight-ring),
+    var(--shadow-md),
+    0 0 0 calc(var(--highlight-reach) + 2px) var(--accent);
+}
+
+/* ---- Card highlights (domain/highlight.ts) ----
+   A border colour of the card's own, drawn one of six ways. Every style is
+   paint only -- box-shadow and outline, never border width or padding -- so
+   a highlighted card is exactly the size of its neighbours and switching
+   styles never shifts the list. */
+.card[data-highlight] {
+  border-color: var(--card-highlight);
+}
+
+.card[data-highlight="ring"],
+.card[data-highlight="pulse"] {
+  --highlight-ring: inset 0 0 0 1px var(--card-highlight);
+}
+
+.card[data-highlight="outline"] {
+  --highlight-ring: 0 0 0 var(--card-highlight-reach) var(--card-highlight);
+  --highlight-reach: var(--card-highlight-reach);
+}
+
+/* An outline follows the border radius, and unlike a border it takes no
+   space, so it can be twice as thick without moving the text. */
+.card[data-highlight="dashed"] {
+  border-color: transparent;
+  outline: 2px dashed var(--card-highlight);
+  outline-offset: -2px;
+}
+
+/* The gap between the two lines is real transparency, not a painted
+   stripe, so it shows whatever is behind the card. */
+.card[data-highlight="double"] {
+  outline: 1px solid var(--card-highlight);
+  outline-offset: calc(var(--card-highlight-reach) - 1px);
+  --highlight-reach: var(--card-highlight-reach);
+}
+
+.card[data-highlight="bar"] {
+  border-color: var(--border-subtle);
+  border-top-color: var(--card-highlight);
+  --highlight-ring: inset 0 var(--card-highlight-bar) 0 0 var(--card-highlight);
+}
+
+/* A ring that breathes. The loop animates only the opacity of an overlay
+   drawn once, so it costs the compositor nothing per frame. */
+.card[data-highlight="pulse"] {
+  --highlight-reach: var(--card-highlight-reach);
+}
+
+.card[data-highlight="pulse"]::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  box-shadow: 0 0 0 var(--card-highlight-reach) var(--card-highlight);
+  pointer-events: none;
+  animation: card-highlight-pulse var(--duration-pulse) var(--ease-standard) infinite;
+}
+
+@keyframes card-highlight-pulse {
+  0%,
+  100% {
+    opacity: 0.15;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* The global reduced-motion rule shortens animations to nearly nothing,
+   which would turn an endless loop into a strobe. Hold it still instead. */
+@media (prefers-reduced-motion: reduce) {
+  .card[data-highlight="pulse"]::before {
+    animation: none;
+  }
 }
 
 /* A search result being revealed (`features/search/revealCard.ts` sets
@@ -184,7 +268,7 @@
 }
 
 .dragging:hover {
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--highlight-ring), var(--shadow-sm);
   transform: none;
 }
 
@@ -193,7 +277,7 @@
    used for settling, since a pickup shouldn't overshoot on the way up, only
    on the way back down. */
 .overlay {
-  box-shadow: var(--shadow-lifted);
+  box-shadow: var(--highlight-ring), var(--shadow-lifted);
   cursor: grabbing;
   animation: card-lift-off var(--duration-fast) var(--ease-out) forwards;
 }
@@ -207,11 +291,11 @@
 @keyframes card-lift-off {
   from {
     transform: scale(1);
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--highlight-ring), var(--shadow-sm);
   }
   to {
     transform: scale(1.03);
-    box-shadow: var(--shadow-lifted);
+    box-shadow: var(--highlight-ring), var(--shadow-lifted);
   }
 }
 

@@ -16,6 +16,7 @@ import { useState, type CSSProperties, type ReactNode } from "react";
 
 import { inkOf, specOf } from "../../domain/cardKinds";
 import { accentCss } from "../../domain/colors";
+import { highlightStyleOf } from "../../domain/highlight";
 import { formatNumber, needsWideGutter } from "../../domain/numberStyle";
 import type { CardId, ListId } from "../../domain/types";
 import {
@@ -207,6 +208,7 @@ function CardOverlay({ cardId, listId }: { readonly cardId: CardId; readonly lis
   const style: CSSProperties = {
     ...(card.color ? ({ "--card-accent": accentCss(card.color) } as CSSProperties) : {}),
     ...(list.color ? ({ "--list-accent": accentCss(list.color) } as CSSProperties) : {}),
+    ...(card.highlight ? ({ "--card-highlight": accentCss(card.highlight) } as CSSProperties) : {}),
     // Portalled too, so the list's wider number strip has to be restated.
     ...(needsWideGutter(list.numberFormat)
       ? ({ "--card-number-gutter": "var(--card-number-gutter-wide)" } as CSSProperties)
@@ -222,6 +224,7 @@ function CardOverlay({ cardId, listId }: { readonly cardId: CardId; readonly lis
       data-ink={ink === "default" ? undefined : ink}
       data-numbered={number !== null ? "" : undefined}
       data-number-emphasis={card.numberEmphasis}
+      data-highlight={specOf(card).highlightable ? highlightStyleOf(card) : undefined}
     >
       {/* A zero-width space keeps a blank title one line tall, as on the card. */}
       <p className={cardStyles.title}>
