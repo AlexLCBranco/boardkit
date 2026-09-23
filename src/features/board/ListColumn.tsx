@@ -324,15 +324,6 @@ function ListColumnImpl({ listId }: ListColumnProps) {
       <ContextMenu>
         <ContextMenuTrigger asChild>
       <header className={styles.header} data-list-header {...attributes} {...listeners}>
-        {continuesNumbering && (
-          <span
-            className={styles.continuesMark}
-            title="Numbering continues from the previous list"
-            aria-label="Numbering continues from the previous list"
-          >
-            ↳
-          </span>
-        )}
         {list.icon && <Icon name={list.icon} className={styles.headerIcon} />}
         <h2 className={styles.title}>
           <InlineEditable
@@ -342,7 +333,16 @@ function ListColumnImpl({ listId }: ListColumnProps) {
             allowEmpty
           />
         </h2>
-        <span className={styles.count}>{cardCount}</span>
+        {continuesNumbering ? (
+          <span
+            className={styles.count}
+            title={`${cardCount} card${cardCount === 1 ? "" : "s"}, numbered on from the previous list`}
+          >
+            {numberRange(cardNumbers) ?? cardCount}
+          </span>
+        ) : (
+          <span className={styles.count}>{cardCount}</span>
+        )}
         <button
           type="button"
           className={styles.thotsButton}
@@ -526,6 +526,20 @@ function EmptyListDropZone({ listId }: { readonly listId: ListId }) {
       className={`${styles.emptyDropZone} ${isOver ? styles.emptyDropZoneOver : ""}`}
     />
   );
+}
+
+/** A continuing list's pill: "5–7", or just "5" for a single numbered card.
+    `null` when nothing in the list is numbered, so the pill falls back to
+    the plain count. Numbers only ever go up, so the first and last non-null
+    entries are the range. */
+function numberRange(numbers: readonly (number | null)[]): string | null {
+  const numbered = numbers.filter((number) => number !== null);
+  if (numbered.length === 0) {
+    return null;
+  }
+  const first = numbered[0];
+  const last = numbered[numbered.length - 1];
+  return first === last ? `${first}` : `${first}–${last}`;
 }
 
 /** "Paste 3 cards", or "Paste 2 of 5 cards" when the list can only take part

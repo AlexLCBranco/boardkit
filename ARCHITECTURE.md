@@ -845,7 +845,10 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
     copy passes none and stays transparent.
 - **Continued numbering (v0.0.53).** A list can continue the numbering of the
   list to its left instead of starting at 1: right-click its header, or click
-  the number on its first card. A "↳" in the header marks it.
+  the number on its first card. Its header's count pill then shows the
+  range it covers ("5–7") instead of the card count, which moves to the
+  pill's tooltip -- no extra header chrome, and it says where the list sits
+  in the sequence rather than only that it continues.
   - **One flag, linked by position.** `List.continuesNumbering` is a boolean,
     not a pointer to another list. The link follows board order, so moving or
     deleting lists can't leave a dangling reference, and chains (C continues
