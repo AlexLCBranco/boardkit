@@ -48,6 +48,11 @@
   cursor: pointer;
 }
 
+/* Single-glyph buttons (reset, clear): square, not padded out like words. */
+.iconButton {
+  padding: 0;
+}
+
 .button:hover {
   background: var(--surface-active);
 }

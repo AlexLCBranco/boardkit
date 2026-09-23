@@ -124,6 +124,9 @@ export interface BoardActions {
   setCardsHighlight: (cardIds: readonly CardId[], highlight: ItemColor | undefined) => void;
   /** How the given cards' highlights are drawn. `undefined` goes back to a ring. */
   setCardsHighlightStyle: (cardIds: readonly CardId[], style: HighlightStyle | undefined) => void;
+  /** Clears number emphasis, highlight and highlight style on every card
+      given -- everything the selection bar can set -- in one undo step. */
+  resetCardsStyle: (cardIds: readonly CardId[]) => void;
   setCardDescription: (cardId: CardId, description: string | undefined) => void;
   setCardPostgameDescription: (cardId: CardId, description: string | undefined) => void;
   undo: () => void;
@@ -480,6 +483,18 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
 
   setCardsHighlightStyle: (cardIds, highlightStyle) =>
     set((state) => withHistory(state, patchCards(state, cardIds, { highlightStyle }))),
+
+  resetCardsStyle: (cardIds) =>
+    set((state) =>
+      withHistory(
+        state,
+        patchCards(state, cardIds, {
+          numberEmphasis: undefined,
+          highlight: undefined,
+          highlightStyle: undefined,
+        }),
+      ),
+    ),
 
   setCardDescription: (cardId, description) =>
     set((state) =>

@@ -313,6 +313,10 @@ export function useSetCardsHighlightStyle() {
   return useBoardStore((state) => state.setCardsHighlightStyle);
 }
 
+export function useResetCardsStyle() {
+  return useBoardStore((state) => state.resetCardsStyle);
+}
+
 export function useSetCardsNumberEmphasis() {
   return useBoardStore((state) => state.setCardsNumberEmphasis);
 }

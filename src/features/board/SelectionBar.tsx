@@ -18,6 +18,7 @@ import {
   useClipboard,
   useCopySelection,
   useRecentColors,
+  useResetCardsStyle,
   useSelectedCount,
   useSetCardsHighlight,
   useSetCardsHighlightStyle,
@@ -43,6 +44,9 @@ const COPIED_FLASH_MS = 1500;
  * "Highlight" works the same way: a colour, or no highlight, for every
  * selected card at once, then a style. A style on a card with no highlight
  * colour is kept and shows once it gets one, just as in a card's own panel.
+ *
+ * "↺" undoes all of the above at once: normal numbers, no highlight, plain
+ * ring. It leaves the card's own colour, type and text alone.
  */
 export function SelectionBar() {
   const selectedCount = useSelectedCount();
@@ -52,6 +56,7 @@ export function SelectionBar() {
   const setCardsNumberEmphasis = useSetCardsNumberEmphasis();
   const setCardsHighlight = useSetCardsHighlight();
   const setCardsHighlightStyle = useSetCardsHighlightStyle();
+  const resetCardsStyle = useResetCardsStyle();
   const recent = useRecentColors();
   const [copied, setCopied] = useState(false);
 
@@ -143,7 +148,16 @@ export function SelectionBar() {
       </DropdownMenu>
       <button
         type="button"
-        className={styles.button}
+        className={`${styles.button} ${styles.iconButton}`}
+        onClick={() => resetCardsStyle(readSelectedCardIds())}
+        aria-label="Reset number and highlight to default"
+        title="Reset to default"
+      >
+        ↺
+      </button>
+      <button
+        type="button"
+        className={`${styles.button} ${styles.iconButton}`}
         onClick={clearSelection}
         aria-label="Clear selection"
       >
