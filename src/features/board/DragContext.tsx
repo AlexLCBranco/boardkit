@@ -16,6 +16,7 @@ import { useState, type CSSProperties, type ReactNode } from "react";
 
 import { inkOf, specOf } from "../../domain/cardKinds";
 import { accentCss } from "../../domain/colors";
+import { formatNumber, needsWideGutter } from "../../domain/numberStyle";
 import type { CardId, ListId } from "../../domain/types";
 import {
   useCard,
@@ -206,6 +207,10 @@ function CardOverlay({ cardId, listId }: { readonly cardId: CardId; readonly lis
   const style: CSSProperties = {
     ...(card.color ? ({ "--card-accent": accentCss(card.color) } as CSSProperties) : {}),
     ...(list.color ? ({ "--list-accent": accentCss(list.color) } as CSSProperties) : {}),
+    // Portalled too, so the list's wider number strip has to be restated.
+    ...(needsWideGutter(list.numberFormat)
+      ? ({ "--card-number-gutter": "var(--card-number-gutter-wide)" } as CSSProperties)
+      : {}),
   };
   const theme = useResolvedTheme();
   const ink = inkOf(card, list.color, theme);
@@ -216,10 +221,15 @@ function CardOverlay({ cardId, listId }: { readonly cardId: CardId; readonly lis
       style={style}
       data-ink={ink === "default" ? undefined : ink}
       data-numbered={number !== null ? "" : undefined}
+      data-number-emphasis={card.numberEmphasis}
     >
       {/* A zero-width space keeps a blank title one line tall, as on the card. */}
       <p className={cardStyles.title}>
-        {number !== null && <span className={cardStyles.number}>{number}</span>}
+        {number !== null && (
+          <span className={cardStyles.number}>
+            <span className={cardStyles.numberText}>{formatNumber(number, list.numberFormat)}</span>
+          </span>
+        )}
         {card.title || "​"}
       </p>
       {specOf(card).hasThots && (card.description || card.postgameDescription) && (

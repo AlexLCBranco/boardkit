@@ -869,3 +869,26 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
     button, with a stable `useCallback` handler so `memo` holds. It stops
     `pointerdown` from reaching the card's drag listeners, so clicking it is
     never the start of a drag.
+
+- **Number styles (v0.0.57).** Card numbers have two independent style
+  controls, both optional fields so older boards load unchanged:
+  - **Format is per list, emphasis is per card.** `List.numberFormat`
+    (plain, padded, hash, roman, letters) sets how every number in a list is
+    written, because a sequence only reads as one if it's written one way
+    ("1, ii, 3" looks like a bug). `Card.numberEmphasis` (badge, ring, bold,
+    muted) picks out a single card without breaking the sequence. Format is
+    in the list's customise panel, emphasis in the card's, and the selection
+    bar's "Number" menu sets emphasis on every selected card in one undo step
+    (`setCardsNumberEmphasis`, which also serves the single-card case).
+  - **Text in `domain/`, paint in CSS.** `domain/numberStyle.ts` only turns a
+    number into text (`formatNumber`). Emphasis is a `data-number-emphasis`
+    attribute on the card, styled in `CardItem.module.css`, the same way
+    `data-ink` works. The number's text sits in its own `.numberText` pill, so
+    the strip keeps its size and emphasised cards stay lined up.
+  - **Long formats widen the strip.** Roman and hash can outgrow the 32px
+    strip ("lxxxviii"), so those lists override `--card-number-gutter` with
+    `--card-number-gutter-wide` on the column, and every card inherits it
+    through CSS. The drag overlay is portalled outside the column, so it sets
+    the variable again itself, just as it does for `--list-accent`.
+  - The format comes down to `CardItem` as a primitive prop next to `number`,
+    so changing it re-renders that list's cards and nothing else.

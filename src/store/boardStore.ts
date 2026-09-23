@@ -31,6 +31,8 @@ import type {
   ListId,
   ListWidth,
   ItemColor,
+  NumberEmphasis,
+  NumberFormat,
 } from "../domain/types";
 import { releaseImageIfUnused } from "./imageStore";
 import {
@@ -101,12 +103,18 @@ export interface BoardActions {
   setListIcon: (listId: ListId, icon: IconKey | undefined) => void;
   /** One undo step. */
   setListContinuesNumbering: (listId: ListId, continues: boolean) => void;
+  /** `undefined` goes back to plain digits. One undo step. */
+  setListNumberFormat: (listId: ListId, format: NumberFormat | undefined) => void;
   setListWidths: (updates: Readonly<Record<ListId, ListWidth | undefined>>) => void;
   /** `undefined` goes back to the theme's own background. One undo step. */
   setBackground: (background: BoardBackground | undefined) => void;
   /** `undefined` makes it a normal card again. One undo step. */
   setCardKind: (cardId: CardId, kind: CardKind | undefined) => void;
   setCardColor: (cardId: CardId, color: ItemColor | undefined) => void;
+  /** Sets the emphasis on every card given -- one card from its customise
+      panel, or a whole marquee selection -- in one undo step. `undefined`
+      goes back to normal. */
+  setCardsNumberEmphasis: (cardIds: readonly CardId[], emphasis: NumberEmphasis | undefined) => void;
   setCardDescription: (cardId: CardId, description: string | undefined) => void;
   setCardPostgameDescription: (cardId: CardId, description: string | undefined) => void;
   undo: () => void;
@@ -389,6 +397,13 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
       }),
     ),
 
+  setListNumberFormat: (listId, format) =>
+    set((state) =>
+      withHistory(state, {
+        lists: { ...state.lists, [listId]: { ...state.lists[listId], numberFormat: format } },
+      }),
+    ),
+
   // A single resize/auto-fit is `updates` with one entry; the Alt-modified
   // "every list at once" form has one per column (ListColumn.tsx). Either
   // way, every affected list lands in one `lists` patch, so the gesture is
@@ -417,6 +432,19 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
         cards: { ...state.cards, [cardId]: { ...state.cards[cardId], color } },
       }),
     ),
+
+  // Ids no longer on the board (a selection that outlived a delete) are
+  // skipped rather than recreated as half-empty cards.
+  setCardsNumberEmphasis: (cardIds, emphasis) =>
+    set((state) => {
+      const cards = { ...state.cards };
+      for (const cardId of cardIds) {
+        if (cards[cardId]) {
+          cards[cardId] = { ...cards[cardId], numberEmphasis: emphasis };
+        }
+      }
+      return withHistory(state, { cards });
+    }),
 
   setCardDescription: (cardId, description) =>
     set((state) =>

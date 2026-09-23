@@ -34,7 +34,8 @@ import {
 } from "../../components/ui/context-menu";
 import { MAX_CARDS_PER_LIST, cardRoom } from "../../domain/limits";
 import { accentCss } from "../../domain/colors";
-import type { ItemColor, ListId } from "../../domain/types";
+import { formatNumber, needsWideGutter } from "../../domain/numberStyle";
+import type { ItemColor, ListId, NumberFormat } from "../../domain/types";
 import {
   useAddCard,
   useCardCount,
@@ -54,6 +55,7 @@ import {
   useSetListContinuesNumbering,
   useSetListIcon,
   useSetListWidths,
+  useSetListNumberFormat,
 } from "../../store/selectors";
 import { LIST_WIDTH_MAX, LIST_WIDTH_MIN } from "../../styles/layout";
 import { sortableTransition } from "../../styles/motion";
@@ -102,6 +104,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
   const setListColor = useSetListColor();
   const setListIcon = useSetListIcon();
   const setListWidths = useSetListWidths();
+  const setListNumberFormat = useSetListNumberFormat();
   const cardNumbers = useCardNumbers(listId);
   const isFirstList = useIsFirstList(listId);
   // True when the list to the right continues from this one, so this list
@@ -314,6 +317,10 @@ function ListColumnImpl({ listId }: ListColumnProps) {
     transition,
     ...(accent ? ({ "--list-accent": accent } as CSSProperties) : {}),
     ...(list.width ? ({ "--column-width": `${list.width}px` } as CSSProperties) : {}),
+    // Cascades to every card's number strip, like `--list-accent` above.
+    ...(needsWideGutter(list.numberFormat)
+      ? ({ "--card-number-gutter": "var(--card-number-gutter-wide)" } as CSSProperties)
+      : {}),
   };
 
   return (
@@ -344,7 +351,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
               continuesNumbering ? "on from the previous list" : "on into the next list"
             }`}
           >
-            {numberRange(cardNumbers) ?? cardCount}
+            {numberRange(cardNumbers, list.numberFormat) ?? cardCount}
           </span>
         ) : (
           <span className={styles.count}>{cardCount}</span>
@@ -434,6 +441,8 @@ function ListColumnImpl({ listId }: ListColumnProps) {
           onColorChange={(next) => setListColor(listId, next)}
           onColorPreview={setPreviewColor}
           onIconChange={(icon) => setListIcon(listId, icon)}
+          numberFormat={list.numberFormat}
+          onNumberFormatChange={(format) => setListNumberFormat(listId, format)}
           onClose={() => setIsCustomizeOpen(false)}
         />
       )}
@@ -449,6 +458,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
                     listId={listId}
                     thotsMode={columnThotsMode}
                     number={cardNumbers[index] ?? null}
+                    numberFormat={list.numberFormat}
                     onNumberClick={
                       !isFirstList && index === firstNumberedIndex
                         ? toggleContinuesNumbering
@@ -538,14 +548,19 @@ function EmptyListDropZone({ listId }: { readonly listId: ListId }) {
     `null` when nothing in the list is numbered, so the pill falls back to
     the plain count. Numbers only ever go up, so the first and last non-null
     entries are the range. */
-function numberRange(numbers: readonly (number | null)[]): string | null {
+function numberRange(
+  numbers: readonly (number | null)[],
+  format: NumberFormat | undefined,
+): string | null {
   const numbered = numbers.filter((number) => number !== null);
   if (numbered.length === 0) {
     return null;
   }
   const first = numbered[0];
   const last = numbered[numbered.length - 1];
-  return first === last ? `${first}` : `${first}–${last}`;
+  return first === last
+    ? formatNumber(first, format)
+    : `${formatNumber(first, format)}–${formatNumber(last, format)}`;
 }
 
 /** "Paste 3 cards", or "Paste 2 of 5 cards" when the list can only take part

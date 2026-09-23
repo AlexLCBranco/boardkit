@@ -1,7 +1,13 @@
 import type { RefObject } from "react";
 
 import { CARD_KIND_CHOICES, CARD_KIND_SPECS, NORMAL_KIND } from "../domain/cardKinds";
-import type { CardKind, IconKey, ItemColor } from "../domain/types";
+import {
+  NORMAL_EMPHASIS,
+  NUMBER_EMPHASIS_LABELS,
+  NUMBER_FORMAT_LABELS,
+  PLAIN_FORMAT,
+} from "../domain/numberStyle";
+import type { CardKind, IconKey, ItemColor, NumberEmphasis, NumberFormat } from "../domain/types";
 import { useForgetColor, useRecentColors } from "../store/selectors";
 import { ColorSwatchPicker } from "./ColorSwatchPicker";
 import styles from "./CustomizePanel.module.css";
@@ -26,6 +32,14 @@ interface CustomizePanelProps {
       gets no "Card type" section. `kind` undefined means a normal card. */
   readonly kind?: CardKind;
   readonly onKindChange?: (kind: CardKind | undefined) => void;
+  /** Lists only: how the list writes its card numbers. Omit the handler and
+      there is no "Numbers" section. `undefined` means plain digits. */
+  readonly numberFormat?: NumberFormat;
+  readonly onNumberFormatChange?: (format: NumberFormat | undefined) => void;
+  /** Cards only, and only numbered ones: how this card's number stands out.
+      `undefined` means normal. */
+  readonly numberEmphasis?: NumberEmphasis;
+  readonly onNumberEmphasisChange?: (emphasis: NumberEmphasis | undefined) => void;
 }
 
 /**
@@ -55,8 +69,11 @@ export function CustomizePanel({
   onIconChange,
   kind,
   onKindChange,
+  numberFormat,
+  onNumberFormatChange,
+  numberEmphasis,
+  onNumberEmphasisChange,
 }: CustomizePanelProps) {
-  const currentKind = kind ?? NORMAL_KIND;
   const recent = useRecentColors();
   const forgetColor = useForgetColor();
   const { draft, updateDraft, commit, finish } = useColorDraft(onColorChange, onColorPreview);
@@ -86,23 +103,76 @@ export function CustomizePanel({
         </div>
       )}
       {onKindChange && (
-        <div className={styles.section}>
-          <span className={styles.label}>Card type</span>
-          <div className={styles.choices} role="group" aria-label="Card type">
-            {CARD_KIND_CHOICES.map((choice) => (
-              <button
-                key={choice}
-                type="button"
-                className={`${styles.choice} ${currentKind === choice ? styles.choiceSelected : ""}`}
-                onClick={() => onKindChange(choice === NORMAL_KIND ? undefined : choice)}
-                aria-pressed={currentKind === choice}
-              >
-                {CARD_KIND_SPECS[choice].label}
-              </button>
-            ))}
-          </div>
-        </div>
+        <ChoiceSection
+          label="Card type"
+          choices={CARD_KIND_CHOICES}
+          labels={Object.fromEntries(CARD_KIND_CHOICES.map((c) => [c, CARD_KIND_SPECS[c].label]))}
+          value={kind}
+          absent={NORMAL_KIND}
+          onChange={onKindChange}
+        />
+      )}
+      {onNumberFormatChange && (
+        <ChoiceSection
+          label="Numbers"
+          choices={Object.keys(NUMBER_FORMAT_LABELS) as (keyof typeof NUMBER_FORMAT_LABELS)[]}
+          labels={NUMBER_FORMAT_LABELS}
+          value={numberFormat}
+          absent={PLAIN_FORMAT}
+          onChange={onNumberFormatChange}
+        />
+      )}
+      {onNumberEmphasisChange && (
+        <ChoiceSection
+          label="Number"
+          choices={Object.keys(NUMBER_EMPHASIS_LABELS) as (keyof typeof NUMBER_EMPHASIS_LABELS)[]}
+          labels={NUMBER_EMPHASIS_LABELS}
+          value={numberEmphasis}
+          absent={NORMAL_EMPHASIS}
+          onChange={onNumberEmphasisChange}
+        />
       )}
     </Popover>
+  );
+}
+
+/**
+ * One row of pill choices over a closed set where one member (`absent`)
+ * is stored as `undefined` -- card type, number format and number emphasis
+ * all work this way, so boards saved before each existed load unchanged.
+ */
+function ChoiceSection<T extends string, A extends string>({
+  label,
+  choices,
+  labels,
+  value,
+  absent,
+  onChange,
+}: {
+  readonly label: string;
+  readonly choices: readonly (T | A)[];
+  readonly labels: Readonly<Record<string, string>>;
+  readonly value: T | undefined;
+  readonly absent: A;
+  readonly onChange: (value: T | undefined) => void;
+}) {
+  const current = value ?? absent;
+  return (
+    <div className={styles.section}>
+      <span className={styles.label}>{label}</span>
+      <div className={styles.choices} role="group" aria-label={label}>
+        {choices.map((choice) => (
+          <button
+            key={choice}
+            type="button"
+            className={`${styles.choice} ${current === choice ? styles.choiceSelected : ""}`}
+            onClick={() => onChange(choice === absent ? undefined : (choice as T))}
+            aria-pressed={current === choice}
+          >
+            {labels[choice]}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }

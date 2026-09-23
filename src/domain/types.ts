@@ -77,6 +77,18 @@ export type ListWidth = number;
 export const CARD_KINDS = ["divider", "note"] as const;
 export type CardKind = (typeof CARD_KINDS)[number];
 
+/** How a list writes its card numbers (`domain/numberStyle.ts`). Set per
+    list, not per card: mixing formats inside one list ("1, ii, 3") reads as
+    a mistake. A list with no format uses plain digits. */
+export const NUMBER_FORMATS = ["padded", "hash", "roman", "letters"] as const;
+export type NumberFormat = (typeof NUMBER_FORMATS)[number];
+
+/** How one card's number stands out from its neighbours. Per card, so a
+    single card can be picked out without breaking the list's sequence. A
+    card with no emphasis shows its number the ordinary way. */
+export const NUMBER_EMPHASES = ["badge", "ring", "bold", "muted"] as const;
+export type NumberEmphasis = (typeof NUMBER_EMPHASES)[number];
+
 /**
  * What is behind a board's lists. Per board, so boards can be told apart at a
  * glance; `undefined` on the board means the theme's own background. A tagged
@@ -120,6 +132,10 @@ export interface Card {
   readonly description?: string;
   /** Shown in the UI as "postgame thots". */
   readonly postgameDescription?: string;
+  /** How this card's number stands out (domain/numberStyle.ts). Absent
+      means normal. Kept when the card switches to an unnumbered type, so
+      switching back restores it. */
+  readonly numberEmphasis?: NumberEmphasis;
 }
 
 export interface List {
@@ -133,6 +149,9 @@ export interface List {
   /** Start card numbers where the list to the left finished, instead of at
       1 (domain/numbering.ts). Absent means false. */
   readonly continuesNumbering?: boolean;
+  /** How this list writes its card numbers (domain/numberStyle.ts). Absent
+      means plain digits. */
+  readonly numberFormat?: NumberFormat;
 }
 
 /**

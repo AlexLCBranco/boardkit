@@ -61,6 +61,9 @@
   /* The numbered card's left strip (CardItem's `.number`). Fits three
      digits, since continued numbering can run past 99. */
   --card-number-gutter: 32px;
+  /* The same strip for a list whose number format runs long (roman
+     "lxxxviii", "#100"): see domain/numberStyle.ts `needsWideGutter`. */
+  --card-number-gutter-wide: 44px;
 
   /* ---- Stacking order, declared once so layers never fight ---- */
   --z-board: 1;

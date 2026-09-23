@@ -276,6 +276,51 @@
   outline-offset: -2px;
 }
 
+/* ---- Number emphasis (domain/numberStyle.ts) ----
+   The strip stays put; only the text inside it changes, so an emphasised
+   card lines up with its neighbours. The pill is exactly one title line
+   tall, so a badge or ring never pushes the number off the title's line. */
+.numberText {
+  display: inline-block;
+  min-width: calc(var(--font-size-sm) + var(--space-2));
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-full);
+  line-height: calc(var(--font-size-sm) + var(--space-2));
+  vertical-align: top;
+  margin-top: calc((var(--font-size-md) * var(--line-normal) - var(--font-size-sm) - var(--space-2)) / 2);
+}
+
+/* Inverted text colours, so it reads on every card tint. */
+.card[data-number-emphasis="badge"] .numberText {
+  background: var(--text-primary);
+  color: var(--surface-raised);
+  font-weight: var(--weight-bold);
+}
+
+/* A card whose colour re-pointed the text tokens (see `[data-ink]` above)
+   also re-points `--text-primary`, so the badge's text needs the other ink. */
+.card[data-ink="light"][data-number-emphasis="badge"] .numberText {
+  color: var(--ink-dark);
+}
+
+.card[data-ink="dark"][data-number-emphasis="badge"] .numberText {
+  color: var(--ink-light);
+}
+
+.card[data-number-emphasis="ring"] .numberText {
+  box-shadow: inset 0 0 0 1px currentColor;
+  color: var(--text-primary);
+}
+
+.card[data-number-emphasis="bold"] .numberText {
+  color: var(--text-primary);
+  font-weight: var(--weight-bold);
+}
+
+.card[data-number-emphasis="muted"] .numberText {
+  opacity: 0.45;
+}
+
 /* Not in the DOM at all until opened (see CardItem.tsx's isDescriptionOpen
    check) -- a collapsed card ends right after its title, no reserved gap
    for a control most cards never use. Opened by right-clicking the card;

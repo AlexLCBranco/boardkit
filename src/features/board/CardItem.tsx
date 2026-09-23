@@ -7,7 +7,8 @@ import { InlineEditable } from "../../components/InlineEditable";
 import { DropdownMenu, DropdownMenuTrigger } from "../../components/ui/dropdown-menu";
 import { inkOf, specOf } from "../../domain/cardKinds";
 import { accentCss } from "../../domain/colors";
-import type { CardId, ItemColor, ListId } from "../../domain/types";
+import { formatNumber } from "../../domain/numberStyle";
+import type { CardId, ItemColor, ListId, NumberFormat } from "../../domain/types";
 import {
   useCard,
   useDeleteCard,
@@ -16,6 +17,7 @@ import {
   useRenameCard,
   useSetCardColor,
   useSetCardKind,
+  useSetCardsNumberEmphasis,
   useSetCardDescription,
   useSetCardPostgameDescription,
 } from "../../store/selectors";
@@ -36,6 +38,9 @@ interface CardItemProps {
       Numbered by the column in one pass (domain/numbering.ts) and handed
       down as a primitive, so only cards whose number changed re-render. */
   readonly number: number | null;
+  /** The list's number format, passed down as a primitive for the same
+      reason as `number`. */
+  readonly numberFormat?: NumberFormat;
   /** Set on a list's first numbered card only: clicking its number toggles
       whether the list continues the previous list's numbering. Must be a
       stable function, or every render would defeat `memo`. */
@@ -64,6 +69,7 @@ function CardItemImpl({
   listId,
   thotsMode,
   number,
+  numberFormat,
   onNumberClick,
   continuesNumbering,
 }: CardItemProps) {
@@ -72,6 +78,7 @@ function CardItemImpl({
   const deleteCard = useDeleteCard();
   const setCardColor = useSetCardColor();
   const setCardKind = useSetCardKind();
+  const setCardsNumberEmphasis = useSetCardsNumberEmphasis();
   const setCardDescription = useSetCardDescription();
   const setCardPostgameDescription = useSetCardPostgameDescription();
   const isSelected = useIsCardSelected(cardId);
@@ -161,6 +168,8 @@ function CardItemImpl({
       data-ink={ink === "default" ? undefined : ink}
       // Reserves the left number strip (see CardItem.module.css).
       data-numbered={number !== null ? "" : undefined}
+      // Styles the number (see CardItem.module.css's emphasis rules).
+      data-number-emphasis={card.numberEmphasis}
       onContextMenu={handleCardContextMenu}
       {...attributes}
       {...listeners}
@@ -181,10 +190,12 @@ function CardItemImpl({
                   : "Continue numbering from the previous list"
               }
             >
-              {number}
+              <span className={styles.numberText}>{formatNumber(number, numberFormat)}</span>
             </button>
           ) : (
-            <span className={styles.number}>{number}</span>
+            <span className={styles.number}>
+              <span className={styles.numberText}>{formatNumber(number, numberFormat)}</span>
+            </span>
           ))}
         <InlineEditable
           value={card.title}
@@ -289,6 +300,12 @@ function CardItemImpl({
           onColorPreview={setPreviewColor}
           kind={card.kind}
           onKindChange={(kind) => setCardKind(cardId, kind)}
+          numberEmphasis={card.numberEmphasis}
+          onNumberEmphasisChange={
+            spec.numbered
+              ? (emphasis) => setCardsNumberEmphasis([cardId], emphasis)
+              : undefined
+          }
           onClose={() => setIsCustomizeOpen(false)}
         />
       )}

@@ -267,6 +267,10 @@ export function useSetListContinuesNumbering() {
   return useBoardStore((state) => state.setListContinuesNumbering);
 }
 
+export function useSetListNumberFormat() {
+  return useBoardStore((state) => state.setListNumberFormat);
+}
+
 export function useSetListColor() {
   return useBoardStore((state) => state.setListColor);
 }
@@ -293,6 +297,10 @@ export function useSetCardKind() {
 
 export function useSetCardColor() {
   return useBoardStore((state) => state.setCardColor);
+}
+
+export function useSetCardsNumberEmphasis() {
+  return useBoardStore((state) => state.setCardsNumberEmphasis);
 }
 
 export function useSetCardDescription() {
