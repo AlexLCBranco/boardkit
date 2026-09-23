@@ -33,6 +33,15 @@ export const NUMBER_FORMAT_LABELS: Readonly<Record<NumberFormatChoice, string>> 
   letters: "A B C",
 };
 
+/** Not a format: the panel's "Numbers" row offers hiding at the end of the
+    formats, but it is stored as `List.numbersHidden`. */
+export const HIDDEN_NUMBERS = "hidden";
+
+export const NUMBER_DISPLAY_LABELS: Readonly<Record<NumberFormatChoice | typeof HIDDEN_NUMBERS, string>> = {
+  ...NUMBER_FORMAT_LABELS,
+  hidden: "Hidden",
+};
+
 export const NUMBER_EMPHASIS_LABELS: Readonly<Record<NumberEmphasisChoice, string>> = {
   normal: "Normal",
   badge: "Badge",

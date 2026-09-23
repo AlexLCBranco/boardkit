@@ -5,7 +5,8 @@ import { HIGHLIGHT_STYLE_LABELS, RING_HIGHLIGHT } from "../domain/highlight";
 import {
   NORMAL_EMPHASIS,
   NUMBER_EMPHASIS_LABELS,
-  NUMBER_FORMAT_LABELS,
+  HIDDEN_NUMBERS,
+  NUMBER_DISPLAY_LABELS,
   PLAIN_FORMAT,
 } from "../domain/numberStyle";
 import type {
@@ -44,6 +45,10 @@ interface CustomizePanelProps {
       there is no "Numbers" section. `undefined` means plain digits. */
   readonly numberFormat?: NumberFormat;
   readonly onNumberFormatChange?: (format: NumberFormat | undefined) => void;
+  /** Lists only: hide the numbers without losing the format. Offered as a
+      last "Hidden" choice in the same row; picking a format unhides. */
+  readonly numbersHidden?: boolean;
+  readonly onNumbersHiddenChange?: (hidden: boolean) => void;
   /** Cards only, and only numbered ones: how this card's number stands out.
       `undefined` means normal. */
   readonly numberEmphasis?: NumberEmphasis;
@@ -89,6 +94,8 @@ export function CustomizePanel({
   onKindChange,
   numberFormat,
   onNumberFormatChange,
+  numbersHidden,
+  onNumbersHiddenChange,
   numberEmphasis,
   onNumberEmphasisChange,
   highlight,
@@ -167,11 +174,13 @@ export function CustomizePanel({
       {onNumberFormatChange && (
         <ChoiceSection
           label="Numbers"
-          choices={Object.keys(NUMBER_FORMAT_LABELS) as (keyof typeof NUMBER_FORMAT_LABELS)[]}
-          labels={NUMBER_FORMAT_LABELS}
-          value={numberFormat}
+          choices={Object.keys(NUMBER_DISPLAY_LABELS) as (keyof typeof NUMBER_DISPLAY_LABELS)[]}
+          labels={NUMBER_DISPLAY_LABELS}
+          value={numbersHidden ? HIDDEN_NUMBERS : numberFormat}
           absent={PLAIN_FORMAT}
-          onChange={onNumberFormatChange}
+          onChange={(choice) =>
+            choice === HIDDEN_NUMBERS ? onNumbersHiddenChange?.(true) : onNumberFormatChange(choice)
+          }
         />
       )}
       {onNumberEmphasisChange && (

@@ -235,7 +235,9 @@ export function useCardNumbers(listId: ListId): readonly (number | null)[] {
 export function useCardNumber(cardId: CardId): number | null {
   return useBoardStore((state) => {
     const listId = state.listOrder.find((id) => state.cardOrder[id]?.includes(cardId));
-    if (listId === undefined) {
+    // A hidden list's cards still count toward the numbers after them, but
+    // show none of their own.
+    if (listId === undefined || state.lists[listId]?.numbersHidden) {
       return null;
     }
     const numbers = numberCards(
@@ -269,6 +271,10 @@ export function useSetListContinuesNumbering() {
 
 export function useSetListNumberFormat() {
   return useBoardStore((state) => state.setListNumberFormat);
+}
+
+export function useSetListNumbersHidden() {
+  return useBoardStore((state) => state.setListNumbersHidden);
 }
 
 export function useSetListColor() {

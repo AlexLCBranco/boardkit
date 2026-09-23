@@ -56,6 +56,7 @@ import {
   useSetListIcon,
   useSetListWidths,
   useSetListNumberFormat,
+  useSetListNumbersHidden,
 } from "../../store/selectors";
 import { LIST_WIDTH_MAX, LIST_WIDTH_MIN } from "../../styles/layout";
 import { sortableTransition } from "../../styles/motion";
@@ -105,6 +106,8 @@ function ListColumnImpl({ listId }: ListColumnProps) {
   const setListIcon = useSetListIcon();
   const setListWidths = useSetListWidths();
   const setListNumberFormat = useSetListNumberFormat();
+  const setListNumbersHidden = useSetListNumbersHidden();
+  const numbersHidden = list.numbersHidden === true;
   const cardNumbers = useCardNumbers(listId);
   const isFirstList = useIsFirstList(listId);
   // True when the list to the right continues from this one, so this list
@@ -344,7 +347,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
             allowEmpty
           />
         </h2>
-        {continuesNumbering || isNumberingContinued ? (
+        {!numbersHidden && (continuesNumbering || isNumberingContinued) ? (
           <span
             className={styles.count}
             title={`${cardCount} card${cardCount === 1 ? "" : "s"}, numbered ${
@@ -443,6 +446,8 @@ function ListColumnImpl({ listId }: ListColumnProps) {
           onIconChange={(icon) => setListIcon(listId, icon)}
           numberFormat={list.numberFormat}
           onNumberFormatChange={(format) => setListNumberFormat(listId, format)}
+          numbersHidden={numbersHidden}
+          onNumbersHiddenChange={(hidden) => setListNumbersHidden(listId, hidden)}
           onClose={() => setIsCustomizeOpen(false)}
         />
       )}
@@ -457,7 +462,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
                     cardId={cardId}
                     listId={listId}
                     thotsMode={columnThotsMode}
-                    number={cardNumbers[index] ?? null}
+                    number={numbersHidden ? null : (cardNumbers[index] ?? null)}
                     numberFormat={list.numberFormat}
                     onNumberClick={
                       !isFirstList && index === firstNumberedIndex

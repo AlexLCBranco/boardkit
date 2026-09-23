@@ -104,8 +104,11 @@ export interface BoardActions {
   setListIcon: (listId: ListId, icon: IconKey | undefined) => void;
   /** One undo step. */
   setListContinuesNumbering: (listId: ListId, continues: boolean) => void;
-  /** `undefined` goes back to plain digits. One undo step. */
+  /** `undefined` goes back to plain digits. Picking a format also shows
+      hidden numbers again, in the same undo step. */
   setListNumberFormat: (listId: ListId, format: NumberFormat | undefined) => void;
+  /** Display only -- numbering still counts the list's cards. One undo step. */
+  setListNumbersHidden: (listId: ListId, hidden: boolean) => void;
   setListWidths: (updates: Readonly<Record<ListId, ListWidth | undefined>>) => void;
   /** `undefined` goes back to the theme's own background. One undo step. */
   setBackground: (background: BoardBackground | undefined) => void;
@@ -422,7 +425,21 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
   setListNumberFormat: (listId, format) =>
     set((state) =>
       withHistory(state, {
-        lists: { ...state.lists, [listId]: { ...state.lists[listId], numberFormat: format } },
+        lists: {
+          ...state.lists,
+          [listId]: { ...state.lists[listId], numberFormat: format, numbersHidden: undefined },
+        },
+      }),
+    ),
+
+  // `false` is stored as absent, like `continuesNumbering`.
+  setListNumbersHidden: (listId, hidden) =>
+    set((state) =>
+      withHistory(state, {
+        lists: {
+          ...state.lists,
+          [listId]: { ...state.lists[listId], numbersHidden: hidden || undefined },
+        },
       }),
     ),
 

@@ -316,7 +316,9 @@ function CardItemImpl({
           onKindChange={(kind) => setCardKind(cardId, kind)}
           numberEmphasis={card.numberEmphasis}
           onNumberEmphasisChange={
-            spec.numbered
+            // `null` for a type that isn't numbered, and on a list that
+            // hides its numbers -- either way there is nothing to style.
+            number !== null
               ? (emphasis) => setCardsNumberEmphasis([cardId], emphasis)
               : undefined
           }

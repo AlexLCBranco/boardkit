@@ -892,6 +892,17 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
     the variable again itself, just as it does for `--list-accent`.
   - The format comes down to `CardItem` as a primitive prop next to `number`,
     so changing it re-renders that list's cards and nothing else.
+  - **Hiding is display only (v0.0.60).** `List.numbersHidden` is a separate
+    flag, not a sixth format, so hiding keeps the chosen format. It still
+    shows up in the panel as a final "Hidden" choice in the "Numbers" row,
+    and picking any format clears the flag in the same undo step.
+    `domain/numbering.ts` ignores the flag, so the hidden cards still count:
+    a list continuing from a hidden one keeps its "5–6". Hiding happens where
+    the number is handed out: the column passes `number={null}` to its
+    cards, and `useCardNumber` (the drag overlay) returns `null`. Both paths
+    were already there for cards that aren't numbered, so a hidden list's
+    cards drop the number strip and the card-level emphasis row for free.
+    The header shows the plain count instead of a range.
 
 - **Card highlights (v0.0.58).** A card can wear a border colour of its own,
   set in its customise panel under "Highlight":

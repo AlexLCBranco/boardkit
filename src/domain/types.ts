@@ -164,6 +164,11 @@ export interface List {
   /** How this list writes its card numbers (domain/numberStyle.ts). Absent
       means plain digits. */
   readonly numberFormat?: NumberFormat;
+  /** Hide this list's card numbers. Display only: the cards still count, so
+      a list continuing from this one numbers on as if they showed. Kept
+      apart from `numberFormat` so the format survives being hidden. Absent
+      means false. */
+  readonly numbersHidden?: boolean;
 }
 
 /**
