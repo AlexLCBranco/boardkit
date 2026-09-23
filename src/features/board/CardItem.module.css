@@ -226,30 +226,54 @@
   overflow-wrap: anywhere;
 }
 
+/* A numbered card gives its number a strip of its own down the left edge,
+   split off by a hairline, so the numbers line up in a column down the list
+   whatever the titles do. The strip is the card's own left padding with the
+   number absolutely placed in it, not a flex child of the title: that way it
+   spans the full card height (title and thots alike) and the title wraps
+   exactly as before. */
+.card[data-numbered] {
+  padding-left: calc(var(--card-number-gutter) + var(--space-3));
+}
+
 .number {
-  flex: 0 0 auto;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: var(--card-number-gutter);
+  /* The card's own top padding plus the title's line height, so the number
+     sits on the title's first line instead of drifting to the middle of a
+     tall card with its thots open. */
+  padding: var(--space-2) 0 0;
+  border: 0;
+  border-right: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
   color: var(--text-muted);
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+  line-height: calc(var(--font-size-md) * var(--line-normal));
+  text-align: center;
   font-variant-numeric: tabular-nums;
 }
 
 /* A list's first number doubles as the "continue numbering" toggle. It looks
-   exactly like the plain number until hovered, so it adds no chrome. */
+   exactly like the plain number until hovered, and the whole strip is the
+   hit target. */
 .numberButton {
-  padding: 0;
-  border: 0;
   background: none;
-  font: inherit;
   cursor: pointer;
 }
 
 .numberButton:hover {
   color: var(--text-primary);
+  background: var(--surface-hover);
   text-decoration: underline dotted;
 }
 
 .numberButton:focus-visible {
   outline: 2px solid var(--focus-ring);
-  outline-offset: 2px;
+  outline-offset: -2px;
 }
 
 /* Not in the DOM at all until opened (see CardItem.tsx's isDescriptionOpen

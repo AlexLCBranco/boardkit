@@ -58,6 +58,9 @@
   --list-width-min: 220px;
   --list-width-max: 640px;
   --board-gutter: var(--space-4);
+  /* The numbered card's left strip (CardItem's `.number`). Fits three
+     digits, since continued numbering can run past 99. */
+  --card-number-gutter: 32px;
 
   /* ---- Stacking order, declared once so layers never fight ---- */
   --z-board: 1;

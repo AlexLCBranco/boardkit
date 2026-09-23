@@ -226,6 +226,27 @@ export function useCardNumbers(listId: ListId): readonly (number | null)[] {
   );
 }
 
+/**
+ * One card's display number, wherever it currently sits (`null` for a card
+ * type that isn't numbered, or a card in no list). For the drag overlay,
+ * which is the only thing that needs a single card's number: it follows the
+ * card across lists mid-drag, so it can't take a fixed list id.
+ */
+export function useCardNumber(cardId: CardId): number | null {
+  return useBoardStore((state) => {
+    const listId = state.listOrder.find((id) => state.cardOrder[id]?.includes(cardId));
+    if (listId === undefined) {
+      return null;
+    }
+    const numbers = numberCards(
+      state.cardOrder[listId],
+      state.cards,
+      numberingOffset(state.listOrder, state.lists, state.cardOrder, state.cards, listId),
+    );
+    return numbers[state.cardOrder[listId].indexOf(cardId)] ?? null;
+  });
+}
+
 /** Whether this is the leftmost list -- the one list with nothing to
     continue numbering from. A boolean, so reordering other lists never
     re-renders this one. */

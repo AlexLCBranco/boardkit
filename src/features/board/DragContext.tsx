@@ -20,6 +20,7 @@ import type { CardId, ListId } from "../../domain/types";
 import {
   useCard,
   useCardCount,
+  useCardNumber,
   useList,
   useMoveCardBetweenLists,
   useReorderCardsWithinList,
@@ -200,6 +201,7 @@ export function BoardDragContext({ children }: { readonly children: ReactNode })
 function CardOverlay({ cardId, listId }: { readonly cardId: CardId; readonly listId: ListId }) {
   const card = useCard(cardId);
   const list = useList(listId);
+  const number = useCardNumber(cardId);
 
   const style: CSSProperties = {
     ...(card.color ? ({ "--card-accent": accentCss(card.color) } as CSSProperties) : {}),
@@ -213,9 +215,13 @@ function CardOverlay({ cardId, listId }: { readonly cardId: CardId; readonly lis
       className={`${cardStyles.card} ${card.kind ? cardStyles[card.kind] : ""} ${cardStyles.overlay}`}
       style={style}
       data-ink={ink === "default" ? undefined : ink}
+      data-numbered={number !== null ? "" : undefined}
     >
       {/* A zero-width space keeps a blank title one line tall, as on the card. */}
-      <p className={cardStyles.title}>{card.title || "​"}</p>
+      <p className={cardStyles.title}>
+        {number !== null && <span className={cardStyles.number}>{number}</span>}
+        {card.title || "​"}
+      </p>
       {specOf(card).hasThots && (card.description || card.postgameDescription) && (
         <div className={cardStyles.descriptionToggle}>▸ pregame thots</div>
       )}

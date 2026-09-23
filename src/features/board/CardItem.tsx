@@ -159,6 +159,8 @@ function CardItemImpl({
       className={`${styles.card} ${card.kind ? styles[card.kind] : ""} ${isDragging ? styles.dragging : ""} ${isSelected ? styles.selected : ""}`}
       data-card-id={cardId}
       data-ink={ink === "default" ? undefined : ink}
+      // Reserves the left number strip (see CardItem.module.css).
+      data-numbered={number !== null ? "" : undefined}
       onContextMenu={handleCardContextMenu}
       {...attributes}
       {...listeners}
