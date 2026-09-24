@@ -197,6 +197,12 @@ export function InlineEditable({
         placeholder={placeholder}
         onChange={(event) => setDraft(event.target.value)}
         onBlur={commit}
+        // The pointer equivalent of the keydown guard below: a press inside
+        // the field -- placing the caret, drag-selecting text -- must not
+        // reach the card's or list header's drag listeners, or moving the
+        // pointer a few pixels picks the whole card up. While editing, the
+        // field is locked in place; outside it, dragging works as normal.
+        onPointerDown={(event) => event.stopPropagation()}
         onKeyDown={(event) => {
           // The card article this sits inside spreads dnd-kit's drag
           // listeners across itself, and dnd-kit's KeyboardSensor treats
