@@ -343,8 +343,13 @@
 
 /* A list's first number doubles as the "continue numbering" toggle. It looks
    exactly like the plain number until hovered, and the whole strip is the
-   hit target. */
+   hit target. Browsers centre a button's content vertically, ignoring the
+   top padding the plain span relies on; flex pins it to the top so the
+   first number lines up with the rest. */
 .numberButton {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
   background: none;
   cursor: pointer;
 }
