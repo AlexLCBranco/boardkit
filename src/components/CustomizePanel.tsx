@@ -49,6 +49,11 @@ interface CustomizePanelProps {
       last "Hidden" choice in the same row; picking a format unhides. */
   readonly numbersHidden?: boolean;
   readonly onNumbersHiddenChange?: (hidden: boolean) => void;
+  /** Lists other than the leftmost: whether numbering picks up where the
+      list to the left finished. Omit the handler and there is no
+      "Numbering" section. */
+  readonly continuesNumbering?: boolean;
+  readonly onContinuesNumberingChange?: (continues: boolean) => void;
   /** Cards only, and only numbered ones: how this card's number stands out.
       `undefined` means normal. */
   readonly numberEmphasis?: NumberEmphasis;
@@ -64,6 +69,8 @@ interface CustomizePanelProps {
 }
 
 function ignore() {}
+
+const NUMBERING_LABELS = { restart: "Start at 1", continue: "Continue from previous list" };
 
 /**
  * The colour (and, for a list, icon; for a card, type) popover. Cards and
@@ -96,6 +103,8 @@ export function CustomizePanel({
   onNumberFormatChange,
   numbersHidden,
   onNumbersHiddenChange,
+  continuesNumbering,
+  onContinuesNumberingChange,
   numberEmphasis,
   onNumberEmphasisChange,
   highlight,
@@ -181,6 +190,16 @@ export function CustomizePanel({
           onChange={(choice) =>
             choice === HIDDEN_NUMBERS ? onNumbersHiddenChange?.(true) : onNumberFormatChange(choice)
           }
+        />
+      )}
+      {onContinuesNumberingChange && (
+        <ChoiceSection
+          label="Numbering"
+          choices={["restart", "continue"] as const}
+          labels={NUMBERING_LABELS}
+          value={continuesNumbering ? "continue" : undefined}
+          absent="restart"
+          onChange={(choice) => onContinuesNumberingChange(choice === "continue")}
         />
       )}
       {onNumberEmphasisChange && (

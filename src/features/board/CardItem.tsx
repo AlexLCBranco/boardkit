@@ -44,11 +44,6 @@ interface CardItemProps {
   /** The list's number format, passed down as a primitive for the same
       reason as `number`. */
   readonly numberFormat?: NumberFormat;
-  /** Set on a list's first numbered card only: clicking its number toggles
-      whether the list continues the previous list's numbering. Must be a
-      stable function, or every render would defeat `memo`. */
-  readonly onNumberClick?: () => void;
-  readonly continuesNumbering?: boolean;
 }
 
 /**
@@ -73,8 +68,6 @@ function CardItemImpl({
   thotsMode,
   number,
   numberFormat,
-  onNumberClick,
-  continuesNumbering,
 }: CardItemProps) {
   const card = useCard(cardId);
   const renameCard = useRenameCard();
@@ -189,28 +182,11 @@ function CardItemImpl({
       {...listeners}
     >
       <p className={styles.title} data-card-title>
-        {number !== null &&
-          (onNumberClick ? (
-            <button
-              type="button"
-              className={`${styles.number} ${styles.numberButton}`}
-              onClick={onNumberClick}
-              // Keeps the click a click: without this the card's drag
-              // listeners also see the pointer-down.
-              onPointerDown={(event) => event.stopPropagation()}
-              title={
-                continuesNumbering
-                  ? "Restart numbering at 1"
-                  : "Continue numbering from the previous list"
-              }
-            >
-              <span className={styles.numberText}>{formatNumber(number, numberFormat)}</span>
-            </button>
-          ) : (
-            <span className={styles.number}>
-              <span className={styles.numberText}>{formatNumber(number, numberFormat)}</span>
-            </span>
-          ))}
+        {number !== null && (
+          <span className={styles.number}>
+            <span className={styles.numberText}>{formatNumber(number, numberFormat)}</span>
+          </span>
+        )}
         <InlineEditable
           value={card.title}
           onCommit={(title) => renameCard(cardId, title)}

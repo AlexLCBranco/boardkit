@@ -865,10 +865,12 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
     store update (`PLAN.md` item 1). A card whose number didn't change still
     bails out of `memo`. The cost now is one pass over the list and the lists
     it continues, per list, per update -- short by design.
-  - **The number as a toggle.** Only the first numbered card's number is a
-    button, with a stable `useCallback` handler so `memo` holds. It stops
-    `pointerdown` from reaching the card's drag listeners, so clicking it is
-    never the start of a drag.
+  - **Toggled from the list, not the card.** The switch is a "Numbering" row
+    in the list's customise panel (hidden for the leftmost list) and a
+    checkbox in the header's right-click menu. It used to be the first card's
+    number itself, but a clickable number inside a draggable card was easy to
+    hit by accident and needed its own drag and alignment workarounds; every
+    number is now a plain span and cards take no numbering callbacks.
 
 - **Number styles (v0.0.57).** Card numbers have two independent style
   controls, both optional fields so older boards load unchanged:

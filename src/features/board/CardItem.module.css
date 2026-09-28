@@ -341,30 +341,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* A list's first number doubles as the "continue numbering" toggle. It looks
-   exactly like the plain number until hovered, and the whole strip is the
-   hit target. Browsers centre a button's content vertically, ignoring the
-   top padding the plain span relies on; flex pins it to the top so the
-   first number lines up with the rest. */
-.numberButton {
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  background: none;
-  cursor: pointer;
-}
-
-.numberButton:hover {
-  color: var(--text-primary);
-  background: var(--surface-hover);
-  text-decoration: underline dotted;
-}
-
-.numberButton:focus-visible {
-  outline: 2px solid var(--focus-ring);
-  outline-offset: -2px;
-}
-
 /* ---- Number emphasis (domain/numberStyle.ts) ----
    The strip stays put; only the text inside it changes, so an emphasised
    card lines up with its neighbours. The pill is exactly one title line

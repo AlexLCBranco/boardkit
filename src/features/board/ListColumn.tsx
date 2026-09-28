@@ -3,7 +3,6 @@ import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-
 import { CSS } from "@dnd-kit/utilities";
 import {
   memo,
-  useCallback,
   useRef,
   useState,
   type CSSProperties,
@@ -118,13 +117,6 @@ function ListColumnImpl({ listId }: ListColumnProps) {
   // that was set to continue keeps the flag (so moving it back restores the
   // link) but shows and behaves as if it weren't.
   const continuesNumbering = !isFirstList && list.continuesNumbering === true;
-  // Memoised so the first card gets the same function every render and its
-  // `memo` still holds; it only changes when the flag itself does.
-  const toggleContinuesNumbering = useCallback(
-    () => setListContinuesNumbering(listId, !continuesNumbering),
-    [setListContinuesNumbering, listId, continuesNumbering],
-  );
-  const firstNumberedIndex = cardNumbers.findIndex((number) => number !== null);
 
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
   // A colour being tried in the customise panel's picker, shown before it is
@@ -448,6 +440,10 @@ function ListColumnImpl({ listId }: ListColumnProps) {
           onNumberFormatChange={(format) => setListNumberFormat(listId, format)}
           numbersHidden={numbersHidden}
           onNumbersHiddenChange={(hidden) => setListNumbersHidden(listId, hidden)}
+          continuesNumbering={continuesNumbering}
+          onContinuesNumberingChange={
+            isFirstList ? undefined : (continues) => setListContinuesNumbering(listId, continues)
+          }
           onClose={() => setIsCustomizeOpen(false)}
         />
       )}
@@ -464,12 +460,6 @@ function ListColumnImpl({ listId }: ListColumnProps) {
                     thotsMode={columnThotsMode}
                     number={numbersHidden ? null : (cardNumbers[index] ?? null)}
                     numberFormat={list.numberFormat}
-                    onNumberClick={
-                      !isFirstList && index === firstNumberedIndex
-                        ? toggleContinuesNumbering
-                        : undefined
-                    }
-                    continuesNumbering={continuesNumbering}
                   />
                 </li>
               ))}
