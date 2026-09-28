@@ -47,6 +47,12 @@ If one of these seems necessary to finish a task, stop and ask instead.
   nobody has asked for.
 - After finishing a piece of work, record anything architecturally
   significant in `ARCHITECTURE.md`.
+- `PROJECT.md` is a plain-language snapshot the owner pastes into Claude
+  chat. When a commit changes what's built, what's next, or the stack,
+  update it (and its "Last updated" line) in the same commit. Keep it to
+  about one screen, in plain language, with the same five sections every
+  time: What it is, Stack, What works now, What's next, Open problems.
+  Consistent sections let the owner spot what changed between versions.
 
 Two agents work in this repo: Claude and Codex. Before editing, check
 `git status` and `PLAN.md`. Claim an item in `PLAN.md` before starting it, so
