@@ -1,6 +1,7 @@
 import { toast } from "sonner";
 
-import { backupFileName, backupsToDelete } from "../../domain/backupStatus";
+import { backupFileName, backupsNewestFirst, backupsToDelete } from "../../domain/backupStatus";
+import { deserializeBackup } from "../../domain/persistence";
 import { useBackupStore } from "../../store/backupStore";
 import { useBoardStore } from "../../store/boardStore";
 import { idbDelete, idbGet, idbSet } from "../../store/idb";
@@ -177,6 +178,38 @@ async function rotate(target: Folder, justWritten: string): Promise<void> {
   } catch {
     // See above.
   }
+}
+
+/**
+ * The newest backup in the folder that has `boardId` in it, parsed, for
+ * restoring a damaged board. Newest first, and only files this app wrote;
+ * one that fails to read is skipped rather than ending the search. `null`
+ * when there is no folder, access is refused, or no backup has the board.
+ * Must run from a click: the browser may ask to allow the folder again.
+ */
+export async function findLatestBackupWith(
+  boardId: string,
+): Promise<{ readonly name: string; readonly data: unknown } | null> {
+  if (!folder) return null;
+  try {
+    if ((await folder.requestPermission({ mode: "readwrite" })) !== "granted") return null;
+    const names: string[] = [];
+    for await (const entry of folder.values()) {
+      if (entry.kind === "file") names.push(entry.name);
+    }
+    for (const name of backupsNewestFirst(names)) {
+      try {
+        const file = await (await folder.getFileHandle(name)).getFile();
+        const data: unknown = JSON.parse(await file.text());
+        if (deserializeBackup(data)?.some((entry) => entry.id === boardId)) return { name, data };
+      } catch {
+        // See above.
+      }
+    }
+  } catch {
+    // Folder gone or permission withdrawn: same as finding nothing.
+  }
+  return null;
 }
 
 /** "Automatic backup…" / "Choose folder…". Must run from a click, because

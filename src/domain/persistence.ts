@@ -3,6 +3,7 @@ import { knownCollapsed } from "./collapse";
 import { withKnownKinds } from "./cardKinds";
 import { withKnownColors } from "./colors";
 import { withKnownHighlights } from "./highlight";
+import { repairBoard, type RepairReport } from "./repair";
 import type { BoardId, BoardState, BoardSummary } from "./types";
 
 /**
@@ -44,64 +45,73 @@ export function serializeBoard(board: BoardState): PersistedBoardV1 {
 }
 
 /**
- * Validates and migrates persisted data up to the current schema. There is
- * only one version so far, so today this is a validation gate more than a
- * migration -- but the shape, read a version and branch on it, is what a
- * real migration chain slots into later rather than being rewritten around.
- *
- * Returns `null` for anything unreadable: missing fields, a future version
- * this build does not know about, or JSON that never parsed. The caller
- * falls back to a fresh board rather than crashing on bad storage.
+ * What reading a saved board found. `repaired` carries a board rebuilt from
+ * damaged data (`domain/repair.ts`), and the caller decides what that means:
+ * opening the board keeps the original aside and tells the user, while a
+ * read of some *other* board (search, backup, a transfer) treats it like
+ * `unreadable` rather than act on a partial copy.
  */
-export function deserializeBoard(data: unknown): BoardState | null {
-  if (!isPersistedBoardV1(data)) {
-    return null;
+export type BoardRead =
+  | { readonly status: "ok"; readonly board: BoardState }
+  | { readonly status: "repaired"; readonly board: BoardState; readonly report: RepairReport }
+  | { readonly status: "unreadable" };
+
+/**
+ * Validates, repairs and migrates persisted data up to the current schema.
+ * There is only one version so far, so today this is a validation gate more
+ * than a migration -- but the shape, read a version and branch on it, is
+ * what a real migration chain slots into later rather than being rewritten
+ * around.
+ *
+ * `unreadable` is reserved for data with nothing to salvage: not an object,
+ * a version this build does not know (a newer one -- repairing it would
+ * destroy what the newer version wrote), or a board with no list or card
+ * left once repaired.
+ */
+export function readBoard(data: unknown): BoardRead {
+  if (typeof data !== "object" || data === null) {
+    return { status: "unreadable" };
   }
-  // `trash` and `trashedLists` were both added after v1 shipped, so a board
-  // saved before either has no such field on disk -- default them rather
-  // than bumping the schema version over two optional, backward-compatible
-  // arrays.
-  const trash = Array.isArray(data.board.trash) ? data.board.trash : [];
-  const trashedLists = Array.isArray(data.board.trashedLists) ? data.board.trashedLists : [];
+  const candidate = data as Record<string, unknown>;
+  if (candidate.version !== 1 || typeof candidate.board !== "object" || candidate.board === null) {
+    return { status: "unreadable" };
+  }
   // Also strips any extra fields boards saved by earlier versions carry (a
-  // stale `boards` list, `boardId`, `history`) so they cannot reach the store.
+  // stale `boards` list, `boardId`, `history`) so they cannot reach the
+  // store. `trash` and `trashedLists` were both added after v1 shipped, so a
+  // board saved before either has no such field; the repair defaults them
+  // without counting it as damage.
+  const { board: repaired, report } = repairBoard(candidate.board as Record<string, unknown>);
   // A card's `kind` is optional the same way, but one this build doesn't know
   // (from a newer version, or a hand-edited backup) is dropped, so the card
   // loads as a normal one instead of breaking the board.
   // Colours get the same treatment: one this build can't read is dropped, so
   // the list or card loads uncoloured instead of breaking the board.
   // Highlights too: an unreadable colour or style is dropped on its own.
-  const cards = withKnownHighlights(withKnownColors(withKnownKinds(data.board.cards)));
-  const lists = withKnownColors(data.board.lists);
+  const cards = withKnownHighlights(withKnownColors(withKnownKinds(repaired.cards)));
+  const lists = withKnownColors(repaired.lists);
   // A background this build can't read is dropped the same way.
-  const background = knownBackground(data.board.background);
+  const background = knownBackground(repaired.background);
   // Collapse flags for lists that no longer exist are dropped.
-  const collapsedLists = knownCollapsed(data.board.collapsedLists, lists);
-  return boardContent({ ...data.board, lists, cards, trash, trashedLists, background, collapsedLists });
+  const collapsedLists = knownCollapsed(repaired.collapsedLists, lists);
+  const board = boardContent({ ...repaired, lists, cards, background, collapsedLists });
+
+  if (report.lost === 0 && report.fixed === 0) {
+    return { status: "ok", board };
+  }
+  if (Object.keys(lists).length === 0 && Object.keys(cards).length === 0) {
+    return { status: "unreadable" };
+  }
+  return { status: "repaired", board, report };
 }
 
-function isPersistedBoardV1(data: unknown): data is PersistedBoardV1 {
-  if (typeof data !== "object" || data === null) {
-    return false;
-  }
-  const candidate = data as Record<string, unknown>;
-  if (candidate.version !== 1) {
-    return false;
-  }
-  const board = candidate.board;
-  if (typeof board !== "object" || board === null) {
-    return false;
-  }
-  const { lists, cards, listOrder, cardOrder } = board as Record<string, unknown>;
-  return (
-    typeof lists === "object" &&
-    lists !== null &&
-    typeof cards === "object" &&
-    cards !== null &&
-    Array.isArray(listOrder) &&
-    typeof cardOrder === "object" &&
-    cardOrder !== null
-  );
+/** The board from `readBoard`, repaired if need be, or `null` when nothing
+    could be salvaged. For reads where a repaired copy is fine as it is: a
+    backup being imported, the pre-multi-board key -- neither overwrites
+    anything. */
+export function deserializeBoard(data: unknown): BoardState | null {
+  const read = readBoard(data);
+  return read.status === "unreadable" ? null : read.board;
 }
 
 /**

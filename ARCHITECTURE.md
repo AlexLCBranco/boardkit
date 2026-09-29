@@ -499,9 +499,8 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   `collectBoards()` no longer swaps an unreadable board for an empty one: it
   returns it in `unreadable`. Automatic backup then writes nothing and shows
   a warning (otherwise rotation would push every good copy out); manual
-  export leaves that board out of the file and toasts. This does not add the
-  repair-on-load behaviour queued in `PLAN.md` item 5; it only stops backups
-  from hiding the problem. Pure rules (staleness, age text, filename,
+  export leaves that board out of the file and toasts. Repair on load came later
+  (v0.0.67, below); this only stops backups from hiding the problem. Pure rules (staleness, age text, filename,
   rotation, dot) are in `domain/backupStatus.ts`.
 - **Clickable links in thots (v0.0.37).** A web address in a pregame or
   postgame thot shows as a link when the thot is not being edited; editing
@@ -988,3 +987,32 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
     the strip, the context menu and the `c` shortcut, and hands keyboard
     focus from the old header to the new one. Search opens a collapsed list
     before revealing a card in it (`expandListOf`).
+- **Damaged boards are repaired, never silently replaced (v0.0.67).** Before
+  this, a saved board that failed validation loaded as `null` and the app
+  put an empty board in its place, which the next save wrote over the
+  original. Now:
+  - **Repair, not rejection.** `domain/repair.ts` rebuilds a board from
+    whatever parses: ids pointing at nothing and repeats are dropped, a list
+    without a card order gets `[]`, a card in two lists stays in the first,
+    and lists or cards nothing points at are put back (orphan cards go into
+    "Recovered cards" lists, 50 at a time). Only non-object entries are lost.
+    `readBoard` in `persistence.ts` returns `ok | repaired | unreadable`;
+    `unreadable` is kept for non-objects, unknown (newer) versions, and
+    boards with nothing left. Unknown optional values (an icon from a newer
+    build) are still dropped silently: forward compatibility, not damage.
+  - **The original is set aside first.** `openPersistedBoard` (used only for
+    the board going on screen) copies a damaged board's raw text to
+    `boardkit:damaged:<id>` before returning the repair, reusing an
+    identical copy and giving different damage a timestamped key, so no copy
+    is overwritten. If storage refuses the copy, the board is *held*:
+    `writeBoard` skips it until the user chooses.
+  - **Other readers stay strict.** `loadPersistedBoard` (search, transfers,
+    backup, the image sweep) returns only healthy boards, so a transfer can
+    never write a partial copy back over the original.
+  - **The user chooses.** `recoveryStore` holds the active board's damage;
+    `RecoveryNotice` offers "Restore from latest backup" (the newest file in
+    the backup folder that has this board, by id), "Restore from a file…",
+    or "Keep this version". Each releases the hold and saves at once. A
+    restore is one undo step (`replaceBoardContent`). Until then
+    `collectBoards` counts the active board as unreadable, so automatic
+    backups pause instead of rotating good copies out for the repair.

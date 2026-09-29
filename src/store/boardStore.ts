@@ -41,7 +41,7 @@ import { releaseImageIfUnused } from "./imageStore";
 import {
   flushPersist,
   loadLegacyPersistedBoard,
-  loadPersistedBoard,
+  openPersistedBoard,
   removePersistedBoard,
   savePersistedBoardNow,
   schedulePersist,
@@ -52,6 +52,7 @@ import {
   savePersistedRegistryNow,
   schedulePersistRegistry,
 } from "./persistRegistry";
+import { useRecoveryStore } from "./recoveryStore";
 import {
   cardsOfList,
   copyCardToBoard,
@@ -170,6 +171,9 @@ export interface BoardActions {
   addBoards: (entries: readonly BackupBoard[]) => void;
   deleteBoard: () => void;
   switchBoard: (boardId: BoardId) => void;
+  /** Replaces the active board's content wholesale (restoring a backup).
+      One undo step. */
+  replaceBoardContent: (board: BoardState) => void;
   renameBoard: (name: string) => void;
 }
 
@@ -224,6 +228,23 @@ function patchCards(state: BoardStore, cardIds: readonly CardId[], fields: Parti
 }
 
 /**
+ * Loads a board to put on screen, and tells the recovery notice whether it
+ * was damaged (see `openPersistedBoard`). Nothing saved, or nothing
+ * salvageable, opens as an empty board -- the latter with the notice up and
+ * the original kept aside, never silently.
+ */
+function openBoard(boardId: BoardId): BoardState {
+  const { board, damage } = openPersistedBoard(boardId);
+  useRecoveryStore.getState().setDamage(damage);
+  return board ?? createEmptyBoard();
+}
+
+/** A board made in this session has no saved past to be damaged. */
+function clearDamage(): void {
+  useRecoveryStore.getState().setDamage(null);
+}
+
+/**
  * Where the very first `boardId`/`boards`/`board` come from. Three cases,
  * checked in order:
  *
@@ -240,7 +261,7 @@ function patchCards(state: BoardStore, cardIds: readonly CardId[], fields: Parti
 function loadInitialState(): { boardId: BoardId; boards: readonly BoardSummary[]; board: BoardState } {
   const registry = loadPersistedRegistry();
   if (registry) {
-    const board = loadPersistedBoard(registry.activeBoardId) ?? createEmptyBoard();
+    const board = openBoard(registry.activeBoardId);
     return { boardId: registry.activeBoardId, boards: registry.boards, board };
   }
 
@@ -623,6 +644,7 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
       const boards = [...state.boards, { id: boardId, name }];
       savePersistedBoardNow(board, boardId);
       savePersistedRegistryNow(boards, boardId);
+      clearDamage();
       return { ...board, boardId, boards, history: EMPTY_HISTORY };
     }),
 
@@ -655,6 +677,7 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
       const boards = [...state.boards, { id: boardId, name }];
       savePersistedBoardNow(board, boardId);
       savePersistedRegistryNow(boards, boardId);
+      clearDamage();
       return { ...board, boardId, boards, history: EMPTY_HISTORY };
     }),
 
@@ -669,6 +692,7 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
       const boards = [...state.boards, { id: boardId, name }];
       savePersistedBoardNow(board, boardId);
       savePersistedRegistryNow(boards, boardId);
+      clearDamage();
       return { ...board, boardId, boards, history: EMPTY_HISTORY };
     }),
 
@@ -726,7 +750,7 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
       const orphanedImage = imageIdOf(state.background);
       if (orphanedImage !== undefined) void releaseImageIfUnused(orphanedImage, boards);
       const nextId = boards[boards.length - 1].id;
-      const board = loadPersistedBoard(nextId) ?? createEmptyBoard();
+      const board = openBoard(nextId);
       return { ...board, boardId: nextId, boards, history: EMPTY_HISTORY };
     }),
 
@@ -734,9 +758,27 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
     set((state) => {
       if (boardId === state.boardId) return state;
       flushPersist();
-      const board = loadPersistedBoard(boardId) ?? createEmptyBoard();
+      const board = openBoard(boardId);
       return { ...board, boardId, history: EMPTY_HISTORY };
     }),
+
+  // Swaps the whole board for another copy of it -- a backup, when the saved
+  // one was damaged. One undo step, so the repaired version is a Ctrl+Z away.
+  // Collapse is a view setting outside history (see domain/collapse.ts), so
+  // it is set alongside rather than inside the step.
+  replaceBoardContent: (board) =>
+    set((state) => ({
+      ...withHistory(state, {
+        lists: board.lists,
+        cards: board.cards,
+        listOrder: board.listOrder,
+        cardOrder: board.cardOrder,
+        trash: board.trash,
+        trashedLists: board.trashedLists,
+        background: board.background,
+      }),
+      collapsedLists: board.collapsedLists,
+    })),
 
   renameBoard: (name) =>
     set((state) => ({

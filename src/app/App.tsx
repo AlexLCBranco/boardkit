@@ -2,6 +2,7 @@ import { ThemeSwitch } from "../components/ThemeSwitch";
 import { Toaster } from "../components/ui/sonner";
 import { BoardCanvas } from "../features/board/BoardCanvas";
 import { BoardSwitcher } from "../features/board/BoardSwitcher";
+import { RecoveryNotice } from "../features/board/RecoveryNotice";
 import { TrashPanel } from "../features/board/TrashPanel";
 import { useResolvedTheme } from "../store/themeStore";
 import styles from "./App.module.css";
@@ -25,6 +26,7 @@ export function App() {
         <ThemeSwitch />
         <TrashPanel />
       </header>
+      <RecoveryNotice />
       <main className={styles.main}>
         <BoardCanvas />
       </main>

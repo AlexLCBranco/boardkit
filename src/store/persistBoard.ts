@@ -1,4 +1,4 @@
-import { deserializeBoard, serializeBoard } from "../domain/persistence";
+import { deserializeBoard, readBoard, serializeBoard, type BoardRead } from "../domain/persistence";
 import type { BoardId, BoardState } from "../domain/types";
 
 /**
@@ -12,7 +12,13 @@ import type { BoardId, BoardState } from "../domain/types";
  */
 const STORAGE_KEY_PREFIX = "boardkit:board:";
 
+/** Boards whose damaged original could not be set aside (see
+    `openPersistedBoard`). Nothing is written over them this session until
+    the user picks what to keep: the original is still only in its own key. */
+const heldBoards = new Set<BoardId>();
+
 function writeBoard(board: BoardState, boardId: BoardId): void {
+  if (heldBoards.has(boardId)) return;
   try {
     localStorage.setItem(STORAGE_KEY_PREFIX + boardId, JSON.stringify(serializeBoard(board)));
   } catch {
@@ -21,13 +27,109 @@ function writeBoard(board: BoardState, boardId: BoardId): void {
   }
 }
 
+function parse(raw: string): BoardRead {
+  try {
+    return readBoard(JSON.parse(raw));
+  } catch {
+    return { status: "unreadable" };
+  }
+}
+
+/**
+ * A board that is not the one on screen, read for search, backup, a
+ * transfer or the image sweep. Only a healthy board comes back: a damaged
+ * one is `null`, like a missing one, so none of those can act on a partial
+ * copy -- a transfer would write it back over the original. It gets repaired
+ * when the user opens it (`openPersistedBoard`), where they are told.
+ */
 export function loadPersistedBoard(boardId: BoardId): BoardState | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY_PREFIX + boardId);
-    return raw === null ? null : deserializeBoard(JSON.parse(raw));
+    if (raw === null) return null;
+    const read = parse(raw);
+    return read.status === "ok" ? read.board : null;
   } catch {
     return null;
   }
+}
+
+/** What was wrong with a board that was just opened. */
+export interface BoardDamage {
+  readonly boardId: BoardId;
+  /** `repaired`: some of it was recovered. `unreadable`: none of it. */
+  readonly status: "repaired" | "unreadable";
+  /** Entries that could not be read, when `repaired`. */
+  readonly lost: number;
+  /** Where the original now sits, untouched; `null` if it could not be
+      copied there (storage full), in which case the board is held -- not
+      saved -- until the user chooses. */
+  readonly setAsideKey: string | null;
+}
+
+/**
+ * Reads the board about to go on screen. Unlike `loadPersistedBoard`, a
+ * damaged board still opens, repaired as far as it goes -- but first its
+ * saved text is copied, exactly as it was, to a key of its own. The next
+ * save overwrites the board's own key, so without that copy "repaired"
+ * would quietly mean "whatever the repair kept".
+ *
+ * `board` is `null` when there is nothing saved, or nothing salvageable;
+ * `damage` tells the two apart.
+ */
+export function openPersistedBoard(boardId: BoardId): { board: BoardState | null; damage: BoardDamage | null } {
+  let raw: string | null;
+  try {
+    raw = localStorage.getItem(STORAGE_KEY_PREFIX + boardId);
+  } catch {
+    return { board: null, damage: null };
+  }
+  if (raw === null) return { board: null, damage: null };
+  const read = parse(raw);
+  if (read.status === "ok") return { board: read.board, damage: null };
+
+  const setAsideKey = setAside(boardId, raw);
+  if (setAsideKey === null) heldBoards.add(boardId);
+  return {
+    board: read.status === "repaired" ? read.board : null,
+    damage: {
+      boardId,
+      status: read.status,
+      lost: read.status === "repaired" ? read.report.lost : 0,
+      setAsideKey,
+    },
+  };
+}
+
+const SET_ASIDE_PREFIX = "boardkit:damaged:";
+
+/**
+ * Copies a damaged board's saved text to `boardkit:damaged:<id>`, and
+ * returns that key. Opening the same damaged board again finds its copy
+ * already there and adds nothing; different damage to the same board gets a
+ * timestamped key of its own, so no earlier copy is ever overwritten.
+ * `null` if storage refused the write.
+ */
+function setAside(boardId: BoardId, raw: string): string | null {
+  const base = SET_ASIDE_PREFIX + boardId;
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if ((key === base || key?.startsWith(base + ":")) && localStorage.getItem(key) === raw) {
+        return key;
+      }
+    }
+    const key = localStorage.getItem(base) === null ? base : `${base}:${Date.now()}`;
+    localStorage.setItem(key, raw);
+    return key;
+  } catch {
+    return null;
+  }
+}
+
+/** The user has chosen what this board should be (kept the repair, or
+    restored a backup): saving it may overwrite the original again. */
+export function releaseHeldBoard(boardId: BoardId): void {
+  heldBoards.delete(boardId);
 }
 
 /** Removes a board's saved content. Callers must `flushPersist()` first: a

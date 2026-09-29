@@ -33,15 +33,19 @@ effort.
    `domain/cardDrag.ts` and ARCHITECTURE.md.
 
 3. **Tests.** Vitest is set up (`npm test`), and the drag transaction is
-   covered (`domain/cardDrag.test.ts`). Still untested: `history.ts`,
-   `ordering.ts`, `numbering.ts` and `persistence.ts`.
+   covered (`domain/cardDrag.test.ts`), and so is loading and repairing a
+   saved board (`domain/persistence.test.ts`). Still untested:
+   `history.ts`, `ordering.ts` and `numbering.ts`.
 
 4. ~~**Pending saves are not flushed on page hide.**~~ Done in `0e1438c`:
    board and registry saves are written immediately on `pagehide` and when
    the tab is hidden (`visibilitychange`), not `beforeunload`, which mobile
    Safari never fires. See the end of `store/boardStore.ts`.
 
-5. **Persistence validation is shallow, and fails destructively.**
+5. ~~**Persistence validation is shallow, and fails destructively.**~~ Done
+   in v0.0.67: damaged boards are repaired (`domain/repair.ts`), the
+   original is set aside under `boardkit:damaged:<id>`, and a notice offers
+   restoring from the latest backup. See ARCHITECTURE.md. Original note:
    `domain/persistence.ts` checks only that four containers exist; it does
    not validate entities, ids, or references. The important half is the
    failure mode: invalid data returns `null`, which silently replaces the

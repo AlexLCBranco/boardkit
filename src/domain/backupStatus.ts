@@ -64,6 +64,11 @@ export function backupNeedsAttention(input: {
 
 const FILE_NAME = /^boardkit-backup-\d{4}-\d{2}-\d{2}-\d{4}\.json$/;
 
+/** The automatic backups among `names`, newest first. */
+export function backupsNewestFirst(names: readonly string[]): string[] {
+  return names.filter((name) => FILE_NAME.test(name)).sort().reverse();
+}
+
 /** `boardkit-backup-2026-09-19-1432.json`: local time, and sorts oldest-first
     as plain text. */
 export function backupFileName(date: Date): string {

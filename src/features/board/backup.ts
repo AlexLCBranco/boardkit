@@ -14,6 +14,7 @@ import { hasImage, loadImage, saveImage } from "../../store/imageStore";
 import { flushPersist, loadPersistedBoard } from "../../store/persistBoard";
 import { useBackupStore } from "../../store/backupStore";
 import { useBoardStore } from "../../store/boardStore";
+import { useRecoveryStore } from "../../store/recoveryStore";
 
 /**
  * Backup and restore. Boards live in one browser's `localStorage`, which
@@ -33,7 +34,10 @@ export interface CollectedBoards {
 /** Every board's content, in registry order. The active board is read from
     the live store rather than storage: its latest edits may still be inside
     the debounce window, and a failed storage write (quota) would otherwise
-    silently drop the board the user is looking at from its own backup. */
+    silently drop the board the user is looking at from its own backup --
+    unless it was damaged and the user has not yet chosen what to keep: a
+    repaired copy counts as unreadable, so automatic backup pauses rather than
+    rotate the good copies out for it. */
 export function collectBoards(): CollectedBoards {
   flushPersist();
   const state = useBoardStore.getState();
@@ -41,6 +45,10 @@ export function collectBoards(): CollectedBoards {
   const unreadable: string[] = [];
   for (const { id, name } of state.boards) {
     if (id === state.boardId) {
+      if (useRecoveryStore.getState().damage?.boardId === id) {
+        unreadable.push(name);
+        continue;
+      }
       boards.push({ id, name, board: boardContent(state) });
       continue;
     }
@@ -147,7 +155,7 @@ export async function importBackup(file: File): Promise<ImportResult> {
  * left alone. A picture that cannot be stored costs only that board its
  * background: the board still imports.
  */
-async function restoreImages(
+export async function restoreImages(
   boards: readonly BackupBoard[],
   images: Readonly<Record<string, BackupImage>>,
 ): Promise<void> {

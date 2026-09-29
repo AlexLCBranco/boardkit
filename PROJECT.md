@@ -1,6 +1,6 @@
 # Boardkit — project summary
 
-_Last updated: 2026-09-29, v0.0.66_
+_Last updated: 2026-09-29, v0.0.67_
 
 ## What it is
 
@@ -37,6 +37,8 @@ normalised state.
 - Card numbering that can continue across lists, be styled, or be hidden
 - Multi-select cards with a selection bar
 - Collapse a list to a thin strip; cards can still be dropped on it
+- A damaged saved board is repaired, its original kept aside, and a notice
+  offers restoring it from the latest backup
 
 ## What's next
 
@@ -44,6 +46,4 @@ normalised state.
 
 ## Open problems
 
-- A corrupt saved board gets silently replaced with a fresh one instead of
-  being repaired
 - Unused shadcn components need clearing out (low priority)
