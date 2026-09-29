@@ -36,11 +36,10 @@ effort.
    covered (`domain/cardDrag.test.ts`). Still untested: `history.ts`,
    `ordering.ts`, `numbering.ts` and `persistence.ts`.
 
-4. **Pending saves are not flushed on page hide.** Board and registry writes
-   debounce 400ms with no `pagehide`/`visibilitychange` flush, so a fast
-   reload after an edit loses it. `flushPersist` already exists and is
-   already called on board switch. Use `pagehide` and `visibilitychange`, not
-   `beforeunload` — mobile Safari never fires it.
+4. ~~**Pending saves are not flushed on page hide.**~~ Done in `0e1438c`:
+   board and registry saves are written immediately on `pagehide` and when
+   the tab is hidden (`visibilitychange`), not `beforeunload`, which mobile
+   Safari never fires. See the end of `store/boardStore.ts`.
 
 5. **Persistence validation is shallow, and fails destructively.**
    `domain/persistence.ts` checks only that four containers exist; it does

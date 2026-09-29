@@ -44,8 +44,6 @@ normalised state.
 
 ## Open problems
 
-- An edit can be lost on a very fast reload (saves aren't flushed when the
-  page is hidden)
 - A corrupt saved board gets silently replaced with a fresh one instead of
   being repaired
 - Unused shadcn components need clearing out (low priority)
