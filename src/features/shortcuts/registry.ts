@@ -7,6 +7,7 @@ import { useBoardStore } from "../../store/boardStore";
 import { useSearchDialogStore } from "../../store/searchDialogStore";
 import { useSelectionStore } from "../../store/selectionStore";
 import { useShortcutsDialogStore } from "../../store/shortcutsDialogStore";
+import { toggleListCollapsed } from "../board/animateCollapse";
 import {
   cardElement,
   focusCard,
@@ -172,6 +173,7 @@ export const SHORTCUTS: readonly Shortcut[] = [
   list("list.focus-right", "arrowright", "Focus the list to the right", ({ listId }) => focusListBeside(listId, 1), { allowRepeat: true }),
   list("list.focus-cards", "arrowdown", "Focus the list's first card", ({ listId }) => focusFirstCard(listId)),
   list("list.duplicate", "d", "Duplicate the list", ({ listId }) => board().duplicateList(listId)),
+  list("list.collapse", "c", "Collapse or expand the list", ({ listId }) => toggleListCollapsed(listId)),
 ];
 
 /** A new card next to the focused one, opened straight into rename. */

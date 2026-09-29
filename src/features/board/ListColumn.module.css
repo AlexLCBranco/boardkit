@@ -116,6 +116,27 @@
   text-align: center;
 }
 
+.collapseButton {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--font-size-lg);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.collapseButton:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
 .thotsButton {
   flex: 0 0 auto;
   display: inline-flex;
@@ -332,4 +353,94 @@
 .resizeHandle:hover::after,
 .resizing .resizeHandle::after {
   background: var(--border-strong);
+}
+
+/* ---- Collapsed list ----
+   The column keeps its own background, border and `--list-accent` tint;
+   only its size changes. Declared after `.column` with the same
+   specificity, so these widths win over the `--column-width` a resized list
+   carries -- which is kept, so expanding restores the list's own width. */
+.collapsed {
+  width: var(--list-collapsed-width);
+  flex: 0 0 var(--list-collapsed-width);
+}
+
+.strip {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--list-collapsed-min-height);
+  max-height: 100%;
+  padding: var(--space-3) 0;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  touch-action: none;
+  transition: background-color var(--duration-fast) var(--ease-standard);
+}
+
+/* The accent stripe, as on an open list's header. */
+.strip::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  background: var(--list-accent);
+}
+
+.strip:hover {
+  background: var(--surface-hover);
+}
+
+.strip:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.dragging .strip {
+  cursor: grabbing;
+}
+
+/* A card hovering over the strip: it will land at the bottom of this list.
+   A full list shows the refusal instead, and the drop is rolled back. */
+.strip[data-drop="accepted"] {
+  background: var(--surface-hover);
+  box-shadow: inset 0 0 0 1px var(--border-strong);
+}
+
+.strip[data-drop="refused"] {
+  box-shadow: inset 0 0 0 1px var(--border-subtle);
+  cursor: not-allowed;
+}
+
+.strip[data-drop="refused"] .stripTitle {
+  color: var(--text-muted);
+}
+
+.stripChevron {
+  color: var(--text-muted);
+  font-size: var(--font-size-lg);
+  line-height: 1;
+}
+
+.strip:hover .stripChevron {
+  color: var(--text-primary);
+}
+
+/* Written sideways, top to bottom, the way a book's spine reads. A long
+   title is cut off with an ellipsis rather than growing the strip past the
+   board. */
+.stripTitle {
+  flex: 0 1 auto;
+  min-height: 0;
+  margin: 0;
+  writing-mode: vertical-rl;
+  font-size: var(--font-size-md);
+  font-weight: var(--weight-bold);
+  line-height: var(--line-tight);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

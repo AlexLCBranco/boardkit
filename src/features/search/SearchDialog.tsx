@@ -12,7 +12,13 @@ import {
 } from "../../components/ui/command";
 import { MAX_SEARCH_RESULTS, searchBoards, type Excerpt, type SearchHit } from "../../domain/search";
 import { loadSearchSources } from "../../store/searchSources";
-import { useBoardId, useIsSearchOpen, useSetSearchOpen, useSwitchBoard } from "../../store/selectors";
+import {
+  useBoardId,
+  useExpandListOf,
+  useIsSearchOpen,
+  useSetSearchOpen,
+  useSwitchBoard,
+} from "../../store/selectors";
 import { formatCombo, parseCombo } from "../shortcuts/keys";
 import { revealCard } from "./revealCard";
 
@@ -58,6 +64,7 @@ export function SearchDialog() {
 function SearchPanel({ onDone }: { readonly onDone: () => void }) {
   const activeBoardId = useBoardId();
   const switchBoard = useSwitchBoard();
+  const expandListOf = useExpandListOf();
   const [query, setQuery] = useState("");
   // Loaded once, on open -- not per keystroke. The dialog is modal, so the
   // board cannot change underneath it.
@@ -68,6 +75,8 @@ function SearchPanel({ onDone }: { readonly onDone: () => void }) {
   function open(hit: SearchHit) {
     onDone();
     if (hit.boardId !== activeBoardId) switchBoard(hit.boardId);
+    // A card in a collapsed list is not on screen to reveal.
+    expandListOf(hit.cardId);
     revealCard(hit.cardId);
   }
 

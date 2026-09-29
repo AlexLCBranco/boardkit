@@ -208,6 +208,10 @@ export interface BoardState {
   /** Absent means the theme's default. Optional so boards saved before
       backgrounds existed load unchanged (same approach as `trash`). */
   readonly background?: BoardBackground;
+  /** Lists folded down to a thin strip (domain/collapse.ts). A view setting,
+      kept apart from `lists` so undo never touches it; saved with the board.
+      Absent means every list is open. */
+  readonly collapsedLists?: Readonly<Record<ListId, true>>;
 }
 
 /** One card sitting in the trash: which list to put it back into, and when

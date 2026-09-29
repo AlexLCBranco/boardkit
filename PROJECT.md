@@ -1,6 +1,6 @@
 # Boardkit — project summary
 
-_Last updated: 2026-09-29, v0.0.65_
+_Last updated: 2026-09-29, v0.0.66_
 
 ## What it is
 
@@ -36,10 +36,10 @@ normalised state.
 - Light/dark/system theme; per-board background colour or image
 - Card numbering that can continue across lists, be styled, or be hidden
 - Multi-select cards with a selection bar
+- Collapse a list to a thin strip; cards can still be dropped on it
 
 ## What's next
 
-- Collapse a list (waiting on the owner's design changes)
 - More tests for the pure logic in `domain/` (the drag logic has them)
 
 ## Open problems

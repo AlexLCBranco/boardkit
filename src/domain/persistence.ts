@@ -1,4 +1,5 @@
 import { knownBackground } from "./background";
+import { knownCollapsed } from "./collapse";
 import { withKnownKinds } from "./cardKinds";
 import { withKnownColors } from "./colors";
 import { withKnownHighlights } from "./highlight";
@@ -27,14 +28,15 @@ export interface PersistedBoardV1 {
  * back over the live store on load, e.g. an old board list overwriting the
  * current one when switching boards.
  *
- * `background` is always present as a key, even when it is `undefined`: a
+ * `background` and `collapsedLists` are always present as keys, even when it is `undefined`: a
  * loaded board is spread over the live store, and a key that is merely
  * missing would leave the *previous* board's background showing.
  * `JSON.stringify` drops an undefined value, so nothing extra is saved.
  */
 export function boardContent(board: BoardState): BoardState {
-  const { lists, cards, listOrder, cardOrder, trash, trashedLists, background } = board;
-  return { lists, cards, listOrder, cardOrder, trash, trashedLists, background };
+  const { lists, cards, listOrder, cardOrder, trash, trashedLists, background, collapsedLists } =
+    board;
+  return { lists, cards, listOrder, cardOrder, trash, trashedLists, background, collapsedLists };
 }
 
 export function serializeBoard(board: BoardState): PersistedBoardV1 {
@@ -73,7 +75,9 @@ export function deserializeBoard(data: unknown): BoardState | null {
   const lists = withKnownColors(data.board.lists);
   // A background this build can't read is dropped the same way.
   const background = knownBackground(data.board.background);
-  return boardContent({ ...data.board, lists, cards, trash, trashedLists, background });
+  // Collapse flags for lists that no longer exist are dropped.
+  const collapsedLists = knownCollapsed(data.board.collapsedLists, lists);
+  return boardContent({ ...data.board, lists, cards, trash, trashedLists, background, collapsedLists });
 }
 
 function isPersistedBoardV1(data: unknown): data is PersistedBoardV1 {

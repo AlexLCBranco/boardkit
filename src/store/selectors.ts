@@ -1,6 +1,7 @@
 import { useShallow } from "zustand/react/shallow";
 
 import type { AutoBackupStatus } from "../domain/backupStatus";
+import { isCollapsed } from "../domain/collapse";
 import { isListFull } from "../domain/limits";
 import { numberCards, numberingOffset } from "../domain/numbering";
 import type {
@@ -295,6 +296,19 @@ export function useSetListIcon() {
 
 export function useSetListWidths() {
   return useBoardStore((state) => state.setListWidths);
+}
+
+/** A boolean, so a column re-renders only when its own flag flips. */
+export function useIsListCollapsed(listId: ListId): boolean {
+  return useBoardStore((state) => isCollapsed(state.collapsedLists, listId));
+}
+
+export function useExpandListOf() {
+  return useBoardStore((state) => state.expandListOf);
+}
+
+export function useEndCardDragInto() {
+  return useBoardStore((state) => state.endCardDragInto);
 }
 
 export function useBackground(): BoardBackground | undefined {

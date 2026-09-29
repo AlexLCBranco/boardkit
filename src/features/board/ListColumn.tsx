@@ -8,6 +8,7 @@ import {
   type CSSProperties,
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
+  type ReactNode,
 } from "react";
 
 import { Composer } from "../../components/Composer";
@@ -29,6 +30,7 @@ import {
   ContextMenuCheckboxItem,
   ContextMenuContent,
   ContextMenuItem,
+  ContextMenuSeparator,
   ContextMenuTrigger,
 } from "../../components/ui/context-menu";
 import { MAX_CARDS_PER_LIST, cardRoom } from "../../domain/limits";
@@ -44,6 +46,7 @@ import {
   useClipboardCount,
   useIsFirstList,
   useIsNumberingContinued,
+  useIsListCollapsed,
   useIsListFull,
   useDeleteList,
   useDuplicateList,
@@ -59,6 +62,7 @@ import {
 } from "../../store/selectors";
 import { LIST_WIDTH_MAX, LIST_WIDTH_MIN } from "../../styles/layout";
 import { sortableTransition } from "../../styles/motion";
+import { toggleListCollapsed } from "./animateCollapse";
 import { CardItem } from "./CardItem";
 import { copyAsImage } from "./copyAsImage";
 import styles from "./ListColumn.module.css";
@@ -117,6 +121,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
   // that was set to continue keeps the flag (so moving it back restores the
   // link) but shows and behaves as if it weren't.
   const continuesNumbering = !isFirstList && list.continuesNumbering === true;
+  const isCollapsed = useIsListCollapsed(listId);
 
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
   // A colour being tried in the customise panel's picker, shown before it is
@@ -149,6 +154,8 @@ function ListColumnImpl({ listId }: ListColumnProps) {
     data: { type: "list" },
     transition: sortableTransition,
   });
+
+  const toggleCollapsed = () => toggleListCollapsed(listId);
 
   // Combines dnd-kit's own ref callback with the plain node ref the resize
   // handle needs to read/write the column's live width. Both want the same
@@ -318,6 +325,78 @@ function ListColumnImpl({ listId }: ListColumnProps) {
       : {}),
   };
 
+  // The same menu on the header and on the collapsed strip, so folding a
+  // list away never hides what can be done with it.
+  const menuContent = (
+    <ContextMenuContent>
+      <ContextMenuItem onSelect={toggleCollapsed}>
+        {isCollapsed ? "Expand list" : "Collapse list"}
+      </ContextMenuItem>
+      <ContextMenuSeparator />
+      <ContextMenuItem onSelect={() => duplicateList(listId)}>Duplicate list</ContextMenuItem>
+      <ContextMenuCheckboxItem
+        checked={continuesNumbering}
+        disabled={isFirstList}
+        onCheckedChange={(checked) => setListContinuesNumbering(listId, checked)}
+      >
+        Continue numbering from previous list
+      </ContextMenuCheckboxItem>
+      <ListTransferItems listId={listId} />
+      {isCollapsed && (
+        <>
+          <ContextMenuSeparator />
+          <ContextMenuItem variant="destructive" onSelect={() => setIsDeleteConfirmOpen(true)}>
+            Delete list…
+          </ContextMenuItem>
+        </>
+      )}
+    </ContextMenuContent>
+  );
+
+  const deleteDialog = (
+    <AlertDialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete {list.title ? `"${list.title}"` : "this list"}?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This moves the list, and its {cardCount} card{cardCount === 1 ? "" : "s"}, to the
+            trash. You can restore it from there.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction variant="destructive" onClick={() => deleteList(listId)}>
+            Delete
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+
+  // Collapsed: the same sortable <section> (so it still drags to reorder,
+  // and keeps its accent tint), holding only the strip. Its cards are not
+  // rendered at all -- they still count for numbering, which reads the
+  // store, not the DOM.
+  if (isCollapsed) {
+    return (
+      <section
+        ref={setColumnRefs}
+        style={style}
+        className={`${styles.column} ${styles.collapsed} ${isDragging ? styles.dragging : ""}`}
+        data-list-id={listId}
+      >
+        <CollapsedStrip
+          listId={listId}
+          isFull={isFull}
+          onExpand={toggleCollapsed}
+          handleProps={{ ...attributes, ...listeners }}
+          menuContent={menuContent}
+        />
+        {deleteDialog}
+      </section>
+    );
+  }
+
   return (
     <section
       ref={setColumnRefs}
@@ -351,6 +430,16 @@ function ListColumnImpl({ listId }: ListColumnProps) {
         ) : (
           <span className={styles.count}>{cardCount}</span>
         )}
+        <button
+          type="button"
+          className={styles.collapseButton}
+          onClick={toggleCollapsed}
+          data-capture-exclude="true"
+          aria-label="Collapse list"
+          title="Collapse list"
+        >
+          ‹
+        </button>
         <button
           type="button"
           className={styles.thotsButton}
@@ -397,36 +486,10 @@ function ListColumnImpl({ listId }: ListColumnProps) {
         </button>
       </header>
         </ContextMenuTrigger>
-        <ContextMenuContent>
-          <ContextMenuItem onSelect={() => duplicateList(listId)}>Duplicate list</ContextMenuItem>
-          <ContextMenuCheckboxItem
-            checked={continuesNumbering}
-            disabled={isFirstList}
-            onCheckedChange={(checked) => setListContinuesNumbering(listId, checked)}
-          >
-            Continue numbering from previous list
-          </ContextMenuCheckboxItem>
-          <ListTransferItems listId={listId} />
-        </ContextMenuContent>
+        {menuContent}
       </ContextMenu>
 
-      <AlertDialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete {list.title ? `"${list.title}"` : "this list"}?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This moves the list, and its {cardCount} card{cardCount === 1 ? "" : "s"}, to the
-              trash. You can restore it from there.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction variant="destructive" onClick={() => deleteList(listId)}>
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {deleteDialog}
 
       {isCustomizeOpen && (
         <CustomizePanel
@@ -536,6 +599,78 @@ function EmptyListDropZone({ listId }: { readonly listId: ListId }) {
       ref={setNodeRef}
       className={`${styles.emptyDropZone} ${isOver ? styles.emptyDropZoneOver : ""}`}
     />
+  );
+}
+
+/**
+ * A collapsed list: a thin strip with the title written sideways, the card
+ * count and the icon, on the column's own accent tint.
+ *
+ * It is three things at once, each with its own mechanism:
+ *  - the list's drag handle -- dnd-kit's listeners, as on the header;
+ *  - a click target that opens the list -- dnd-kit swallows the click that
+ *    ends a drag, so dragging the strip never also expands it;
+ *  - a drop target for cards, which land at the bottom. It is its own
+ *    droppable, typed `list-collapsed`, so DragContext's collision filter
+ *    treats it as a card target, not a list-reorder target.
+ *
+ * With no `menuContent` it renders bare, with its droppable switched off:
+ * that is `ListOverlay`'s lifted copy, which keeps the strip look while a
+ * collapsed list is dragged.
+ */
+export function CollapsedStrip({
+  listId,
+  isFull = false,
+  onExpand,
+  handleProps,
+  menuContent,
+}: {
+  readonly listId: ListId;
+  readonly isFull?: boolean;
+  readonly onExpand?: () => void;
+  readonly handleProps?: object;
+  readonly menuContent?: ReactNode;
+}) {
+  const list = useList(listId);
+  const cardCount = useCardCount(listId);
+  const isPreview = menuContent === undefined;
+  const { setNodeRef, isOver } = useDroppable({
+    id: `collapsed-list-drop:${listId}`,
+    data: { type: "list-collapsed", listId },
+    disabled: isPreview,
+  });
+  const title = list.title || "Untitled list";
+
+  const strip = (
+    <div
+      {...handleProps}
+      ref={setNodeRef}
+      className={styles.strip}
+      data-list-header={isPreview ? undefined : ""}
+      data-drop={isOver ? (isFull ? "refused" : "accepted") : undefined}
+      onClick={onExpand}
+      aria-label={`${title}, ${cardCount} card${cardCount === 1 ? "" : "s"}, collapsed`}
+      title={isOver && isFull ? `List is full · ${MAX_CARDS_PER_LIST} cards max` : "Click to expand"}
+    >
+      <span className={styles.stripChevron} aria-hidden="true">
+        ›
+      </span>
+      {list.icon && <Icon name={list.icon} className={styles.headerIcon} />}
+      <span className={styles.count}>{cardCount}</span>
+      <h2 className={styles.stripTitle}>{title}</h2>
+    </div>
+  );
+
+  if (isPreview) {
+    return strip;
+  }
+  // The trigger wraps the strip element itself (`asChild`), so Radix merges
+  // its own pointer handlers with dnd-kit's rather than replacing them.
+  return (
+    <ContextMenu>
+      <ContextMenuTrigger asChild>{strip}</ContextMenuTrigger>
+      {menuContent}
+    </ContextMenu>
   );
 }
 

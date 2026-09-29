@@ -956,3 +956,35 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
     rewrite the order the drag is about to settle against.
   - **Tests.** Vitest (`npm test`), starting with `domain/cardDrag.test.ts`.
     `domain/` is React-free precisely so it can be tested like this.
+
+- **Collapsing a list (v0.0.66).** A list folds down to a thin strip: title
+  written sideways, card count, icon, and the list's own accent tint.
+  - **A view setting, outside `lists`.** The flag lives in a board-level
+    `collapsedLists` slice (`Record<ListId, true>`), not on `List`. Undo
+    restores whole `lists` snapshots, so a flag on the list would be rolled
+    back by undoing any unrelated rename. `setListCollapsed` skips
+    `withHistory`, and no history patch ever names the slice, so no undo
+    can touch it. It is saved with the board (`boardContent`), carried by
+    board duplication and "new from layout", and cleaned on load
+    (`knownCollapsed` drops flags for lists that no longer exist).
+  - **Same sortable, different body.** A collapsed `ListColumn` renders the
+    same `useSortable` `<section>` with only a `CollapsedStrip` inside, so
+    list reordering and the header menu work unchanged. Its cards are not
+    rendered; numbering still counts them, because it reads the store.
+  - **Drop target.** The strip is its own droppable, typed
+    `list-collapsed`. The collision filter checks it with `pointerWithin`
+    before anything else, so the pointer has to be on the strip; nearest
+    centre would let a tall neighbour win. There is no mid-drag preview (the
+    strip shows no cards to open a gap in; it lights up instead). On drop,
+    `endCardDragInto` appends the card and settles the drag as one undo
+    step, or rolls it back if the list is full.
+  - **Animation without animating width.** `animateListCollapse` is FLIP:
+    measure every column, apply the change with `flushSync`, then play each
+    moved column from its old position with a Web Animations `transform`,
+    and fade the toggled column in with `opacity`. It uses WAAPI rather than
+    inline styles so it never fights dnd-kit's inline transforms, and it
+    divides by the rail's zoom so the slide stays right at any zoom level.
+  - **One entry point.** `toggleListCollapsed` serves the header button,
+    the strip, the context menu and the `c` shortcut, and hands keyboard
+    focus from the old header to the new one. Search opens a collapsed list
+    before revealing a card in it (`expandListOf`).

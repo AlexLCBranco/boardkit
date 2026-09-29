@@ -74,5 +74,7 @@ export function layoutOnly(state: BoardState): BoardState {
     trash: [],
     trashedLists: [],
     background: state.background,
+    // Same list ids, so which ones are folded away carries over too.
+    collapsedLists: state.collapsedLists,
   };
 }

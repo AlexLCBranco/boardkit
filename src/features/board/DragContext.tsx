@@ -4,6 +4,7 @@ import {
   KeyboardSensor,
   PointerSensor,
   closestCenter,
+  pointerWithin,
   useSensor,
   useSensors,
   type CollisionDetection,
@@ -27,11 +28,14 @@ import {
   useBeginCardDrag,
   useCancelCardDrag,
   useEndCardDrag,
+  useEndCardDragInto,
+  useIsListCollapsed,
   useMoveCardBetweenLists,
   useReorderLists,
 } from "../../store/selectors";
 import { useResolvedTheme } from "../../store/themeStore";
 import cardStyles from "./CardItem.module.css";
+import { CollapsedStrip } from "./ListColumn";
 import listStyles from "./ListColumn.module.css";
 
 /**
@@ -43,7 +47,8 @@ import listStyles from "./ListColumn.module.css";
 type DragData =
   | { readonly type: "card"; readonly listId: ListId }
   | { readonly type: "list" }
-  | { readonly type: "list-empty"; readonly listId: ListId };
+  | { readonly type: "list-empty"; readonly listId: ListId }
+  | { readonly type: "list-collapsed"; readonly listId: ListId };
 
 type ActiveDrag =
   | { readonly kind: "card"; readonly id: CardId; readonly listId: ListId }
@@ -72,6 +77,7 @@ export function BoardDragContext({ children }: { readonly children: ReactNode })
   const moveCardBetweenLists = useMoveCardBetweenLists();
   const endCardDrag = useEndCardDrag();
   const cancelCardDrag = useCancelCardDrag();
+  const endCardDragInto = useEndCardDragInto();
   const reorderLists = useReorderLists();
 
   const sensors = useSensors(
@@ -85,14 +91,36 @@ export function BoardDragContext({ children }: { readonly children: ReactNode })
    * (its drag handle) could resolve as "over" the list-reorder target
    * instead of the card or empty-list drop zone underneath it, and a
    * dragged list could snap to a card by mistake.
+   *
+   * A collapsed list's strip is a card target too, but it only counts when
+   * the pointer is actually on it. Nearest-centre alone would let a tall
+   * neighbouring list win while the pointer sits squarely on a thin strip,
+   * or pull a card onto the strip from halfway across the next column.
    */
   const collisionDetection: CollisionDetection = (args) => {
     const activeIsList = dragDataOf(args.active)?.type === "list";
-    const compatible = args.droppableContainers.filter((container) => {
-      const containerType = dragDataOf(container)?.type;
-      return activeIsList ? containerType === "list" : containerType !== "list";
+    if (activeIsList) {
+      return closestCenter({
+        ...args,
+        droppableContainers: args.droppableContainers.filter(
+          (container) => dragDataOf(container)?.type === "list",
+        ),
+      });
+    }
+    const strips = args.droppableContainers.filter(
+      (container) => dragDataOf(container)?.type === "list-collapsed",
+    );
+    const onStrip = pointerWithin({ ...args, droppableContainers: strips });
+    if (onStrip.length > 0) {
+      return onStrip;
+    }
+    return closestCenter({
+      ...args,
+      droppableContainers: args.droppableContainers.filter((container) => {
+        const containerType = dragDataOf(container)?.type;
+        return containerType !== "list" && containerType !== "list-collapsed";
+      }),
     });
-    return closestCenter({ ...args, droppableContainers: compatible });
   };
 
   function handleDragStart(event: DragStartEvent) {
@@ -156,6 +184,13 @@ export function BoardDragContext({ children }: { readonly children: ReactNode })
         return;
       }
       const overData = dragDataOf(over);
+      // A collapsed list shows no cards, so it previews nothing while the
+      // card hovers (its strip lights up instead); the move happens here, on
+      // drop, to the bottom of that list.
+      if (overData?.type === "list-collapsed") {
+        endCardDragInto(active.id as CardId, activeData.listId, overData.listId);
+        return;
+      }
       // A drop on an empty list was already placed by handleDragOver above;
       // only a drop on another card still needs its final position applied.
       // That card must be in the dragged card's own list: if it isn't, the
@@ -265,6 +300,7 @@ function CardOverlay({ cardId, listId }: { readonly cardId: CardId; readonly lis
 function ListOverlay({ listId }: { readonly listId: ListId }) {
   const list = useList(listId);
   const cardCount = useCardCount(listId);
+  const isCollapsed = useIsListCollapsed(listId);
 
   // Same reasoning as CardOverlay above: portalled outside the column's own
   // DOM subtree, so it can't inherit `--list-accent` (or a custom width) by
@@ -274,6 +310,14 @@ function ListOverlay({ listId }: { readonly listId: ListId }) {
     ...(list.color ? ({ "--list-accent": accentCss(list.color) } as CSSProperties) : {}),
     ...(list.width ? ({ "--column-width": `${list.width}px` } as CSSProperties) : {}),
   };
+
+  if (isCollapsed) {
+    return (
+      <div className={`${listStyles.column} ${listStyles.collapsed} ${listStyles.overlay}`} style={style}>
+        <CollapsedStrip listId={listId} />
+      </div>
+    );
+  }
 
   return (
     <div className={`${listStyles.column} ${listStyles.overlay}`} style={style}>

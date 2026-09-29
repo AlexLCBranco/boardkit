@@ -13,9 +13,10 @@ import {
 const MARQUEE_THRESHOLD = 4;
 
 /** Anything a press on should keep doing its own job instead of starting a
-    marquee: cards and list headers start drags, the rest are controls. */
+    marquee: cards and list headers (a collapsed list's strip too) start
+    drags, the rest are controls. */
 const INTERACTIVE =
-  "[data-card-id], header, button, input, textarea, select, a, [role='separator'], [contenteditable='true']";
+  "[data-card-id], header, [data-list-header], button, input, textarea, select, a, [role='separator'], [contenteditable='true']";
 
 /**
  * Drag on empty canvas to draw a box; every card the box touches is selected

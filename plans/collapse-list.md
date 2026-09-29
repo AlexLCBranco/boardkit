@@ -8,6 +8,11 @@ A small, self-contained plan for one feature. It is **not** part of
 > before it's built. **Start the build chat by asking what they want
 > changed.** Everything below is the starting design, not a final spec.
 
+> **Built in v0.0.66.** The owner's changes: collapse is a view setting,
+> saved with the board but never an undo step (so it lives outside `List`,
+> in `BoardState.collapsedLists`), and the neighbours slide over with a
+> FLIP transform. See ARCHITECTURE.md.
+
 ## Starting design
 
 - A small arrow button in the list header collapses the list into a narrow

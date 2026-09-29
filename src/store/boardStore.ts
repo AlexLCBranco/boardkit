@@ -4,6 +4,7 @@ import { imageIdOf } from "../domain/background";
 import { pasteCardsIntoList } from "../domain/clipboard";
 import { duplicateList as duplicateListState, layoutOnly } from "../domain/duplicate";
 import { settleCardDrag } from "../domain/cardDrag";
+import { listOfCard, withCollapsed } from "../domain/collapse";
 import { createBoardId, createCardId, createListId } from "../domain/ids";
 import { EMPTY_HISTORY, pushEntry, stepRedo, stepUndo, type BoardPatch, type History } from "../domain/history";
 import { isListFull } from "../domain/limits";
@@ -111,6 +112,10 @@ export interface BoardActions {
   ) => void;
   /** Esc, or a drop outside every list: puts every card back. */
   cancelCardDrag: () => void;
+  /** Drops the dragged card at the bottom of `toListId` -- a collapsed list,
+      which shows no cards to drop between. Settles like `endCardDrag`; a
+      full list refuses the card and the drag is rolled back instead. */
+  endCardDragInto: (activeId: CardId, fromListId: ListId, toListId: ListId) => void;
   reorderLists: (activeId: ListId, overId: ListId) => void;
   setListColor: (listId: ListId, color: ItemColor | undefined) => void;
   setListIcon: (listId: ListId, icon: IconKey | undefined) => void;
@@ -122,6 +127,11 @@ export interface BoardActions {
   /** Display only -- numbering still counts the list's cards. One undo step. */
   setListNumbersHidden: (listId: ListId, hidden: boolean) => void;
   setListWidths: (updates: Readonly<Record<ListId, ListWidth | undefined>>) => void;
+  /** Folds a list to a strip or opens it again. A view setting: saved with
+      the board, never an undo step (see domain/collapse.ts). */
+  setListCollapsed: (listId: ListId, collapsed: boolean) => void;
+  /** Opens whichever list holds the card, so it can be shown. */
+  expandListOf: (cardId: CardId) => void;
   /** `undefined` goes back to the theme's own background. One undo step. */
   setBackground: (background: BoardBackground | undefined) => void;
   /** `undefined` makes it a normal card again. One undo step. */
@@ -412,6 +422,17 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
       state.cardDragOrigin ? { cardOrder: state.cardDragOrigin, cardDragOrigin: null } : state,
     ),
 
+  endCardDragInto: (activeId, fromListId, toListId) => {
+    if (fromListId !== toListId && isListFull(get().cardOrder[toListId])) {
+      get().cancelCardDrag();
+      return;
+    }
+    if (fromListId !== toListId) {
+      get().moveCardBetweenLists(activeId, fromListId, toListId, null);
+    }
+    get().endCardDrag(null);
+  },
+
   reorderLists: (activeId, overId) =>
     set((state) =>
       withHistory(state, {
@@ -493,6 +514,18 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
       }
       return withHistory(state, { lists });
     }),
+
+  // Deliberately not `withHistory`: see domain/collapse.ts.
+  setListCollapsed: (listId, collapsed) =>
+    set((state) => {
+      const collapsedLists = withCollapsed(state.collapsedLists, listId, collapsed);
+      return collapsedLists === state.collapsedLists ? state : { collapsedLists };
+    }),
+
+  expandListOf: (cardId) => {
+    const listId = listOfCard(get().cardOrder, cardId);
+    if (listId) get().setListCollapsed(listId, false);
+  },
 
   setBackground: (background) => set((state) => withHistory(state, { background })),
 
@@ -617,6 +650,7 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
         trash: [],
         trashedLists: [],
         background: state.background,
+        collapsedLists: state.collapsedLists,
       };
       const boards = [...state.boards, { id: boardId, name }];
       savePersistedBoardNow(board, boardId);
@@ -723,7 +757,8 @@ useBoardStore.subscribe((state, previous) => {
     state.cardOrder !== previous.cardOrder ||
     state.trash !== previous.trash ||
     state.trashedLists !== previous.trashedLists ||
-    state.background !== previous.background
+    state.background !== previous.background ||
+    state.collapsedLists !== previous.collapsedLists
   ) {
     schedulePersist(state, state.boardId);
   }

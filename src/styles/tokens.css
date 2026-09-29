@@ -61,6 +61,11 @@
   --list-width-min: 220px;
   --list-width-max: 640px;
   --board-gutter: var(--space-4);
+  /* A collapsed list's strip (ListColumn's `.collapsed`): narrow enough to
+     get out of the way, wide enough to hit with a mouse and drop a card on.
+     The minimum height keeps a short title from making a tiny target. */
+  --list-collapsed-width: 44px;
+  --list-collapsed-min-height: 160px;
   /* The numbered card's left strip (CardItem's `.number`). Fits three
      digits, since continued numbering can run past 99. */
   --card-number-gutter: 32px;
