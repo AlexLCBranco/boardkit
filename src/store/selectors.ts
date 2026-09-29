@@ -191,8 +191,16 @@ export function useEmptyListTrash() {
   return useBoardStore((state) => state.emptyListTrash);
 }
 
-export function useReorderCardsWithinList() {
-  return useBoardStore((state) => state.reorderCardsWithinList);
+export function useBeginCardDrag() {
+  return useBoardStore((state) => state.beginCardDrag);
+}
+
+export function useEndCardDrag() {
+  return useBoardStore((state) => state.endCardDrag);
+}
+
+export function useCancelCardDrag() {
+  return useBoardStore((state) => state.cancelCardDrag);
 }
 
 export function useMoveCardBetweenLists() {

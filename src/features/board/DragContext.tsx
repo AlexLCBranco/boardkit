@@ -24,8 +24,10 @@ import {
   useCardCount,
   useCardNumber,
   useList,
+  useBeginCardDrag,
+  useCancelCardDrag,
+  useEndCardDrag,
   useMoveCardBetweenLists,
-  useReorderCardsWithinList,
   useReorderLists,
 } from "../../store/selectors";
 import { useResolvedTheme } from "../../store/themeStore";
@@ -66,8 +68,10 @@ function dragDataOf(entity: { data: { current?: unknown } }): DragData | undefin
  */
 export function BoardDragContext({ children }: { readonly children: ReactNode }) {
   const [activeDrag, setActiveDrag] = useState<ActiveDrag>(null);
-  const reorderCardsWithinList = useReorderCardsWithinList();
+  const beginCardDrag = useBeginCardDrag();
   const moveCardBetweenLists = useMoveCardBetweenLists();
+  const endCardDrag = useEndCardDrag();
+  const cancelCardDrag = useCancelCardDrag();
   const reorderLists = useReorderLists();
 
   const sensors = useSensors(
@@ -97,6 +101,7 @@ export function BoardDragContext({ children }: { readonly children: ReactNode })
       setActiveDrag({ kind: "list", id: event.active.id as ListId });
     } else if (data?.type === "card") {
       setActiveDrag({ kind: "card", id: event.active.id as CardId, listId: data.listId });
+      beginCardDrag();
     }
   }
 
@@ -107,7 +112,10 @@ export function BoardDragContext({ children }: { readonly children: ReactNode })
    * waiting for drop, would leave the card looking like it belongs to its
    * old list right up until release. Reordering within the list the card
    * already lives in is left to the sortable preview and committed only in
-   * `handleDragEnd`, exactly as milestone 4 already does it.
+   * `handleDragEnd`.
+   *
+   * These crossings are previews, not history: the whole drag becomes one
+   * undo step on drop, or is rolled back on cancel (see `domain/cardDrag.ts`).
    */
   function handleDragOver(event: DragOverEvent) {
     const { active, over } = event;
@@ -137,33 +145,39 @@ export function BoardDragContext({ children }: { readonly children: ReactNode })
   function handleDragEnd(event: DragEndEvent) {
     setActiveDrag(null);
     const { active, over } = event;
-    if (!over) {
-      return;
-    }
-
     const activeData = dragDataOf(active);
 
-    if (activeData?.type === "list") {
-      if (active.id !== over.id) {
-        reorderLists(active.id as ListId, over.id as ListId);
+    if (activeData?.type === "card") {
+      // Released outside every list: treated as a cancel, so the card goes
+      // back where it was picked up rather than staying wherever the last
+      // boundary crossing left it.
+      if (!over) {
+        cancelCardDrag();
+        return;
       }
+      const overData = dragDataOf(over);
+      // A drop on an empty list was already placed by handleDragOver above;
+      // only a drop on another card still needs its final position applied.
+      // That card must be in the dragged card's own list: if it isn't, the
+      // destination was full and refused the card, so there is no reorder.
+      const reorders =
+        overData?.type === "card" && overData.listId === activeData.listId && over.id !== active.id;
+      endCardDrag(
+        reorders
+          ? { listId: activeData.listId, activeId: active.id as CardId, overId: over.id as CardId }
+          : null,
+      );
       return;
     }
 
-    if (activeData?.type === "card") {
-      const overData = dragDataOf(over);
-      // A drop on an empty list was already placed by handleDragOver above;
-      // only a drop on another card still needs its final position committed.
-      // That card must be in the dragged card's own list: if it isn't, the
-      // destination was full and refused the card, so there is nothing to do.
-      if (
-        overData?.type === "card" &&
-        overData.listId === activeData.listId &&
-        over.id !== active.id
-      ) {
-        reorderCardsWithinList(activeData.listId, active.id as CardId, over.id as CardId);
-      }
+    if (activeData?.type === "list" && over && active.id !== over.id) {
+      reorderLists(active.id as ListId, over.id as ListId);
     }
+  }
+
+  function handleDragCancel() {
+    setActiveDrag(null);
+    cancelCardDrag();
   }
 
   return (
@@ -173,7 +187,7 @@ export function BoardDragContext({ children }: { readonly children: ReactNode })
       onDragStart={handleDragStart}
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
-      onDragCancel={() => setActiveDrag(null)}
+      onDragCancel={handleDragCancel}
     >
       {children}
       <DragOverlay>

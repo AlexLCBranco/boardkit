@@ -27,23 +27,14 @@ effort.
    card gets its number as a prop. Kept here so the item numbers below, which
    other docs cite, stay stable.
 
-2. **A cross-list drag is not atomic.** `handleDragOver` commits the move as
-   soon as the pointer crosses a list boundary, but `onDragCancel` only
-   clears the overlay — so Escape mid-drag leaves the card moved. One drag
-   also produces one undo entry per boundary crossed. Fix: snapshot
-   `cardOrder` on drag start, keep writing on drag-over with history
-   suppressed, then push a single history entry on drop or restore the
-   snapshot on cancel. Note this overturns a deliberate decision recorded at
-   `store/boardStore.ts`'s `moveCardBetweenLists` — the reasoning there
-   (the board visibly changed at each crossing, so each crossing is its own
-   undo step) is being rejected, not overlooked. Do **not** build a separate
-   preview layer: drag-over must stay a real store write, because
-   `SortableContext` reads its items from the store.
+2. ~~**A cross-list drag is not atomic.**~~ Done in v0.0.65: a card drag
+   snapshots `cardOrder` on start, previews list crossings without history,
+   and settles into one undo step on drop or rolls back on Esc. See
+   `domain/cardDrag.ts` and ARCHITECTURE.md.
 
-3. **Tests.** There are none. `domain/` is pure and React-free precisely so
-   it can be tested — `history.ts`, `ordering.ts`, `numbering.ts` and
-   `persistence.ts` are the targets. Write the drag-transaction tests as part
-   of item 2, not after it.
+3. **Tests.** Vitest is set up (`npm test`), and the drag transaction is
+   covered (`domain/cardDrag.test.ts`). Still untested: `history.ts`,
+   `ordering.ts`, `numbering.ts` and `persistence.ts`.
 
 4. **Pending saves are not flushed on page hide.** Board and registry writes
    debounce 400ms with no `pagehide`/`visibilitychange` flush, so a fast

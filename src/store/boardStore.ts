@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { imageIdOf } from "../domain/background";
 import { pasteCardsIntoList } from "../domain/clipboard";
 import { duplicateList as duplicateListState, layoutOnly } from "../domain/duplicate";
+import { settleCardDrag } from "../domain/cardDrag";
 import { createBoardId, createCardId, createListId } from "../domain/ids";
 import { EMPTY_HISTORY, pushEntry, stepRedo, stepUndo, type BoardPatch, type History } from "../domain/history";
 import { isListFull } from "../domain/limits";
@@ -92,13 +93,24 @@ export interface BoardActions {
   restoreList: (listId: ListId) => void;
   permanentlyDeleteList: (listId: ListId) => void;
   emptyListTrash: () => void;
-  reorderCardsWithinList: (listId: ListId, activeId: CardId, overId: CardId) => void;
+  /** Starts a card drag: remembers `cardOrder` so the drag can settle into
+      one undo step, or be rolled back. */
+  beginCardDrag: () => void;
+  /** Mid-drag preview move into another list. Not recorded in history. */
   moveCardBetweenLists: (
     activeId: CardId,
     fromListId: ListId,
     toListId: ListId,
     overId: CardId | null,
   ) => void;
+  /** Drops the dragged card, optionally moving it onto `overId` within its
+      list first, and records the whole drag as one undo step (none if it
+      ended where it began). */
+  endCardDrag: (
+    reorder: { readonly listId: ListId; readonly activeId: CardId; readonly overId: CardId } | null,
+  ) => void;
+  /** Esc, or a drop outside every list: puts every card back. */
+  cancelCardDrag: () => void;
   reorderLists: (activeId: ListId, overId: ListId) => void;
   setListColor: (listId: ListId, color: ItemColor | undefined) => void;
   setListIcon: (listId: ListId, icon: IconKey | undefined) => void;
@@ -161,6 +173,10 @@ export interface BoardActions {
  */
 export type BoardStore = BoardState & {
   readonly history: History;
+  /** `cardOrder` as it was when the card being dragged was picked up, or
+      `null` when no card drag is in progress. Live-session only, like
+      `history`, and never persisted. */
+  readonly cardDragOrigin: BoardState["cardOrder"] | null;
   readonly boardId: BoardId;
   readonly boards: readonly BoardSummary[];
 } & BoardActions;
@@ -236,6 +252,7 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
   boardId: initial.boardId,
   boards: initial.boards,
   history: EMPTY_HISTORY,
+  cardDragOrigin: null,
 
   addList: (title) =>
     set((state) => {
@@ -344,26 +361,18 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
 
   emptyTrash: () => set((state) => withHistory(state, emptyTrashState(state))),
 
-  // A thin wrapper over the pure domain function: the store's only job is to
-  // put the result back into the normalised shape.
-  reorderCardsWithinList: (listId, activeId, overId) =>
-    set((state) =>
-      withHistory(state, {
-        cardOrder: {
-          ...state.cardOrder,
-          [listId]: moveWithinList(state.cardOrder[listId], activeId, overId),
-        },
-      }),
-    ),
+  // A card drag is one transaction -- see `domain/cardDrag.ts`. These four
+  // actions are its begin / preview / commit / rollback, and none of them go
+  // through `withHistory`: the only history a drag produces is the single
+  // entry `endCardDrag` settles on drop.
+  beginCardDrag: () => set((state) => ({ cardDragOrigin: state.cardOrder })),
 
   // Called continuously as a drag crosses into a different list, not just on
   // drop -- see DragContext's onDragOver. That is what makes the destination
   // list open a gap for the card while it is still being dragged, rather
-  // than the card only appearing there once the pointer is released. Each
-  // boundary crossing is its own undo step as a result -- a drag that visits
-  // three lists before dropping produces three undo-able moves, not one --
-  // which matches the fact that the board's content already changed at each
-  // crossing, in full view, well before the drop.
+  // than the card only appearing there once the pointer is released. It is
+  // still a real store write (each list's SortableContext reads its items
+  // from the store), just not a recorded one.
   //
   // A full destination list refuses the card: it opens no gap, and the card
   // stays in the list it came from.
@@ -372,10 +381,36 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
       if (isListFull(state.cardOrder[toListId])) {
         return state;
       }
-      return withHistory(state, {
+      return {
         cardOrder: moveBetweenLists(state.cardOrder, activeId, fromListId, toListId, overId),
-      });
+      };
     }),
+
+  endCardDrag: (reorder) =>
+    set((state) => {
+      const cardOrder = reorder
+        ? {
+            ...state.cardOrder,
+            [reorder.listId]: moveWithinList(
+              state.cardOrder[reorder.listId],
+              reorder.activeId,
+              reorder.overId,
+            ),
+          }
+        : state.cardOrder;
+      if (!state.cardDragOrigin) {
+        return { cardOrder };
+      }
+      return {
+        ...settleCardDrag(state.history, state.cardDragOrigin, cardOrder),
+        cardDragOrigin: null,
+      };
+    }),
+
+  cancelCardDrag: () =>
+    set((state) =>
+      state.cardDragOrigin ? { cardOrder: state.cardDragOrigin, cardDragOrigin: null } : state,
+    ),
 
   reorderLists: (activeId, overId) =>
     set((state) =>
@@ -516,14 +551,23 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
   // Undo and redo apply a recorded patch directly and move it between the
   // two stacks -- they never go through `withHistory`, or undoing would push
   // a fresh "undo the undo" entry and the redo stack could never be reached.
+  //
+  // Both are ignored mid-drag: undoing under a lifted card would rewrite the
+  // `cardOrder` the drag is about to settle against its origin.
   undo: () =>
     set((state) => {
+      if (state.cardDragOrigin) {
+        return state;
+      }
       const step = stepUndo(state.history);
       return step ? { ...step.patch, history: step.history } : state;
     }),
 
   redo: () =>
     set((state) => {
+      if (state.cardDragOrigin) {
+        return state;
+      }
       const step = stepRedo(state.history);
       return step ? { ...step.patch, history: step.history } : state;
     }),

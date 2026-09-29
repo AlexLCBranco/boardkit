@@ -932,3 +932,27 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   - Dividers have no border to draw on, so `CardKindSpec.highlightable` is
     false for them: the highlight is kept, hidden, and offered again when the
     card switches back to a type that has one.
+
+- **A card drag is one transaction (v0.0.65).** Crossing into another list
+  mid-drag used to be a recorded store write, so Esc left the card moved and
+  one drag could leave several undo steps. Now:
+  - **Still a real write, just not a recorded one.** Drag-over keeps writing
+    `cardOrder` (each list's `SortableContext` reads its items from the
+    store, so a separate preview layer would not work), through
+    `moveCardBetweenLists`, which no longer goes through `withHistory`.
+  - **The snapshot is a reference.** `beginCardDrag` keeps the pre-drag
+    `cardOrder` as `cardDragOrigin` on the store. Nothing is copied, because
+    slices are never mutated. It is live-session state like `history`, and
+    never persisted.
+  - **Drop settles, cancel rolls back.** `endCardDrag` applies any final
+    within-list reorder and then calls `settleCardDrag`
+    (`domain/cardDrag.ts`). That records one `{ cardOrder: origin } ->
+    { cardOrder: final }` entry, or nothing (restoring the origin's own
+    references) if the card ended where it began. The comparison is by
+    content, because `pushEntry`'s reference check can't see an out-and-back
+    drag. `cancelCardDrag` (Esc, or a release outside every list) puts the
+    origin back.
+  - **Undo/redo are ignored while `cardDragOrigin` is set**, so they can't
+    rewrite the order the drag is about to settle against.
+  - **Tests.** Vitest (`npm test`), starting with `domain/cardDrag.test.ts`.
+    `domain/` is React-free precisely so it can be tested like this.
