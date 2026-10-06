@@ -1,6 +1,6 @@
 # Boardkit — project summary
 
-_Last updated: 2026-10-06, v0.0.69_
+_Last updated: 2026-10-06, v0.0.70_
 
 ## What it is
 
@@ -40,7 +40,8 @@ normalised state.
 - Multi-select cards with a selection bar
 - Collapse a list to a thin strip; cards can still be dropped on it
 - A damaged saved board is repaired, its original kept aside, and a notice
-  offers restoring it from the latest backup (named by date)
+  offers restoring it from the latest backup (named by date); add
+  `?damage-test` to the address to try it on a throwaway board
 
 ## What's next
 

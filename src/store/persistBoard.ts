@@ -132,6 +132,16 @@ export function releaseHeldBoard(boardId: BoardId): void {
   heldBoards.delete(boardId);
 }
 
+/** Writes `saved` as a board's content exactly as given, unvalidated -- only
+    for planting the damage-test board (`store/damageTest.ts`). */
+export function savePersistedRawBoard(saved: unknown, boardId: BoardId): void {
+  try {
+    localStorage.setItem(STORAGE_KEY_PREFIX + boardId, JSON.stringify(saved));
+  } catch {
+    // Same as `writeBoard`.
+  }
+}
+
 /** Removes a board's saved content. Callers must `flushPersist()` first: a
     still-pending save for this board would otherwise fire afterwards and
     write the deleted board straight back. */

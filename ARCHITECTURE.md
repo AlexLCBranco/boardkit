@@ -1020,3 +1020,8 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
     step (`replaceBoardContent`). Until then `collectBoards` counts the
     active board as unreadable, so automatic backups pause instead of
     rotating good copies out for the repair.
+  - **Trying it.** Opening the app with `?damage-test` adds a "Damage test"
+    board with one card replaced by a number, and opens it
+    (`app/damageTestFromUrl.ts`, imported first in `main.tsx` so it writes
+    before `boardStore` reads). Four cards survive; the notice reports one
+    lost entry. Other boards are untouched.

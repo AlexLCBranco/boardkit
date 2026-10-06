@@ -1,3 +1,6 @@
+// First: may write a test board to storage before the board store reads it.
+import "./app/damageTestFromUrl";
+
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
