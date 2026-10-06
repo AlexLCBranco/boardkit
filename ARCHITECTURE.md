@@ -1024,11 +1024,15 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
     board with one card replaced by a number, and opens it
     (`app/damageTestFromUrl.ts`, imported first in `main.tsx` so it writes
     before `boardStore` reads). Four cards survive; the notice reports one
-    lost entry. Other boards are untouched. If the active board is already
-    a healthy "Damage test" board, it breaks another of its cards instead:
-    that board can be in a backup, so restoring the latest backup can be
-    tried too. While backups are active and no backup has the board, the
-    notice says so in place of a restore button that could only fail.
+    lost entry. Other boards are untouched. There is only ever one test
+    board: the newest is reused. Healthy, it gets another card broken (it
+    can be in a backup by then, so restoring the latest backup can be
+    tried); still damaged, it is just reopened, because an unresolved
+    damaged board pauses every automatic backup. While backups are active
+    and no backup has the board, the notice says so in place of a restore
+    button that could only fail. Verified end to end against an origin-
+    private folder (`navigator.storage.getDirectory()`) stored as the
+    backup folder, which needs no picker.
   - **Tidying up.** Deleting a board removes its set-aside copies, and
     startup drops any whose board no longer exists
     (`removeOrphanedSetAside`), so repeated tests leave nothing behind.
