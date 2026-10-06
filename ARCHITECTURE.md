@@ -420,6 +420,23 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   i.e. nobody touched it; otherwise it stays. A browser without the folder
   picker gets the same restore from a single backup file.
 
+- **Trash caps and the full-trash warning.** The caps went from 20 cards /
+  10 lists to 200 / 30, and the trash no longer forgets anything silently.
+  `domain/trash.ts` gained `cardTrashOverflow` and `listTrashOverflow`:
+  what one more delete would erase (the oldest entry), or `null` when there
+  is room. Every delete path asks first -- `guardTrash(kind, run)` in
+  `store/trashWarningStore.ts` runs the delete straight away when there is
+  room and otherwise opens `TrashFullDialog`, which names the item and runs
+  the delete only on confirm. The list delete already has a confirmation, so
+  it adds the warning to that dialog instead of opening a second one. "Move
+  to board" asks before copying, so cancelling leaves nothing half-done.
+  `moveCardToTrash` / `moveListToTrash` still evict as before: they are
+  only reached after the warning. The two caps are independent: a trashed
+  list counts once against `LIST_TRASH_LIMIT`, and its cards stay in its
+  own `cardOrder` entry, never in `trash`, so they don't count against
+  `TRASH_LIMIT`. 30 full lists is up to 1,500 cards in storage, which is
+  why the list cap stays lower.
+
 ## Decisions
 
 - **Vite + React + TypeScript.** Fast HMR matters when tuning drag feel.
@@ -1065,20 +1082,3 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   - **Tidying up.** Deleting a board removes its set-aside copies, and
     startup drops any whose board no longer exists
     (`removeOrphanedSetAside`), so repeated tests leave nothing behind.
-
-- **Trash caps and the full-trash warning.** The caps went from 20 cards /
-  10 lists to 200 / 30, and the trash no longer forgets anything silently.
-  `domain/trash.ts` gained `cardTrashOverflow` and `listTrashOverflow`:
-  what one more delete would erase (the oldest entry), or `null` when there
-  is room. Every delete path asks first -- `guardTrash(kind, run)` in
-  `store/trashWarningStore.ts` runs the delete straight away when there is
-  room and otherwise opens `TrashFullDialog`, which names the item and runs
-  the delete only on confirm. The list delete already has a confirmation, so
-  it adds the warning to that dialog instead of opening a second one. "Move
-  to board" asks before copying, so cancelling leaves nothing half-done.
-  `moveCardToTrash` / `moveListToTrash` still evict as before: they are
-  only reached after the warning. The two caps are independent: a trashed
-  list counts once against `LIST_TRASH_LIMIT`, and its cards stay in its
-  own `cardOrder` entry, never in `trash`, so they don't count against
-  `TRASH_LIMIT`. 30 full lists is up to 1,500 cards in storage, which is
-  why the list cap stays lower.
