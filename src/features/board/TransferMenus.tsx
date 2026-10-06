@@ -23,6 +23,7 @@ import {
   useSendListToBoard,
 } from "../../store/selectors";
 import { loadTransferTargets } from "../../store/transferToBoard";
+import { guardTrash, type TrashKind } from "../../store/trashWarningStore";
 
 /**
  * The "Move to board ›" / "Copy to board ›" menus for a card (a dropdown from
@@ -51,6 +52,13 @@ function useOtherBoards(): readonly BoardSummary[] {
 function report(mode: TransferMode, ok: boolean, where: string, error?: string): void {
   if (ok) toast.success(`${mode === "move" ? "Moved" : "Copied"} to ${where}`);
   else toast.error(error ?? "Could not transfer.");
+}
+
+/** A move trashes the original here, so a full trash asks first (and then
+    nothing is copied either, if the user cancels). A copy deletes nothing. */
+function transfer(mode: TransferMode, kind: TrashKind, send: () => void): void {
+  if (mode === "move") guardTrash(kind, send);
+  else send();
 }
 
 /**
@@ -129,10 +137,12 @@ function CardListPicker({
         <DropdownMenuItem
           key={target.id}
           disabled={target.full}
-          onSelect={() => {
-            const result = sendCardToBoard(mode, listId, cardId, board.id, target.id);
-            report(mode, result.ok, `“${board.name}” → “${target.title || "Untitled list"}”`, !result.ok ? result.message : undefined);
-          }}
+          onSelect={() =>
+            transfer(mode, "card", () => {
+              const result = sendCardToBoard(mode, listId, cardId, board.id, target.id);
+              report(mode, result.ok, `“${board.name}” → “${target.title || "Untitled list"}”`, !result.ok ? result.message : undefined);
+            })
+          }
         >
           {target.title || "Untitled list"}
           {target.full && " (full)"}
@@ -171,10 +181,12 @@ export function ListTransferItems({ listId }: { listId: ListId }): ReactNode {
             {others.map((board) => (
               <ContextMenuItem
                 key={board.id}
-                onSelect={() => {
-                  const result = sendListToBoard(mode, listId, board.id);
-                  report(mode, result.ok, `“${board.name}”`, !result.ok ? result.message : undefined);
-                }}
+                onSelect={() =>
+                  transfer(mode, "list", () => {
+                    const result = sendListToBoard(mode, listId, board.id);
+                    report(mode, result.ok, `“${board.name}”`, !result.ok ? result.message : undefined);
+                  })
+                }
               >
                 {board.name}
               </ContextMenuItem>

@@ -1,6 +1,6 @@
 # Boardkit — project summary
 
-_Last updated: 2026-10-06, v0.0.75_
+_Last updated: 2026-10-06, v0.0.76_
 
 ## What it is
 
@@ -42,6 +42,9 @@ normalised state.
 - Card numbering that can continue across lists, be styled, or be hidden
 - Multi-select cards with a selection bar
 - Collapse a list to a thin strip; cards can still be dropped on it
+- Deleted cards and lists go to the trash (up to 200 cards and 30 lists
+  per board); when it is full, deleting asks first and names the oldest
+  item it would erase for good, instead of erasing it silently
 - A damaged saved board is repaired, its original kept aside, and a notice
   offers restoring it from the latest backup (named by date); add
   `?damage-test` to the address to try it on a throwaway board. Until it is

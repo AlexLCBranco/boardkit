@@ -7,6 +7,7 @@ import { useBoardStore } from "../../store/boardStore";
 import { useSearchDialogStore } from "../../store/searchDialogStore";
 import { useSelectionStore } from "../../store/selectionStore";
 import { useShortcutsDialogStore } from "../../store/shortcutsDialogStore";
+import { guardTrash } from "../../store/trashWarningStore";
 import { toggleListCollapsed } from "../board/animateCollapse";
 import {
   cardElement,
@@ -157,16 +158,19 @@ export const SHORTCUTS: readonly Shortcut[] = [
   card("card.toggle-thots", "t", "Open or close its thots", ({ cardId }) =>
     cardElement(cardId)?.querySelector<HTMLElement>("[data-thots-toggle]")?.click(),
   ),
-  card("card.delete", "delete", "Send the card to the trash (undoable)", ({ cardId, listId }) => {
-    // Hand focus to a neighbour first, so repeated presses walk down a list
-    // instead of dropping focus onto the page.
-    const ids = board().cardOrder[listId];
-    const at = ids.indexOf(cardId);
-    const neighbour = ids[at + 1] ?? ids[at - 1];
-    if (neighbour) focusCard(neighbour);
-    else focusListHeader(listId);
-    board().deleteCard(listId, cardId);
-  }),
+  card("card.delete", "delete", "Send the card to the trash (undoable)", ({ cardId, listId }) =>
+    // A full trash asks first; cancelling leaves focus on the card.
+    guardTrash("card", () => {
+      // Hand focus to a neighbour first, so repeated presses walk down a list
+      // instead of dropping focus onto the page.
+      const ids = board().cardOrder[listId];
+      const at = ids.indexOf(cardId);
+      const neighbour = ids[at + 1] ?? ids[at - 1];
+      if (neighbour) focusCard(neighbour);
+      else focusListHeader(listId);
+      board().deleteCard(listId, cardId);
+    }),
+  ),
 
   // --- List -----------------------------------------------------------------
   list("list.focus-left", "arrowleft", "Focus the list to the left", ({ listId }) => focusListBeside(listId, -1), { allowRepeat: true }),

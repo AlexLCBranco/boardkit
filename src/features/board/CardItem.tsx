@@ -25,6 +25,7 @@ import {
   useSetCardPostgameDescription,
 } from "../../store/selectors";
 import { useResolvedTheme } from "../../store/themeStore";
+import { guardTrash } from "../../store/trashWarningStore";
 import { sortableTransition } from "../../styles/motion";
 import styles from "./CardItem.module.css";
 import { CardTransferContent } from "./TransferMenus";
@@ -276,7 +277,7 @@ function CardItemImpl({
       <button
         type="button"
         className={styles.deleteButton}
-        onClick={() => deleteCard(listId, cardId)}
+        onClick={() => guardTrash("card", () => deleteCard(listId, cardId))}
         aria-label="Delete card"
       >
         ×

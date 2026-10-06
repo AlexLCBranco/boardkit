@@ -34,6 +34,7 @@ import {
   ContextMenuTrigger,
 } from "../../components/ui/context-menu";
 import { MAX_CARDS_PER_LIST, cardRoom } from "../../domain/limits";
+import { LIST_TRASH_LIMIT } from "../../domain/trash";
 import { accentCss } from "../../domain/colors";
 import { formatNumber, needsWideGutter } from "../../domain/numberStyle";
 import type { ItemColor, ListId, NumberFormat } from "../../domain/types";
@@ -67,6 +68,7 @@ import { CardItem } from "./CardItem";
 import { copyAsImage } from "./copyAsImage";
 import styles from "./ListColumn.module.css";
 import { ListTransferItems } from "./TransferMenus";
+import { useErasedDescription } from "../../store/trashWarningStore";
 
 interface ListColumnProps {
   readonly listId: ListId;
@@ -128,6 +130,10 @@ function ListColumnImpl({ listId }: ListColumnProps) {
   // saved. Local state, so previewing never touches the store or undo stack.
   const [previewColor, setPreviewColor] = useState<ItemColor | null>(null);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  // Read only while the dialog is open, so a closed column doesn't follow
+  // every board change. The list delete already asks, so a full list trash
+  // is warned about here rather than in a second dialog.
+  const erasedByDelete = useErasedDescription(isDeleteConfirmOpen ? "list" : null);
   const [isResizing, setIsResizing] = useState(false);
   const [copyState, setCopyState] = useState<"idle" | "copied" | "error">("idle");
   const customizeTriggerRef = useRef<HTMLButtonElement>(null);
@@ -361,6 +367,13 @@ function ListColumnImpl({ listId }: ListColumnProps) {
           <AlertDialogDescription>
             This moves the list, and its {cardCount} card{cardCount === 1 ? "" : "s"}, to the
             trash. You can restore it from there.
+            {erasedByDelete && (
+              <>
+                {" "}
+                The trash is full ({LIST_TRASH_LIMIT} lists), so this also permanently erases{" "}
+                {erasedByDelete}.
+              </>
+            )}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

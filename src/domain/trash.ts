@@ -11,18 +11,44 @@
  */
 
 import { isListFull } from "./limits";
-import type { BoardState, Card, CardId, List, ListId } from "./types";
+import type {
+  BoardState,
+  Card,
+  CardId,
+  List,
+  ListId,
+  TrashEntry,
+  TrashedListEntry,
+} from "./types";
 
-/** How many deleted cards the trash keeps before it starts forgetting the
-    oldest one. A cap, not a time-based purge -- "recently deleted" needs a
-    bound, but a background timer to age entries out is more machinery than
-    this earns. */
-export const TRASH_LIMIT = 20;
+/** How many deleted cards the trash holds. A cap, not a time-based purge --
+    "recently deleted" needs a bound (every board shares one ~5 MB
+    localStorage), but a background timer to age entries out is more
+    machinery than this earns. Generous on purpose: reaching it should be
+    rare, and even then nothing is erased without a warning (see
+    `cardTrashOverflow`). */
+export const TRASH_LIMIT = 200;
 
 /** Same idea, for whole deleted lists. Lower than `TRASH_LIMIT` because one
-    entry here can carry many cards with it -- "a few lists" is the ask, not
-    dozens. */
-export const LIST_TRASH_LIMIT = 10;
+    entry here carries every card in the list with it: 30 full lists is up
+    to 1,500 cards sitting in storage. */
+export const LIST_TRASH_LIMIT = 30;
+
+/**
+ * What one more card delete would erase for good: the oldest trashed card
+ * when the trash is already full, or `null` when there is room. Callers ask
+ * this *before* `moveCardToTrash` and warn the user when it isn't `null`,
+ * so the trash never forgets anything silently.
+ */
+export function cardTrashOverflow(state: Pick<BoardState, "trash">): TrashEntry | null {
+  return state.trash.length >= TRASH_LIMIT ? state.trash[0] : null;
+}
+
+/** The list-trash counterpart of `cardTrashOverflow`: the oldest trashed
+    list (which would be erased with every card in it), or `null`. */
+export function listTrashOverflow(state: Pick<BoardState, "trashedLists">): TrashedListEntry | null {
+  return state.trashedLists.length >= LIST_TRASH_LIMIT ? state.trashedLists[0] : null;
+}
 
 /**
  * Moves a card out of its list and into the trash. The card's own record is
@@ -30,7 +56,8 @@ export const LIST_TRASH_LIMIT = 10;
  * restoring later is just re-inserting the id, not reconstructing the card.
  *
  * When the trash is already at `TRASH_LIMIT`, the oldest entry is forgotten
- * for real (its `cards` record removed too) to make room.
+ * for real (its `cards` record removed too) to make room. Only call this
+ * once the user has been warned about that: see `cardTrashOverflow`.
  */
 export function moveCardToTrash(
   state: BoardState,
@@ -130,7 +157,8 @@ function forgetList(
  * exactly as they were, so restoring needs no reconstruction.
  *
  * When the list trash is already at `LIST_TRASH_LIMIT`, the oldest trashed
- * list is forgotten for real, cards included, to make room.
+ * list is forgotten for real, cards included, to make room. Only call this
+ * once the user has been warned about that: see `listTrashOverflow`.
  */
 export function moveListToTrash(
   state: BoardState,
