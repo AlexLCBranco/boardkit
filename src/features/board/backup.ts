@@ -10,6 +10,7 @@ import {
   type BackupFileV1,
   type BackupImage,
 } from "../../domain/persistence";
+import type { BoardSummary } from "../../domain/types";
 import { hasImage, loadImage, saveImage } from "../../store/imageStore";
 import { flushPersist, loadPersistedBoard } from "../../store/persistBoard";
 import { useBackupStore } from "../../store/backupStore";
@@ -24,11 +25,11 @@ import { useRecoveryStore } from "../../store/recoveryStore";
 
 export interface CollectedBoards {
   readonly boards: BackupBoard[];
-  /** Names of boards whose saved content could not be read. They are left out
-      of `boards` rather than replaced with an empty board: a backup that
-      quietly swaps a board for a blank one is worse than no backup, and with
-      automatic rotation it would push every good copy out of the folder. */
-  readonly unreadable: string[];
+  /** Boards whose saved content could not be read. They are left out of
+      `boards` rather than replaced with an empty board: a backup that quietly
+      swaps a board for a blank one is worse than no backup. Automatic backup
+      carries their last backed-up version forward instead (`autoBackup.ts`). */
+  readonly unreadable: BoardSummary[];
 }
 
 /** Every board's content, in registry order. The active board is read from
@@ -36,17 +37,17 @@ export interface CollectedBoards {
     the debounce window, and a failed storage write (quota) would otherwise
     silently drop the board the user is looking at from its own backup --
     unless it was damaged and the user has not yet chosen what to keep: a
-    repaired copy counts as unreadable, so automatic backup pauses rather than
-    rotate the good copies out for it. */
+    repaired copy counts as unreadable, so a backup never replaces the
+    board's good copy with what the repair kept. */
 export function collectBoards(): CollectedBoards {
   flushPersist();
   const state = useBoardStore.getState();
   const boards: BackupBoard[] = [];
-  const unreadable: string[] = [];
+  const unreadable: BoardSummary[] = [];
   for (const { id, name } of state.boards) {
     if (id === state.boardId) {
       if (useRecoveryStore.getState().damage?.boardId === id) {
-        unreadable.push(name);
+        unreadable.push({ id, name });
         continue;
       }
       boards.push({ id, name, board: boardContent(state) });
@@ -54,7 +55,7 @@ export function collectBoards(): CollectedBoards {
     }
     const board = loadPersistedBoard(id);
     if (board) boards.push({ id, name, board });
-    else unreadable.push(name);
+    else unreadable.push({ id, name });
   }
   return { boards, unreadable };
 }
@@ -93,9 +94,15 @@ async function collectImages(boards: readonly BackupBoard[]): Promise<Record<str
 }
 
 /** The backup document for a set of boards, stamped with `now`, with the
-    background images they use inside it (which is what makes it larger). */
-export async function buildBackup(boards: readonly BackupBoard[], now: Date): Promise<BackupFileV1> {
-  return serializeBackup(boards, now.toISOString(), await collectImages(boards));
+    background images they use inside it (which is what makes it larger).
+    `fallbackImages` fill in any picture no longer stored in this browser --
+    for a board carried over from an earlier backup file. */
+export async function buildBackup(
+  boards: readonly BackupBoard[],
+  now: Date,
+  fallbackImages: Readonly<Record<string, BackupImage>> = {},
+): Promise<BackupFileV1> {
+  return serializeBackup(boards, now.toISOString(), { ...fallbackImages, ...(await collectImages(boards)) });
 }
 
 /** Downloads every board as a single JSON file. Warns if a board could not be
@@ -114,7 +121,7 @@ export async function exportBackup(): Promise<void> {
   useBackupStore.getState().markBackedUp(now.getTime());
   if (unreadable.length > 0) {
     toast.warning(
-      `${listNames(unreadable)} couldn't be read, so ${unreadable.length === 1 ? "it is" : "they are"} not in this backup.`,
+      `${listNames(unreadable.map((board) => board.name))} couldn't be read, so ${unreadable.length === 1 ? "it is" : "they are"} not in this backup.`,
     );
   }
 }

@@ -497,10 +497,12 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   `backupStore`; after a browser restart the saved handle reports "prompt"
   until the user clicks "Resume backups" (`requestPermission` needs a click).
   `collectBoards()` no longer swaps an unreadable board for an empty one: it
-  returns it in `unreadable`. Automatic backup then writes nothing and shows
-  a warning (otherwise rotation would push every good copy out); manual
-  export leaves that board out of the file and toasts. Repair on load came later
-  (v0.0.67, below); this only stops backups from hiding the problem. Pure rules (staleness, age text, filename,
+  returns it in `unreadable`. Since v0.0.74 automatic backup holds only that
+  board back: each new file carries its newest copy from an earlier backup
+  (`lastBackedUpCopies`, with its picture), so rotation never pushes its
+  last good copy out, and every other board is backed up as usual. A board
+  in no backup yet is left out. The menu warning says which. Manual export
+  leaves that board out of the file and toasts. Pure rules (staleness, age text, filename,
   rotation, dot) are in `domain/backupStatus.ts`.
 - **Clickable links in thots (v0.0.37).** A web address in a pregame or
   postgame thot shows as a link when the thot is not being edited; editing
@@ -1018,8 +1020,8 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
     it could not be, it would overwrite the only copy, so it asks first.
     Each choice releases the hold and saves at once. A restore is one undo
     step (`replaceBoardContent`). Until then `collectBoards` counts the
-    active board as unreadable, so automatic backups pause instead of
-    rotating good copies out for the repair.
+    active board as unreadable, so new backups carry its last backed-up
+    version rather than the repair, and other boards keep being backed up.
   - **Trying it.** Opening the app with `?damage-test` adds a "Damage test"
     board with one card replaced by a number, and opens it
     (`app/damageTestFromUrl.ts`, imported first in `main.tsx` so it writes
@@ -1027,8 +1029,8 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
     lost entry. Other boards are untouched. There is only ever one test
     board: the newest is reused. Healthy, it gets another card broken (it
     can be in a backup by then, so restoring the latest backup can be
-    tried); still damaged, it is just reopened, because an unresolved
-    damaged board pauses every automatic backup. While backups are active
+    tried); still damaged, it is just reopened so its notice can be
+    answered, rather than damaged test boards piling up. While backups are active
     and no backup has the board, the notice says so in place of a restore
     button that could only fail. Verified end to end against an origin-
     private folder (`navigator.storage.getDirectory()`) stored as the

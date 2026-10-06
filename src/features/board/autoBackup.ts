@@ -1,7 +1,14 @@
 import { toast } from "sonner";
 
 import { backupFileName, backupsNewestFirst, backupsToDelete } from "../../domain/backupStatus";
-import { deserializeBackup } from "../../domain/persistence";
+import { imageIdOf } from "../../domain/background";
+import {
+  deserializeBackup,
+  deserializeBackupImages,
+  type BackupBoard,
+  type BackupImage,
+} from "../../domain/persistence";
+import type { BoardSummary } from "../../domain/types";
 import { useBackupStore } from "../../store/backupStore";
 import { useBoardStore } from "../../store/boardStore";
 import { idbDelete, idbGet, idbSet } from "../../store/idb";
@@ -124,19 +131,86 @@ async function runBackup(): Promise<void> {
   }
 }
 
-async function writeBackupFile(target: Folder): Promise<void> {
-  const { boards, unreadable } = collectBoards();
-  if (unreadable.length > 0) {
-    // Not writing at all is the point: rotation would otherwise trade good
-    // old copies for backups with these boards missing. The next change
-    // retries, and the warning clears as soon as everything reads again.
-    backup().setWarning(
-      `${listNames(unreadable)} couldn't be read; backups paused so older copies stay safe.`,
-    );
+const NO_COPIES = { boards: [], images: {} } as const;
+
+/**
+ * The newest backed-up version of each board in `wanted`, from the backup
+ * files in `target`, with the pictures they use. A board in no file is
+ * simply missing from the result. Renames since then are kept: the copy
+ * takes the board's current name.
+ */
+async function lastBackedUpCopies(
+  target: Folder,
+  wanted: readonly BoardSummary[],
+): Promise<{ readonly boards: BackupBoard[]; readonly images: Record<string, BackupImage> }> {
+  const boards: BackupBoard[] = [];
+  const images: Record<string, BackupImage> = {};
+  for await (const { data } of readBackupsNewestFirst(target)) {
+    const entries = deserializeBackup(data) ?? [];
+    const fileImages = deserializeBackupImages(data);
+    for (const { id, name } of wanted) {
+      const entry = entries.find((candidate) => candidate.id === id);
+      if (!entry || boards.some((found) => found.id === id)) continue;
+      boards.push({ ...entry, name });
+      const imageId = imageIdOf(entry.board.background);
+      if (imageId !== undefined && fileImages[imageId]) images[imageId] = fileImages[imageId];
+    }
+    if (boards.length === wanted.length) break;
+  }
+  return { boards, images };
+}
+
+/** What the backup menu says while boards are held back, or `null`. */
+function heldBackWarning(unreadable: readonly BoardSummary[], carried: readonly BackupBoard[]): string | null {
+  if (unreadable.length === 0) return null;
+  const kept = unreadable.filter((board) => carried.some((copy) => copy.id === board.id)).map((board) => board.name);
+  const left = unreadable.filter((board) => !carried.some((copy) => copy.id === board.id)).map((board) => board.name);
+  const parts: string[] = [];
+  if (kept.length > 0) {
+    parts.push(`${listNames(kept)} couldn't be read, so new backups keep ${kept.length === 1 ? "its" : "their"} last backed-up version.`);
+  }
+  if (left.length > 0) {
+    parts.push(`${listNames(left)} couldn't be read and ${left.length === 1 ? "isn't" : "aren't"} in any backup yet, so ${left.length === 1 ? "it's" : "they're"} left out.`);
+  }
+  parts.push("Other boards are backed up as usual.");
+  return parts.join(" ");
+}
+
+/** The parsed backup files this app wrote in `target`, newest first. A file
+    that fails to read is skipped; a folder that can't be listed yields
+    nothing. Lazy, so a search can stop at the first file it needs. */
+async function* readBackupsNewestFirst(
+  target: Folder,
+): AsyncGenerator<{ readonly name: string; readonly data: unknown }> {
+  const names: string[] = [];
+  try {
+    for await (const entry of target.values()) {
+      if (entry.kind === "file") names.push(entry.name);
+    }
+  } catch {
     return;
   }
-  backup().setWarning(null);
+  for (const name of backupsNewestFirst(names)) {
+    try {
+      const file = await (await target.getFileHandle(name)).getFile();
+      yield { name, data: JSON.parse(await file.text()) as unknown };
+    } catch {
+      // One unreadable file must not end the search.
+    }
+  }
+}
 
+async function writeBackupFile(target: Folder): Promise<void> {
+  const { boards: readable, unreadable } = collectBoards();
+  // A board that can't be read is held back, not dropped: each new file
+  // carries its last backed-up version forward, so rotation never pushes
+  // its last good copy out of the folder, and every other board is still
+  // backed up as usual. The warning clears once everything reads again.
+  const held = unreadable.length > 0 ? await lastBackedUpCopies(target, unreadable) : NO_COPIES;
+  backup().setWarning(heldBackWarning(unreadable, held.boards));
+
+  const order = useBoardStore.getState().boards.map((board) => board.id);
+  const boards = [...readable, ...held.boards].sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
   const now = new Date();
   const signature = JSON.stringify(boards);
   if (signature === lastWritten) return;
@@ -144,7 +218,7 @@ async function writeBackupFile(target: Folder): Promise<void> {
   const name = backupFileName(now);
   // Built before the try: a failure reading a picture is not a folder problem
   // and must not be reported as one below.
-  const text = JSON.stringify(await buildBackup(boards, now), null, 2);
+  const text = JSON.stringify(await buildBackup(boards, now, held.images), null, 2);
   try {
     // `createWritable` writes to a temporary file and only replaces the real
     // one on `close()`, so a crash mid-write cannot leave half a backup.
@@ -193,18 +267,8 @@ export async function findLatestBackupWith(
   if (!folder) return null;
   try {
     if ((await folder.requestPermission({ mode: "readwrite" })) !== "granted") return null;
-    const names: string[] = [];
-    for await (const entry of folder.values()) {
-      if (entry.kind === "file") names.push(entry.name);
-    }
-    for (const name of backupsNewestFirst(names)) {
-      try {
-        const file = await (await folder.getFileHandle(name)).getFile();
-        const data: unknown = JSON.parse(await file.text());
-        if (deserializeBackup(data)?.some((entry) => entry.id === boardId)) return { name, data };
-      } catch {
-        // See above.
-      }
+    for await (const backup of readBackupsNewestFirst(folder)) {
+      if (deserializeBackup(backup.data)?.some((entry) => entry.id === boardId)) return backup;
     }
   } catch {
     // Folder gone or permission withdrawn: same as finding nothing.

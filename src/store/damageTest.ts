@@ -13,8 +13,8 @@ import { loadPersistedRegistry, savePersistedRegistryNow } from "./persistRegist
  * Healthy, it gets another card broken -- and since it may by now be in an
  * automatic backup, which a brand-new board never is, "Restore from latest
  * backup" has something to find. Still damaged from last time, it is just
- * opened, so its notice can be resolved: an unresolved damaged board pauses
- * every automatic backup. With no test board, a new one is added.
+ * opened, so its notice can be answered instead of damaged test boards
+ * piling up. With no test board, a new one is added.
  */
 export function plantDamageTestBoard(): void {
   const registry = loadPersistedRegistry();

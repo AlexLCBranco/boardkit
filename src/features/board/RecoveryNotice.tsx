@@ -22,7 +22,7 @@ type LatestBackup = Awaited<ReturnType<typeof findLatestBackupWith>>;
  * The banner shown when the board on screen was damaged in storage. It stays
  * until the user picks one of its actions -- there is no plain close button,
  * because each action is also what allows the damaged original to be written
- * over (see `recovery.ts`), and automatic backups stay paused until then.
+ * over (see `recovery.ts`); until then backups hold this board back.
  */
 export function RecoveryNotice() {
   const damage = useRecoveryStore((state) => state.damage);
@@ -98,7 +98,9 @@ export function RecoveryNotice() {
           {noBackupHasBoard &&
             `None of the backups in “${folderName ?? "the backup folder"}” has this board yet, so there is none to restore. `}
           {hasFolder
-            ? "Automatic backups are paused until you choose."
+            ? noBackupHasBoard
+              ? "Until you choose, it’s left out of new backups; other boards are backed up as usual."
+              : "Until you choose, new backups keep this board’s last backed-up version; other boards are backed up as usual."
             : "Automatic backups aren’t set up, so the only backups are files you saved with “Export all boards…”."}
         </p>
       </div>

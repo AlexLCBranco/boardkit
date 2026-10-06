@@ -1,6 +1,6 @@
 # Boardkit — project summary
 
-_Last updated: 2026-10-06, v0.0.73_
+_Last updated: 2026-10-06, v0.0.74_
 
 ## What it is
 
@@ -41,7 +41,8 @@ normalised state.
 - Collapse a list to a thin strip; cards can still be dropped on it
 - A damaged saved board is repaired, its original kept aside, and a notice
   offers restoring it from the latest backup (named by date); add
-  `?damage-test` to the address to try it on a throwaway board
+  `?damage-test` to the address to try it on a throwaway board. Until it is
+  answered, backups keep that board's last good version; others back up as usual
 
 ## What's next
 
