@@ -10,7 +10,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "../../components/ui/alert-dialog";
-import { useAutoBackupStatus } from "../../store/selectors";
+import { useAutoBackupStatus, useBackupFolderName } from "../../store/selectors";
 import { useRecoveryStore } from "../../store/recoveryStore";
 import { findLatestBackupWith } from "./autoBackup";
 import { backupDate, keepRecoveredBoard, restoreFromBackupFile, restoreFromLatestBackup } from "./recovery";
@@ -27,6 +27,7 @@ type LatestBackup = Awaited<ReturnType<typeof findLatestBackupWith>>;
 export function RecoveryNotice() {
   const damage = useRecoveryStore((state) => state.damage);
   const status = useAutoBackupStatus();
+  const folderName = useBackupFolderName();
   const fileInput = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -49,9 +50,14 @@ export function RecoveryNotice() {
   if (!damage) return null;
 
   const hasFolder = status === "active" || status === "needs-permission" || status === "folder-error";
+  // `undefined` while not looked up yet, `null` when no backup has the board.
   const found = latest?.boardId === damage.boardId ? latest.backup : undefined;
-  // Looked up and nothing has this board: offering it would only fail.
-  const showLatest = hasFolder && found !== null;
+  // While backups are active the button waits for the lookup, then names
+  // the backup it will use -- or is replaced by a sentence saying there is
+  // none, rather than offering a button that can only fail. A folder that
+  // still needs a click is offered as is; the click does the lookup.
+  const showLatest = status === "active" ? Boolean(found) : hasFolder;
+  const noBackupHasBoard = status === "active" && found === null;
   const keepLabel = damage.status === "repaired" ? "Continue with what was recovered" : "Continue with an empty board";
 
   const run = async (action: () => Promise<void>) => {
@@ -89,6 +95,8 @@ export function RecoveryNotice() {
           {damage.setAsideKey
             ? "The damaged original is kept in this browser either way, untouched."
             : "There wasn’t room to keep a copy of the original, so changes to this board aren’t saved until you choose below."}{" "}
+          {noBackupHasBoard &&
+            `None of the backups in “${folderName ?? "the backup folder"}” has this board yet, so there is none to restore. `}
           {hasFolder
             ? "Automatic backups are paused until you choose."
             : "Automatic backups aren’t set up, so the only backups are files you saved with “Export all boards…”."}

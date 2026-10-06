@@ -1024,7 +1024,11 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
     board with one card replaced by a number, and opens it
     (`app/damageTestFromUrl.ts`, imported first in `main.tsx` so it writes
     before `boardStore` reads). Four cards survive; the notice reports one
-    lost entry. Other boards are untouched.
+    lost entry. Other boards are untouched. If the active board is already
+    a healthy "Damage test" board, it breaks another of its cards instead:
+    that board can be in a backup, so restoring the latest backup can be
+    tried too. While backups are active and no backup has the board, the
+    notice says so in place of a restore button that could only fail.
   - **Tidying up.** Deleting a board removes its set-aside copies, and
     startup drops any whose board no longer exists
     (`removeOrphanedSetAside`), so repeated tests leave nothing behind.
