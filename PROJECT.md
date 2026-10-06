@@ -1,6 +1,6 @@
 # Boardkit — project summary
 
-_Last updated: 2026-10-06, v0.0.80_
+_Last updated: 2026-10-06, v0.0.81_
 
 ## What it is
 
@@ -52,6 +52,8 @@ normalised state.
   is safe, since a board whose save failed reopens with its real
   content). A new board joins the saved list only once its own content
   is stored, so a failed first save never leaves the list naming nothing.
+  While the banner shows, closing or reloading the tab asks first (the
+  browser’s “Leave site?” prompt; not on mobile Safari).
   Moving a card or
   list to a board that can’t be saved now fails with a message instead of
   trashing the original, and a background picture that can’t be stored

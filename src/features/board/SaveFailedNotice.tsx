@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   AlertDialog,
@@ -36,6 +36,26 @@ function trySavingAgain(): void {
 }
 
 /**
+ * While saves fail, closing or reloading the tab asks first (the browser's
+ * own "Leave site?" prompt): the banner only helps while someone is looking
+ * at the tab, and closing it is the moment unsaved work is lost. Removed as
+ * soon as saves succeed. Browsers show it only after the page has been
+ * clicked or typed in, and mobile Safari never shows it.
+ */
+function useLeaveWarning(active: boolean): void {
+  useEffect(() => {
+    if (!active) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      // Older browsers need a returnValue set to show the prompt.
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [active]);
+}
+
+/**
  * Shown while saving fails (the browser's storage for the site is full, or
  * blocked). Not a toast: it stays until every failing write has gone through
  * again, since until then the latest changes live only in this tab. Emptying
@@ -43,6 +63,7 @@ function trySavingAgain(): void {
  */
 export function SaveFailedNotice() {
   const failing = useSaveHealth((s) => s.failing.length > 0);
+  useLeaveWarning(failing);
   const trashedCards = useTrashCount();
   const trashedLists = useTrashedListsCount();
   const emptyTrash = useEmptyTrash();
