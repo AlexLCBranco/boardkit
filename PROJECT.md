@@ -1,6 +1,6 @@
 # Boardkit — project summary
 
-_Last updated: 2026-10-06, v0.0.70_
+_Last updated: 2026-10-06, v0.0.71_
 
 ## What it is
 

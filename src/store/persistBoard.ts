@@ -126,6 +126,29 @@ function setAside(boardId: BoardId, raw: string): string | null {
   }
 }
 
+/** Removes every set-aside copy whose board `isGone`. Keys are
+    `boardkit:damaged:<id>` or `boardkit:damaged:<id>:<time>`. */
+function removeSetAside(isGone: (boardId: string) => boolean): void {
+  const doomed: string[] = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key?.startsWith(SET_ASIDE_PREFIX) && isGone(key.slice(SET_ASIDE_PREFIX.length).split(":")[0])) {
+      doomed.push(key);
+    }
+  }
+  for (const key of doomed) localStorage.removeItem(key);
+}
+
+/** Startup tidy-up: drops set-aside copies left by boards that no longer
+    exist (deleted before deleting took their copies with them). */
+export function removeOrphanedSetAside(boardIds: readonly BoardId[]): void {
+  try {
+    removeSetAside((owner) => !boardIds.includes(owner as BoardId));
+  } catch {
+    // Storage unavailable: nothing to tidy.
+  }
+}
+
 /** The user has chosen what this board should be (kept the repair, or
     restored a backup): saving it may overwrite the original again. */
 export function releaseHeldBoard(boardId: BoardId): void {
@@ -148,6 +171,9 @@ export function savePersistedRawBoard(saved: unknown, boardId: BoardId): void {
 export function removePersistedBoard(boardId: BoardId): void {
   try {
     localStorage.removeItem(STORAGE_KEY_PREFIX + boardId);
+    // Its set-aside damaged originals go too: with the board gone they can
+    // never be used, and would only take up storage.
+    removeSetAside((owner) => owner === boardId);
   } catch {
     // Nothing useful to do: the registry no longer lists it, so it is
     // unreachable whether or not this succeeds.

@@ -42,6 +42,7 @@ import {
   flushPersist,
   loadLegacyPersistedBoard,
   openPersistedBoard,
+  removeOrphanedSetAside,
   removePersistedBoard,
   savePersistedBoardNow,
   schedulePersist,
@@ -277,6 +278,7 @@ function loadInitialState(): { boardId: BoardId; boards: readonly BoardSummary[]
 }
 
 const initial = loadInitialState();
+removeOrphanedSetAside(initial.boards.map((board) => board.id));
 
 export const useBoardStore = create<BoardStore>((set, get) => ({
   ...initial.board,

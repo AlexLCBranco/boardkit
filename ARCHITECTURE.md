@@ -1025,3 +1025,6 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
     (`app/damageTestFromUrl.ts`, imported first in `main.tsx` so it writes
     before `boardStore` reads). Four cards survive; the notice reports one
     lost entry. Other boards are untouched.
+  - **Tidying up.** Deleting a board removes its set-aside copies, and
+    startup drops any whose board no longer exists
+    (`removeOrphanedSetAside`), so repeated tests leave nothing behind.
