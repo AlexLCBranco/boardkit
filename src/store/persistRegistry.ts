@@ -1,5 +1,6 @@
 import { deserializeRegistry, serializeRegistry, type PersistedRegistryV1 } from "../domain/persistence";
 import type { BoardId, BoardSummary } from "../domain/types";
+import { useSaveHealth } from "./saveHealthStore";
 
 /**
  * The only place that touches `localStorage` for the registry -- the list of
@@ -12,12 +13,15 @@ import type { BoardId, BoardSummary } from "../domain/types";
 const STORAGE_KEY = "boardkit:registry";
 
 function writeRegistry(boards: readonly BoardSummary[], activeBoardId: BoardId): void {
+  let ok = true;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(serializeRegistry(boards, activeBoardId)));
   } catch {
     // Same reasoning as persistBoard.ts: a failed write stays in-memory
-    // only, rather than crashing the session.
+    // only, rather than crashing the session -- and the banner says so.
+    ok = false;
   }
+  useSaveHealth.getState().report(STORAGE_KEY, ok);
 }
 
 export function loadPersistedRegistry(): PersistedRegistryV1 | null {

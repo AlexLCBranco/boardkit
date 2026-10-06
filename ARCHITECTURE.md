@@ -436,6 +436,29 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   own `cardOrder` entry, never in `trash`, so they don't count against
   `TRASH_LIMIT`. 30 full lists is up to 1,500 cards in storage, which is
   why the list cap stays lower.
+- **Save failures are visible.** Every write of a board
+  (`persistBoard.ts`) and of the board list (`persistRegistry.ts`)
+  reports to `store/saveHealthStore.ts`, which keeps the keys whose latest
+  write failed. `SaveFailedNotice` shows while that list isn't empty and
+  goes away by itself once each key saves again -- per key, so a small
+  write that still fits can't hide a big one that doesn't. Its actions:
+  "Back up now" (`exportBackup`, which reads the open board from memory,
+  so the file has the unsaved edits), "Empty trash…" (this board's card
+  and list trash, after a confirmation; the emptying is itself a change,
+  so its save is the retry) and "Try again" (writes the open board and the
+  list now). Two writes are not tracked, because nothing would ever retry
+  them and they would hold the banner up for good: a transfer into another
+  board (`saveOtherBoardNow`, whose failure now makes the transfer fail,
+  so a move never trashes an original whose copy wasn't stored) and a
+  board held for recovery (already covered by RecoveryNotice).
+- **IndexedDB writes wait for the transaction.** `idb.ts` used to resolve
+  a write on the request's success. A write over the storage quota is
+  refused only when the transaction commits, after that, so `saveImage`
+  reported success for a picture that was never stored and the background
+  panel's error toast never showed. Writes now resolve on
+  `transaction.oncomplete` and reject on abort. `restoreImages` (import,
+  restore) now names the boards whose picture couldn't be stored instead
+  of dropping it silently.
 
 ## Decisions
 

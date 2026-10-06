@@ -19,13 +19,30 @@ function open(): Promise<IDBDatabase> {
   });
 }
 
+/**
+ * Resolves once the work is really done. For a read that is the request's
+ * success. For a write it is the *transaction's* completion: a write over
+ * the storage quota is refused only when the transaction commits, after the
+ * request has already reported success -- resolving on the request would
+ * tell the caller an image was saved when it was not.
+ */
 async function run<T>(mode: IDBTransactionMode, work: (store: IDBObjectStore) => IDBRequest<T>): Promise<T> {
   const db = await open();
   try {
     return await new Promise<T>((resolve, reject) => {
-      const request = work(db.transaction(STORE, mode).objectStore(STORE));
-      request.onsuccess = () => resolve(request.result);
+      const transaction = db.transaction(STORE, mode);
+      const request = work(transaction.objectStore(STORE));
       request.onerror = () => reject(request.error);
+      if (mode === "readonly") {
+        request.onsuccess = () => resolve(request.result);
+        return;
+      }
+      // An abort can come with no error of its own; still reject with one.
+      const failed = () =>
+        reject(transaction.error ?? request.error ?? new DOMException("The write was not stored", "AbortError"));
+      transaction.oncomplete = () => resolve(request.result);
+      transaction.onabort = failed;
+      transaction.onerror = failed;
     });
   } finally {
     db.close();

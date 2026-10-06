@@ -1,7 +1,7 @@
 import { isListFull } from "../domain/limits";
 import { insertCardCopy, insertListCopy } from "../domain/transfer";
 import type { BoardId, BoardState, Card, CardId, List, ListId } from "../domain/types";
-import { flushPersist, loadPersistedBoard, savePersistedBoardNow } from "./persistBoard";
+import { flushPersist, loadPersistedBoard, saveOtherBoardNow } from "./persistBoard";
 
 /**
  * Putting things into a board that is not the one on screen.
@@ -26,6 +26,9 @@ export interface TransferTarget {
 
 const LOAD_FAILED =
   "That board could not be read, so nothing was changed. Its saved data is left as it is.";
+
+const SAVE_FAILED =
+  "That board couldn’t be saved (this browser’s storage is full), so nothing was changed.";
 
 /**
  * Flushes first, then loads. The save debounce is one shared timer: a board
@@ -63,8 +66,9 @@ export function copyCardToBoard(
   const next = insertCardCopy(target, card, targetListId);
   if (!next) return { ok: false, message: "That list is full or no longer exists." };
 
-  savePersistedBoardNow(next, targetBoardId);
-  return { ok: true };
+  // A move trashes the original only when this says ok, so a write that
+  // storage refused must not count as done.
+  return saveOtherBoardNow(next, targetBoardId) ? { ok: true } : { ok: false, message: SAVE_FAILED };
 }
 
 export function copyListToBoard(
@@ -75,8 +79,9 @@ export function copyListToBoard(
   const target = loadTarget(targetBoardId);
   if (!target) return { ok: false, message: LOAD_FAILED };
 
-  savePersistedBoardNow(insertListCopy(target, list, cards), targetBoardId);
-  return { ok: true };
+  return saveOtherBoardNow(insertListCopy(target, list, cards), targetBoardId)
+    ? { ok: true }
+    : { ok: false, message: SAVE_FAILED };
 }
 
 /** A list's cards, in order, read from the active board's state. */

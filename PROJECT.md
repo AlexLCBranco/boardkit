@@ -1,6 +1,6 @@
 # Boardkit — project summary
 
-_Last updated: 2026-10-06, v0.0.76_
+_Last updated: 2026-10-06, v0.0.77_
 
 ## What it is
 
@@ -45,6 +45,12 @@ normalised state.
 - Deleted cards and lists go to the trash (up to 200 cards and 30 lists
   per board); when it is full, deleting asks first and names the oldest
   item it would erase for good, instead of erasing it silently
+- When the browser’s storage is full and a save fails, a banner says
+  changes aren’t being saved and stays until they are, with “Back up
+  now”, “Empty trash…” (asks first) and “Try again”. Moving a card or
+  list to a board that can’t be saved now fails with a message instead of
+  trashing the original, and a background picture that can’t be stored
+  says so
 - A damaged saved board is repaired, its original kept aside, and a notice
   offers restoring it from the latest backup (named by date); add
   `?damage-test` to the address to try it on a throwaway board. Until it is

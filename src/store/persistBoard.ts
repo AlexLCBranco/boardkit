@@ -1,5 +1,6 @@
 import { deserializeBoard, readBoard, serializeBoard, type BoardRead } from "../domain/persistence";
 import type { BoardId, BoardState } from "../domain/types";
+import { useSaveHealth } from "./saveHealthStore";
 
 /**
  * The only place that touches `localStorage` for a board's own content.
@@ -17,14 +18,27 @@ const STORAGE_KEY_PREFIX = "boardkit:board:";
     the user picks what to keep: the original is still only in its own key. */
 const heldBoards = new Set<BoardId>();
 
-function writeBoard(board: BoardState, boardId: BoardId): void {
-  if (heldBoards.has(boardId)) return;
+/**
+ * Writes a board; `false` if storage refused it. Storage can fail -- quota,
+ * private browsing -- without that being fatal: the board keeps working in
+ * memory. But never silently: the result goes to `saveHealthStore.ts`, whose
+ * banner stays up until this key saves again. `track` false is for a write
+ * the caller reports itself and that nothing would retry (a transfer into
+ * another board), so it can't hold the banner up for good.
+ */
+function writeBoard(board: BoardState, boardId: BoardId, track = true): boolean {
+  // Held on purpose (see `heldBoards`), not a failure: RecoveryNotice is
+  // already asking the user about this board.
+  if (heldBoards.has(boardId)) return true;
+  const key = STORAGE_KEY_PREFIX + boardId;
+  let ok = true;
   try {
-    localStorage.setItem(STORAGE_KEY_PREFIX + boardId, JSON.stringify(serializeBoard(board)));
+    localStorage.setItem(key, JSON.stringify(serializeBoard(board)));
   } catch {
-    // Storage can fail -- quota, private browsing -- without that being
-    // fatal: the board keeps working in memory for the rest of the session.
+    ok = false;
   }
+  if (track) useSaveHealth.getState().report(key, ok);
+  return ok;
 }
 
 function parse(raw: string): BoardRead {
@@ -188,13 +202,21 @@ export function removePersistedBoard(boardId: BoardId): void {
     // Nothing useful to do: the registry no longer lists it, so it is
     // unreachable whether or not this succeeds.
   }
+  useSaveHealth.getState().forget(STORAGE_KEY_PREFIX + boardId);
 }
 
 /** Writes straight away, bypassing the debounce -- for the one-time initial
     migration in `boardStore.ts`, where there is no later edit to eventually
     flush this through the normal debounced path. */
-export function savePersistedBoardNow(board: BoardState, boardId: BoardId): void {
-  writeBoard(board, boardId);
+export function savePersistedBoardNow(board: BoardState, boardId: BoardId): boolean {
+  return writeBoard(board, boardId);
+}
+
+/** Writes another board's content straight away (a transfer into it) and
+    says whether it was stored. Not tracked for the banner: the caller tells
+    the user itself, and nothing would ever retry this write. */
+export function saveOtherBoardNow(board: BoardState, boardId: BoardId): boolean {
+  return writeBoard(board, boardId, false);
 }
 
 const SAVE_DELAY_MS = 400;

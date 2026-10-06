@@ -174,21 +174,27 @@ export async function addBoardsFromBackup(parsed: unknown): Promise<AddedBoards 
  * themselves are added, so none is ever on screen pointing at nothing. An
  * image already stored (the same picture, on a board that is already here) is
  * left alone. A picture that cannot be stored costs only that board its
- * background: the board still imports.
+ * background: the board still imports, and a message names it.
  */
 export async function restoreImages(
   boards: readonly BackupBoard[],
   images: Readonly<Record<string, BackupImage>>,
 ): Promise<void> {
-  for (const { board } of boards) {
+  const lost: string[] = [];
+  for (const { name, board } of boards) {
     const id = imageIdOf(board.background);
     const image = id === undefined ? undefined : images[id];
     if (id === undefined || image === undefined || (await hasImage(id))) continue;
     try {
       await saveImage(id, await base64ToBlob(image));
     } catch {
-      // See above.
+      lost.push(name);
     }
+  }
+  if (lost.length > 0) {
+    toast.warning(
+      `This browser couldn't store the background picture of ${listNames(lost)} (its storage may be full), so ${lost.length === 1 ? "that board shows" : "those boards show"} no picture.`,
+    );
   }
 }
 
