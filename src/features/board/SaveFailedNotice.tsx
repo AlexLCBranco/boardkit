@@ -65,8 +65,8 @@ export function SaveFailedNotice() {
         <p className={styles.title}>Changes aren't being saved</p>
         <p className={styles.body}>
           The browser's storage for this site is full, so your latest changes exist only in this
-          tab. Keep it open and don't switch boards until this goes away. Back up now, then make
-          room: empty the trash, or delete boards you no longer need.
+          tab. Keep it open until this goes away (switching boards is fine). Back up now, then
+          make room: empty the trash, or delete boards you no longer need.
         </p>
       </div>
       <div className={styles.actions}>

@@ -2,7 +2,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createBoard } from "../domain/seed";
 import type { BoardId } from "../domain/types";
-import { removePersistedBoard, savePersistedBoardNow, saveOtherBoardNow } from "./persistBoard";
+import {
+  hasPersistedBoard,
+  loadPersistedBoard,
+  openPersistedBoard,
+  removePersistedBoard,
+  savePersistedBoardNow,
+  saveOtherBoardNow,
+} from "./persistBoard";
 import { useSaveHealth } from "./saveHealthStore";
 
 /** A tiny localStorage (tests run in Node, which has none) that refuses
@@ -91,5 +98,25 @@ describe("retrying every failed save", () => {
     removePersistedBoard(id);
     useSaveHealth.getState().retryAll();
     expect(localStorage.getItem(`boardkit:board:${id}`)).toBeNull();
+  });
+});
+
+describe("a board whose save failed, read back in the same session", () => {
+  it("opens with the content it was meant to save, not as missing", () => {
+    const storage = fillableStorage();
+    const fresh = "board-new" as BoardId;
+    const board = createBoard([{ title: "Kept", cards: ["a"] }]);
+    storage.full = true;
+    savePersistedBoardNow(board, fresh);
+    expect(openPersistedBoard(fresh)).toEqual({ board, damage: null });
+    expect(hasPersistedBoard(fresh)).toBe(true);
+    expect(loadPersistedBoard(fresh)).toBe(board);
+  });
+
+  it("is missing once nothing holds it (a later visit)", () => {
+    fillableStorage();
+    const gone = "board-gone" as BoardId;
+    expect(openPersistedBoard(gone).damage?.status).toBe("missing");
+    expect(hasPersistedBoard(gone)).toBe(false);
   });
 });

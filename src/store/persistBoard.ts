@@ -19,6 +19,14 @@ const STORAGE_KEY_PREFIX = "boardkit:board:";
 const heldBoards = new Set<BoardId>();
 
 /**
+ * Boards whose latest save failed, as they were meant to be saved. Until a
+ * retry stores them, reading a board looks here first, so switching to one
+ * (or backing it up) gets its real content in this session instead of the
+ * stale stored copy -- or, for a board whose first save failed, nothing.
+ */
+const unsaved = new Map<BoardId, BoardState>();
+
+/**
  * Writes a board; `false` if storage refused it. Storage can fail -- quota,
  * private browsing -- without that being fatal: the board keeps working in
  * memory. But never silently: the result goes to `saveHealthStore.ts`, whose
@@ -37,6 +45,9 @@ function writeBoard(board: BoardState, boardId: BoardId, track = true): boolean 
   } catch {
     ok = false;
   }
+  // Any stored write supersedes an unsaved copy (a transfer included).
+  if (ok) unsaved.delete(boardId);
+  else if (track) unsaved.set(boardId, board);
   if (track) useSaveHealth.getState().report(key, ok, () => writeBoard(board, boardId));
   return ok;
 }
@@ -57,6 +68,8 @@ function parse(raw: string): BoardRead {
  * when the user opens it (`openPersistedBoard`), where they are told.
  */
 export function loadPersistedBoard(boardId: BoardId): BoardState | null {
+  const pending = unsaved.get(boardId);
+  if (pending) return pending;
   try {
     const raw = localStorage.getItem(STORAGE_KEY_PREFIX + boardId);
     if (raw === null) return null;
@@ -64,6 +77,19 @@ export function loadPersistedBoard(boardId: BoardId): BoardState | null {
     return read.status === "ok" ? read.board : null;
   } catch {
     return null;
+  }
+}
+
+/** Whether a board's content exists: stored, or waiting in this session for
+    a save to go through. `false` for a board the list names means its
+    content was lost (see `openPersistedBoard`). */
+export function hasPersistedBoard(boardId: BoardId): boolean {
+  if (unsaved.has(boardId)) return true;
+  try {
+    return localStorage.getItem(STORAGE_KEY_PREFIX + boardId) !== null;
+  } catch {
+    // Storage unreadable: nothing can be said, so nothing is claimed lost.
+    return true;
   }
 }
 
@@ -80,13 +106,17 @@ export function persistedBoardText(boardId: BoardId): string | null {
 /** What was wrong with a board that was just opened. */
 export interface BoardDamage {
   readonly boardId: BoardId;
-  /** `repaired`: some of it was recovered. `unreadable`: none of it. */
-  readonly status: "repaired" | "unreadable";
+  /** `repaired`: some of it was recovered. `unreadable`: none of it.
+      `missing`: the board list names it but nothing is stored for it at all
+      -- most likely its save failed (storage full) and the tab closed
+      before it was retried. */
+  readonly status: "repaired" | "unreadable" | "missing";
   /** Entries that could not be read, when `repaired`. */
   readonly lost: number;
   /** Where the original now sits, untouched; `null` if it could not be
       copied there (storage full), in which case the board is held -- not
-      saved -- until the user chooses. */
+      saved -- until the user chooses. Always `null` when `missing`: there
+      is no original, so nothing is held either. */
   readonly setAsideKey: string | null;
 }
 
@@ -98,16 +128,22 @@ export interface BoardDamage {
  * would quietly mean "whatever the repair kept".
  *
  * `board` is `null` when there is nothing saved, or nothing salvageable;
- * `damage` tells the two apart.
+ * `damage` tells the two apart. Nothing saved is itself `missing` damage:
+ * every board the list names is written the moment it is made, so a board
+ * with no content lost it -- and the user is told rather than shown an
+ * empty board as if nothing happened.
  */
 export function openPersistedBoard(boardId: BoardId): { board: BoardState | null; damage: BoardDamage | null } {
+  // Its latest save failed this session: that content is the real board.
+  const pending = unsaved.get(boardId);
+  if (pending) return { board: pending, damage: null };
   let raw: string | null;
   try {
     raw = localStorage.getItem(STORAGE_KEY_PREFIX + boardId);
   } catch {
     return { board: null, damage: null };
   }
-  if (raw === null) return { board: null, damage: null };
+  if (raw === null) return { board: null, damage: { boardId, status: "missing", lost: 0, setAsideKey: null } };
   const read = parse(raw);
   if (read.status === "ok") return { board: read.board, damage: null };
 
@@ -202,6 +238,7 @@ export function removePersistedBoard(boardId: BoardId): void {
     // Nothing useful to do: the registry no longer lists it, so it is
     // unreachable whether or not this succeeds.
   }
+  unsaved.delete(boardId);
   useSaveHealth.getState().forget(STORAGE_KEY_PREFIX + boardId);
 }
 

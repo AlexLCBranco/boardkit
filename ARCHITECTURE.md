@@ -462,6 +462,19 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   `transaction.oncomplete` and reject on abort. `restoreImages` (import,
   restore) now names the boards whose picture couldn't be stored instead
   of dropping it silently.
+- **Missing boards are named.** A board the list names with nothing stored
+  for it (its save failed and the tab closed before a retry) used to open
+  as an empty board with no word. `openPersistedBoard` now reports it as
+  damage with `status: "missing"`, so the recovery notice explains it and
+  offers the same restores (nothing is held: there is no original to
+  protect, so "Continue with an empty board" needs no confirmation).
+  `MissingBoardsNotice` names such boards other than the open one as
+  Boardkit starts. Within a session a failed save is not "missing":
+  `persistBoard.ts` keeps each board whose latest save failed in an
+  `unsaved` map, and every read (`openPersistedBoard`,
+  `loadPersistedBoard`, `hasPersistedBoard`) looks there first, so
+  switching to such a board, or backing it up, gets its real content. Any
+  stored write of that board removes it from the map.
 
 ## Decisions
 

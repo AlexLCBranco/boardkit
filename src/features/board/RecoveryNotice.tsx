@@ -19,7 +19,8 @@ import styles from "./RecoveryNotice.module.css";
 type LatestBackup = Awaited<ReturnType<typeof findLatestBackupWith>>;
 
 /**
- * The banner shown when the board on screen was damaged in storage. It stays
+ * The banner shown when the board on screen was damaged in storage, or is
+ * missing from it altogether (`status: "missing"`). It stays
  * until the user picks one of its actions -- there is no plain close button,
  * because each action is also what allows the damaged original to be written
  * over (see `recovery.ts`); until then backups hold this board back.
@@ -74,9 +75,10 @@ export function RecoveryNotice() {
     if (file) void run(() => restoreFromBackupFile(file));
   };
   // With the original set aside, continuing loses nothing, so it needs no
-  // question. Without that copy it writes over the only one there is.
+  // question. Without that copy it writes over the only one there is. A
+  // missing board has no original to lose.
   const handleKeep = () => {
-    if (damage.setAsideKey) keepRecoveredBoard();
+    if (damage.setAsideKey || damage.status === "missing") keepRecoveredBoard();
     else setIsConfirmOpen(true);
   };
 
@@ -86,15 +88,19 @@ export function RecoveryNotice() {
         <p className={styles.title}>
           {damage.status === "repaired"
             ? "Part of this board’s saved data was damaged"
-            : "This board’s saved data couldn’t be read"}
+            : damage.status === "missing"
+              ? "This board’s content is missing"
+              : "This board’s saved data couldn’t be read"}
         </p>
         <p className={styles.body}>
           {damage.status === "repaired"
             ? `Everything that could still be read is shown${lostClause(damage.lost)}.`
             : "It is shown empty."}{" "}
-          {damage.setAsideKey
-            ? "The damaged original is kept in this browser either way, untouched."
-            : "There wasn’t room to keep a copy of the original, so changes to this board aren’t saved until you choose below."}{" "}
+          {damage.status === "missing"
+            ? "It is in your list of boards, but nothing for it is in this browser’s storage. Most likely a save failed because storage was full and the tab closed before it was retried."
+            : damage.setAsideKey
+              ? "The damaged original is kept in this browser either way, untouched."
+              : "There wasn’t room to keep a copy of the original, so changes to this board aren’t saved until you choose below."}{" "}
           {noBackupHasBoard &&
             `None of the backups in “${folderName ?? "the backup folder"}” has this board yet, so there is none to restore. `}
           {hasFolder

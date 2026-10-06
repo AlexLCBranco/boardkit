@@ -3,6 +3,7 @@ import { Toaster } from "../components/ui/sonner";
 import { BoardCanvas } from "../features/board/BoardCanvas";
 import { BoardSwitcher } from "../features/board/BoardSwitcher";
 import { RecoveryNotice } from "../features/board/RecoveryNotice";
+import { MissingBoardsNotice } from "../features/board/MissingBoardsNotice";
 import { SaveFailedNotice } from "../features/board/SaveFailedNotice";
 import { StartFreshNotice } from "../features/board/StartFreshNotice";
 import { TrashFullDialog } from "../features/board/TrashFullDialog";
@@ -32,6 +33,7 @@ export function App() {
       <div className={styles.notices}>
         <SaveFailedNotice />
         <RecoveryNotice />
+        <MissingBoardsNotice />
         <StartFreshNotice />
       </div>
       <main className={styles.main}>
