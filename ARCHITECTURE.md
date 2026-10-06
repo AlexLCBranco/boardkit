@@ -1010,9 +1010,13 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
     backup, the image sweep) returns only healthy boards, so a transfer can
     never write a partial copy back over the original.
   - **The user chooses.** `recoveryStore` holds the active board's damage;
-    `RecoveryNotice` offers "Restore from latest backup" (the newest file in
-    the backup folder that has this board, by id), "Restore from a file…",
-    or "Keep this version". Each releases the hold and saves at once. A
-    restore is one undo step (`replaceBoardContent`). Until then
-    `collectBoards` counts the active board as unreadable, so automatic
-    backups pause instead of rotating good copies out for the repair.
+    `RecoveryNotice` offers the latest backup (the newest file in the backup
+    folder that has this board, by id; while backups are active it is looked
+    up as the notice opens, so the button names its date), "Restore from a
+    backup file…", or "Continue with what was recovered" / "with an empty
+    board". Continuing loses nothing while the original is set aside; when
+    it could not be, it would overwrite the only copy, so it asks first.
+    Each choice releases the hold and saves at once. A restore is one undo
+    step (`replaceBoardContent`). Until then `collectBoards` counts the
+    active board as unreadable, so automatic backups pause instead of
+    rotating good copies out for the repair.

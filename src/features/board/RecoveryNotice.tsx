@@ -1,9 +1,22 @@
-import { useRef, useState, type ChangeEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../../components/ui/alert-dialog";
 import { useAutoBackupStatus } from "../../store/selectors";
 import { useRecoveryStore } from "../../store/recoveryStore";
-import { keepRecoveredBoard, restoreFromBackupFile, restoreFromLatestBackup } from "./recovery";
+import { findLatestBackupWith } from "./autoBackup";
+import { backupDate, keepRecoveredBoard, restoreFromBackupFile, restoreFromLatestBackup } from "./recovery";
 import styles from "./RecoveryNotice.module.css";
+
+type LatestBackup = Awaited<ReturnType<typeof findLatestBackupWith>>;
 
 /**
  * The banner shown when the board on screen was damaged in storage. It stays
@@ -16,10 +29,31 @@ export function RecoveryNotice() {
   const status = useAutoBackupStatus();
   const fileInput = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  // The backup "Restore" would use, looked up as soon as the notice shows so
+  // the button can say which one. Only while backups are active: the folder
+  // is already allowed then, so reading it needs no click.
+  const [latest, setLatest] = useState<{ boardId: string; backup: LatestBackup } | null>(null);
+  const damagedBoardId = damage?.boardId;
+  useEffect(() => {
+    if (!damagedBoardId || status !== "active") return;
+    let cancelled = false;
+    void findLatestBackupWith(damagedBoardId).then((backup) => {
+      if (!cancelled) setLatest({ boardId: damagedBoardId, backup });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [damagedBoardId, status]);
 
   if (!damage) return null;
 
   const hasFolder = status === "active" || status === "needs-permission" || status === "folder-error";
+  const found = latest?.boardId === damage.boardId ? latest.backup : undefined;
+  // Looked up and nothing has this board: offering it would only fail.
+  const showLatest = hasFolder && found !== null;
+  const keepLabel = damage.status === "repaired" ? "Continue with what was recovered" : "Continue with an empty board";
+
   const run = async (action: () => Promise<void>) => {
     setBusy(true);
     try {
@@ -32,6 +66,12 @@ export function RecoveryNotice() {
     const file = event.target.files?.[0];
     event.target.value = "";
     if (file) void run(() => restoreFromBackupFile(file));
+  };
+  // With the original set aside, continuing loses nothing, so it needs no
+  // question. Without that copy it writes over the only one there is.
+  const handleKeep = () => {
+    if (damage.setAsideKey) keepRecoveredBoard();
+    else setIsConfirmOpen(true);
   };
 
   return (
@@ -47,35 +87,54 @@ export function RecoveryNotice() {
             ? `Everything that could still be read is shown${lostClause(damage.lost)}.`
             : "It is shown empty."}{" "}
           {damage.setAsideKey
-            ? "The original is kept, untouched, in case it is needed."
+            ? "The damaged original is kept in this browser either way, untouched."
             : "There wasn’t room to keep a copy of the original, so changes to this board aren’t saved until you choose below."}{" "}
-          Automatic backups are paused until you choose.
+          {hasFolder
+            ? "Automatic backups are paused until you choose."
+            : "Automatic backups aren’t set up, so the only backups are files you saved with “Export all boards…”."}
         </p>
       </div>
       <div className={styles.actions}>
-        {hasFolder && (
+        {showLatest && (
           <button
             type="button"
             className={styles.primary}
             disabled={busy}
-            onClick={() => void run(restoreFromLatestBackup)}
+            onClick={() => void run(() => restoreFromLatestBackup(found))}
           >
-            Restore from latest backup
+            {found ? `Restore the backup from ${backupDate(found.data)}` : "Restore from latest backup"}
           </button>
         )}
         <button
           type="button"
-          className={hasFolder ? styles.secondary : styles.primary}
+          className={showLatest ? styles.secondary : styles.primary}
           disabled={busy}
           onClick={() => fileInput.current?.click()}
         >
-          Restore from a file…
+          Restore from a backup file…
         </button>
-        <button type="button" className={styles.secondary} disabled={busy} onClick={keepRecoveredBoard}>
-          Keep this version
+        <button type="button" className={styles.secondary} disabled={busy} onClick={handleKeep}>
+          {keepLabel}
         </button>
       </div>
       <input ref={fileInput} type="file" accept="application/json,.json" hidden onChange={handleFile} />
+      <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Replace the damaged original?</AlertDialogTitle>
+            <AlertDialogDescription>
+              There wasn’t room in this browser to keep a copy of it. Continuing saves the board you see now in
+              its place, and the original can’t be recovered afterwards.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={keepRecoveredBoard}>
+              Replace original
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

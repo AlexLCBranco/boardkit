@@ -14,9 +14,11 @@ import { restoreImages } from "./backup";
  * written over at all (see `store/persistBoard.ts`).
  */
 
-/** "Keep this version": the repaired board (or the empty one) becomes the
-    saved board. Written now, so a reload does not find the damaged text still
-    in place and bring the notice back. */
+/** "Continue with what was recovered" / "Continue with an empty board": the
+    board on screen becomes the saved board. Written now, so a reload does not
+    find the damaged text still in place and bring the notice back. The
+    original stays in its set-aside key; only when there was no room for that
+    copy does this write over it, and the notice asks first. */
 export function keepRecoveredBoard(): void {
   const state = useBoardStore.getState();
   releaseHeldBoard(state.boardId);
@@ -25,15 +27,17 @@ export function keepRecoveredBoard(): void {
 }
 
 /** "Restore from latest backup": the newest file in the automatic-backup
-    folder that has this board in it. */
-export async function restoreFromLatestBackup(): Promise<void> {
+    folder that has this board in it. `found` is that file when the notice
+    has already looked it up (to put its date on the button); otherwise it is
+    looked up now, from the click, so the browser may ask for the folder. */
+export async function restoreFromLatestBackup(found?: { readonly data: unknown } | null): Promise<void> {
   const { boardId } = useBoardStore.getState();
-  const found = await findLatestBackupWith(boardId);
-  if (!found) {
+  const backup = found ?? (await findLatestBackupWith(boardId));
+  if (!backup) {
     toast.error("No backup in the backup folder has this board in it.");
     return;
   }
-  await restoreFrom(found.data, boardId);
+  await restoreFrom(backup.data, boardId);
 }
 
 /** "Restore from a file…": a backup the user picks, from "Export all boards…"
@@ -73,7 +77,8 @@ async function restoreFrom(data: unknown, boardId: string): Promise<void> {
   toast.success(`Restored “${entry.name}” from the backup of ${backupDate(data)}.`);
 }
 
-function backupDate(data: unknown): string {
+/** When a backup file was made, for the notice's button and the toast. */
+export function backupDate(data: unknown): string {
   const exportedAt = new Date(String((data as { exportedAt?: unknown }).exportedAt));
   return Number.isNaN(exportedAt.getTime())
     ? "an unknown date"
