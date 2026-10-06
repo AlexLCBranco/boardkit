@@ -37,7 +37,7 @@ function writeBoard(board: BoardState, boardId: BoardId, track = true): boolean 
   } catch {
     ok = false;
   }
-  if (track) useSaveHealth.getState().report(key, ok);
+  if (track) useSaveHealth.getState().report(key, ok, () => writeBoard(board, boardId));
   return ok;
 }
 

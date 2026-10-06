@@ -1,6 +1,6 @@
 # Boardkit — project summary
 
-_Last updated: 2026-10-06, v0.0.77_
+_Last updated: 2026-10-06, v0.0.78_
 
 ## What it is
 
@@ -47,7 +47,8 @@ normalised state.
   item it would erase for good, instead of erasing it silently
 - When the browser’s storage is full and a save fails, a banner says
   changes aren’t being saved and stays until they are, with “Back up
-  now”, “Empty trash…” (asks first) and “Try again”. Moving a card or
+  now”, “Empty trash…” (asks first) and “Try again” (retries every save
+  that failed, boards that aren’t open included). Moving a card or
   list to a board that can’t be saved now fails with a message instead of
   trashing the original, and a background picture that can’t be stored
   says so
@@ -69,4 +70,7 @@ normalised state.
 
 ## Open problems
 
+- A board whose first save failed (storage full) and was never retried
+  is still in the board list after a reload, but opens empty with no
+  message: its content was lost with the tab. Not fixed yet
 - Unused shadcn components need clearing out (low priority)

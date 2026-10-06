@@ -59,3 +59,37 @@ describe("save health", () => {
     expect(useSaveHealth.getState().failing).toEqual([]);
   });
 });
+
+describe("retrying every failed save", () => {
+  it("writes a board that isn't open again, with the content it last tried", () => {
+    const storage = fillableStorage();
+    const other = "board-2" as BoardId;
+    storage.full = true;
+    savePersistedBoardNow(createBoard([]), id);
+    savePersistedBoardNow(createBoard([]), other);
+    expect(useSaveHealth.getState().failing).toHaveLength(2);
+
+    storage.full = false;
+    useSaveHealth.getState().retryAll();
+    expect(useSaveHealth.getState().failing).toEqual([]);
+    expect(localStorage.getItem(`boardkit:board:${other}`)).not.toBeNull();
+  });
+
+  it("keeps failing keys tracked while storage is still full", () => {
+    const storage = fillableStorage();
+    storage.full = true;
+    savePersistedBoardNow(createBoard([]), id);
+    useSaveHealth.getState().retryAll();
+    expect(useSaveHealth.getState().failing).toEqual([`boardkit:board:${id}`]);
+  });
+
+  it("forgets the retry of a board that was deleted", () => {
+    const storage = fillableStorage();
+    storage.full = true;
+    savePersistedBoardNow(createBoard([]), id);
+    storage.full = false;
+    removePersistedBoard(id);
+    useSaveHealth.getState().retryAll();
+    expect(localStorage.getItem(`boardkit:board:${id}`)).toBeNull();
+  });
+});

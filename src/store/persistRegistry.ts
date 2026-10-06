@@ -21,7 +21,7 @@ function writeRegistry(boards: readonly BoardSummary[], activeBoardId: BoardId):
     // only, rather than crashing the session -- and the banner says so.
     ok = false;
   }
-  useSaveHealth.getState().report(STORAGE_KEY, ok);
+  useSaveHealth.getState().report(STORAGE_KEY, ok, () => writeRegistry(boards, activeBoardId));
 }
 
 export function loadPersistedRegistry(): PersistedRegistryV1 | null {

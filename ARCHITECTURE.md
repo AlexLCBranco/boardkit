@@ -445,8 +445,11 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   "Back up now" (`exportBackup`, which reads the open board from memory,
   so the file has the unsaved edits), "Empty trash…" (this board's card
   and list trash, after a confirmation; the emptying is itself a change,
-  so its save is the retry) and "Try again" (writes the open board and the
-  list now). Two writes are not tracked, because nothing would ever retry
+  so its save is the retry) and "Try again". Each failed write leaves a
+  retry behind (`report(key, ok, retry)`, the content it tried to store,
+  kept outside the store's state), so "Try again" makes every failed write
+  again -- a new, duplicated or imported board that isn't open included --
+  and then writes the open board and the list as they are now. Two writes are not tracked, because nothing would ever retry
   them and they would hold the banner up for good: a transfer into another
   board (`saveOtherBoardNow`, whose failure now makes the transfer fail,
   so a move never trashes an original whose copy wasn't stored) and a

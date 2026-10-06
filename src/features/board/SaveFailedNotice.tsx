@@ -21,9 +21,15 @@ import { exportBackup } from "./backup";
 // this" strips under the header.
 import styles from "./RecoveryNotice.module.css";
 
-/** Writes the board on screen and the board list right now, edited or not. */
+/**
+ * Makes every failed write again -- boards that aren't open too (a new,
+ * duplicated or imported board), with the content each last tried to store
+ * -- then writes the board on screen and the board list as they are now, so
+ * the open board's latest state is what ends up saved.
+ */
 function trySavingAgain(): void {
   flushPersist();
+  useSaveHealth.getState().retryAll();
   const state = useBoardStore.getState();
   savePersistedBoardNow(boardContent(state), state.boardId);
   savePersistedRegistryNow(state.boards, state.boardId);
