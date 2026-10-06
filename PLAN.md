@@ -40,7 +40,9 @@ effort.
 4. ~~**Pending saves are not flushed on page hide.**~~ Done in `0e1438c`:
    board and registry saves are written immediately on `pagehide` and when
    the tab is hidden (`visibilitychange`), not `beforeunload`, which mobile
-   Safari never fires. See the end of `store/boardStore.ts`.
+   Safari never fires. See the end of `store/boardStore.ts`. Since v0.0.68
+   a text field still open when the page hides hands its draft to the
+   store first (`components/InlineEditable.tsx`): a reload never blurs it.
 
 5. ~~**Persistence validation is shallow, and fails destructively.**~~ Done
    in v0.0.67: damaged boards are repaired (`domain/repair.ts`), the

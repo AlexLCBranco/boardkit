@@ -1,6 +1,6 @@
 # Boardkit — project summary
 
-_Last updated: 2026-09-29, v0.0.67_
+_Last updated: 2026-10-06, v0.0.68_
 
 ## What it is
 
@@ -29,6 +29,8 @@ normalised state.
   one undo step, and Esc puts the card back
 - Colours, icons, custom colours and highlight borders per list and per card
 - Undo/redo, auto-save, backup reminder plus automatic folder backup
+- Saves are written immediately when the page is hidden or reloaded,
+  including text still being typed into an open field
 - Multiple boards: switcher, new board from a layout, move/copy cards to
   another board
 - Search across all boards (Ctrl/Cmd+K), keyboard shortcuts
