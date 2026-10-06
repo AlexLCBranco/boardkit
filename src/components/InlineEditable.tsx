@@ -97,6 +97,35 @@ export function InlineEditable({
     }
   }, [isEditing, multiline]);
 
+  // A reload or tab close does not blur the field, so without this a draft
+  // still open in the textarea never reaches `onCommit` and is lost. When
+  // the page is being hidden, hand the draft over now (the field stays
+  // open, so a plain tab switch can carry on typing). Capture phase on
+  // `window` runs this before the store's own pagehide/visibilitychange
+  // listeners, which flush pending saves -- so the commit is in the store
+  // by the time they write it out.
+  const latest = useRef({ draft, value, onCommit, multiline, allowEmpty });
+  latest.current = { draft, value, onCommit, multiline, allowEmpty };
+  useEffect(() => {
+    if (!isEditing) return;
+    const save = () => {
+      const { draft, value, onCommit, multiline, allowEmpty } = latest.current;
+      const trimmed = draft.trim();
+      if (trimmed === value) return;
+      if (!multiline && !allowEmpty && !trimmed) return;
+      onCommit(trimmed);
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") save();
+    };
+    window.addEventListener("pagehide", save, { capture: true });
+    window.addEventListener("visibilitychange", onVisibility, { capture: true });
+    return () => {
+      window.removeEventListener("pagehide", save, { capture: true });
+      window.removeEventListener("visibilitychange", onVisibility, { capture: true });
+    };
+  }, [isEditing]);
+
   function startEditing() {
     setDraft(value);
     setIsEditing(true);
