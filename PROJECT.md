@@ -1,6 +1,6 @@
 # Boardkit — project summary
 
-_Last updated: 2026-10-06, v0.0.74_
+_Last updated: 2026-10-06, v0.0.75_
 
 ## What it is
 
@@ -8,7 +8,8 @@ A fast, visual board app in the browser: lists of cards you drag around,
 rename instantly, and style per list and per card. Not a project-management
 tool or a Trello clone. Trello is the benchmark for drag feel only. Built by
 the owner, who is learning frontend, with Claude Code and Codex. Repo:
-github.com/AlexLCBranco/boardkit; every push to main deploys on Vercel.
+github.com/AlexLCBranco/boardkit; every push to main deploys on Vercel, at
+its own address and, once the gauntlet site forwards it, at /boardkit there.
 Priorities: drag-and-drop, animation, instant editing, clean code. What
 matters most: colours, the two text fields per card ("pregame" and
 "postgame thots"), and drag smoothness. Out of scope: accounts, teams,
@@ -19,7 +20,9 @@ comments, due dates, notifications, integrations, AI, collaboration.
 Vite, React 19, TypeScript (strict), Zustand, dnd-kit, CSS Modules + design
 tokens for the board, Tailwind v4 + shadcn/ui for menus and dialogs. No
 backend: everything is saved in the browser (localStorage, IndexedDB for
-images). Layered `app -> features -> components -> store -> domain`, with
+images); every key and database is named "boardkit…" so other apps on the
+shared gauntlet site can sit beside it. Layered
+`app -> features -> components -> store -> domain`, with
 normalised state.
 
 ## What works now
@@ -43,9 +46,16 @@ normalised state.
   offers restoring it from the latest backup (named by date); add
   `?damage-test` to the address to try it on a throwaway board. Until it is
   answered, backups keep that board's last good version; others back up as usual
+- Works under /boardkit (built for the shared gauntlet site) as well as at
+  its own address
+- A new address starts empty and offers "Restore all boards from a backup
+  folder": the newest backup is loaded, every board and its pictures come
+  back, and nothing already there is replaced
 
 ## What's next
 
+- Gauntlet: a shared data store all apps use, then a canvas of live app
+  pieces (not started)
 - More tests for the pure logic in `domain/` (the drag logic has them)
 
 ## Open problems

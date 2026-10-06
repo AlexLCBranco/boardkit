@@ -1,7 +1,8 @@
 .app {
   display: grid;
   /* Named rows, so the board keeps the `1fr` row whether or not the
-     recovery notice is there; when it is not, its `auto` row is empty. */
+     recovery or start-fresh notice is there; when neither is, its `auto`
+     row is empty. */
   grid-template-areas: "header" "notice" "main";
   grid-template-rows: auto auto 1fr;
   /* An implicit `auto` column grows to its content's min-content width, which
@@ -27,4 +28,8 @@
   grid-area: main;
   min-width: 0;
   min-height: 0; /* lets the grid row shrink so the child can scroll */
+}
+
+.notices {
+  grid-area: notice;
 }

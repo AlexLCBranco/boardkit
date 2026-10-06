@@ -1,0 +1,30 @@
+/* Same layout as the recovery notice; an accent edge instead of its orange
+   warning one, since nothing is wrong. */
+.notice {
+  composes: notice from "./RecoveryNotice.module.css";
+  border-left-color: var(--accent);
+}
+
+.text {
+  composes: text from "./RecoveryNotice.module.css";
+}
+
+.title {
+  composes: title from "./RecoveryNotice.module.css";
+}
+
+.body {
+  composes: body from "./RecoveryNotice.module.css";
+}
+
+.actions {
+  composes: actions from "./RecoveryNotice.module.css";
+}
+
+.primary {
+  composes: primary from "./RecoveryNotice.module.css";
+}
+
+.secondary {
+  composes: secondary from "./RecoveryNotice.module.css";
+}

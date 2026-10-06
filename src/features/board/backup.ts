@@ -10,7 +10,7 @@ import {
   type BackupFileV1,
   type BackupImage,
 } from "../../domain/persistence";
-import type { BoardSummary } from "../../domain/types";
+import type { BoardId, BoardSummary } from "../../domain/types";
 import { hasImage, loadImage, saveImage } from "../../store/imageStore";
 import { flushPersist, loadPersistedBoard } from "../../store/persistBoard";
 import { useBackupStore } from "../../store/backupStore";
@@ -144,15 +144,29 @@ export async function importBackup(file: File): Promise<ImportResult> {
   } catch {
     throw new Error("That file is not valid JSON.");
   }
-  const entries = deserializeBackup(parsed);
-  if (!entries) {
+  const result = await addBoardsFromBackup(parsed);
+  if (!result) {
     throw new Error("That file is not a Boardkit backup.");
   }
+  return result;
+}
+
+/** The ids of the boards added, alongside the counts. */
+export interface AddedBoards extends ImportResult {
+  readonly addedIds: readonly BoardId[];
+}
+
+/** `importBackup` for a backup already parsed (a file, or the newest one in
+    a folder). Same rule: boards already here are skipped, never replaced.
+    `null` when `parsed` is not a Boardkit backup. */
+export async function addBoardsFromBackup(parsed: unknown): Promise<AddedBoards | null> {
+  const entries = deserializeBackup(parsed);
+  if (!entries) return null;
   const existing = new Set(useBoardStore.getState().boards.map((board) => board.id));
   const fresh = entries.filter((entry) => !existing.has(entry.id));
   await restoreImages(fresh, deserializeBackupImages(parsed));
   useBoardStore.getState().addBoards(fresh);
-  return { added: fresh.length, skipped: entries.length - fresh.length };
+  return { added: fresh.length, skipped: entries.length - fresh.length, addedIds: fresh.map((entry) => entry.id) };
 }
 
 /**

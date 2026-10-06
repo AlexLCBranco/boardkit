@@ -30,14 +30,14 @@ import { buildBackup, collectBoards, listNames } from "./backup";
 /** The parts of the File System Access API this module uses. `lib.dom` does
     not declare the permission methods or the async iteration, and this is
     the only place they are needed. */
-type Folder = FileSystemDirectoryHandle & {
+export type Folder = FileSystemDirectoryHandle & {
   queryPermission(descriptor: { mode: "readwrite" }): Promise<PermissionState>;
   requestPermission(descriptor: { mode: "readwrite" }): Promise<PermissionState>;
   values(): AsyncIterable<FileSystemHandle>;
 };
 
 type PickerWindow = Window & {
-  showDirectoryPicker?: (options: { id: string; mode: "readwrite" }) => Promise<Folder>;
+  showDirectoryPicker?: (options: { id: string; mode: "read" | "readwrite" }) => Promise<Folder>;
 };
 
 const FOLDER_KEY = "backupFolder";
@@ -179,7 +179,7 @@ function heldBackWarning(unreadable: readonly BoardSummary[], carried: readonly 
 /** The parsed backup files this app wrote in `target`, newest first. A file
     that fails to read is skipped; a folder that can't be listed yields
     nothing. Lazy, so a search can stop at the first file it needs. */
-async function* readBackupsNewestFirst(
+export async function* readBackupsNewestFirst(
   target: Folder,
 ): AsyncGenerator<{ readonly name: string; readonly data: unknown }> {
   const names: string[] = [];
@@ -300,6 +300,22 @@ export async function chooseBackupFolder(): Promise<void> {
   backup().setAuto("active", chosen.name);
   await runBackup();
   if (backup().status === "active") toast.success(`Backing up to ${chosen.name}`);
+}
+
+/** A folder picked only to read backups from (restoring everything at a new
+    address), without making it the backup folder. `null` when cancelled or
+    unsupported. Must run from a click. */
+export async function pickFolderToRead(): Promise<Folder | null> {
+  const picker = (window as PickerWindow).showDirectoryPicker;
+  if (!picker) return null;
+  try {
+    return await picker.call(window, { id: "boardkit-backup", mode: "read" });
+  } catch (error) {
+    if (!(error instanceof DOMException && error.name === "AbortError")) {
+      toast.error("Couldn't open that folder.");
+    }
+    return null;
+  }
 }
 
 /** "Resume backups": asks the browser to allow the saved folder again. Must

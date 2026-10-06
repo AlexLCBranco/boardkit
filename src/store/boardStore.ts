@@ -54,6 +54,7 @@ import {
   schedulePersistRegistry,
 } from "./persistRegistry";
 import { useRecoveryStore } from "./recoveryStore";
+import { rememberStarterBoard } from "./starterBoard";
 import {
   cardsOfList,
   copyCardToBoard,
@@ -257,7 +258,9 @@ function clearDamage(): void {
  *     see `savePersistedRegistryNow`/`savePersistedBoardNow`) so the random
  *     id minted for it here is the same one found on the next load, rather
  *     than a fresh one every time the tab reopens before any edit is made.
- *  3. Neither -- a first-ever run, seeded with demo content the same way.
+ *  3. Neither -- a first-ever run, seeded with demo content the same way,
+ *     and remembered as the starter board (`starterBoard.ts`): a new
+ *     address offers restoring from a backup while it is the only board.
  */
 function loadInitialState(): { boardId: BoardId; boards: readonly BoardSummary[]; board: BoardState } {
   const registry = loadPersistedRegistry();
@@ -273,6 +276,7 @@ function loadInitialState(): { boardId: BoardId; boards: readonly BoardSummary[]
 
   savePersistedRegistryNow(boards, boardId);
   savePersistedBoardNow(board, boardId);
+  if (!legacyBoard) rememberStarterBoard(boardId);
 
   return { boardId, boards, board };
 }

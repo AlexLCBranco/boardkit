@@ -1,0 +1,7 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    { "source": "/boardkit", "destination": "/" },
+    { "source": "/boardkit/:path*", "destination": "/:path*" }
+  ]
+}

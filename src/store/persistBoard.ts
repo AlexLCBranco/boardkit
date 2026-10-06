@@ -53,6 +53,16 @@ export function loadPersistedBoard(boardId: BoardId): BoardState | null {
   }
 }
 
+/** A board's saved text exactly as stored, or `null` -- for telling whether
+    it has been written since (`starterBoard.ts`). */
+export function persistedBoardText(boardId: BoardId): string | null {
+  try {
+    return localStorage.getItem(STORAGE_KEY_PREFIX + boardId);
+  } catch {
+    return null;
+  }
+}
+
 /** What was wrong with a board that was just opened. */
 export interface BoardDamage {
   readonly boardId: BoardId;

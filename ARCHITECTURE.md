@@ -393,6 +393,32 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   than the original. Boards saved before the limit that already hold more
   than 50 are not trimmed; they just can't grow.
 
+- **Served under `/boardkit/` (v0.0.75).** Boardkit is mounted at
+  `/boardkit` on a shared "gauntlet" site, whose own Vercel project proxies
+  that path to this one. `vite.config.ts` sets `base: '/boardkit/'`, so every
+  built asset URL starts with it (and the dev server redirects `/` there).
+  The app's own address keeps working through `vercel.json`, which rewrites
+  `/boardkit/...` back to the root of this deployment. There is no client
+  routing, so no other path handling is needed.
+
+- **Storage shared with other apps.** On the shared site every app shares one
+  origin, so one `localStorage` and one set of IndexedDB databases. Every
+  Boardkit `localStorage` key starts with `boardkit:` (including the theme,
+  read before first paint in `index.html`) and the only IndexedDB database
+  is `boardkit`. New keys must follow suit. (`components/ui/sidebar.tsx`
+  writes an unprefixed `sidebar_state` cookie, but nothing imports it.)
+
+- **Starting fresh at a new address.** Storage is per origin, so the shared
+  site starts empty. A first-ever run remembers its seeded board
+  (`store/starterBoard.ts`: its id plus its saved text). While that is the
+  only board, `StartFreshNotice` offers "Restore all boards from a backup
+  folder…" (`features/board/restoreAll.ts`): the newest automatic-backup file
+  in the picked folder is read and every board added through the same
+  never-overwrite path as "Import boards…" (`addBoardsFromBackup`), pictures
+  first. The starter is then deleted only if its saved text is unchanged,
+  i.e. nobody touched it; otherwise it stays. A browser without the folder
+  picker gets the same restore from a single backup file.
+
 ## Decisions
 
 - **Vite + React + TypeScript.** Fast HMR matters when tuning drag feel.
