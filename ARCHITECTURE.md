@@ -475,6 +475,18 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   `loadPersistedBoard`, `hasPersistedBoard`) looks there first, so
   switching to such a board, or backing it up, gets its real content. Any
   stored write of that board removes it from the map.
+- **The saved board list names only stored boards.** `writeRegistry`
+  writes just the boards whose content is in storage (`isBoardStored`),
+  falling back to a stored board as the active one, and writes nothing at
+  all while none is stored (the next visit then starts like a first one).
+  It remembers the list it was asked for: `persistBoard.ts` announces
+  every stored board (`onBoardStored`, a listener because the registry
+  module imports the board module, not the other way round), and a board
+  left out is added the moment its content stores -- after a retry or its
+  next edit. In memory the board is listed and usable throughout. This
+  closes the gap where a new board whose first save failed stayed in the
+  saved list pointing at nothing; the missing-board notices still cover
+  lists written before this, or content removed some other way.
 
 ## Decisions
 

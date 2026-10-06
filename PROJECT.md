@@ -1,6 +1,6 @@
 # Boardkit — project summary
 
-_Last updated: 2026-10-06, v0.0.79_
+_Last updated: 2026-10-06, v0.0.80_
 
 ## What it is
 
@@ -50,7 +50,9 @@ normalised state.
   now”, “Empty trash…” (asks first) and “Try again” (retries every save
   that failed, boards that aren’t open included; switching boards meanwhile
   is safe, since a board whose save failed reopens with its real
-  content). Moving a card or
+  content). A new board joins the saved list only once its own content
+  is stored, so a failed first save never leaves the list naming nothing.
+  Moving a card or
   list to a board that can’t be saved now fails with a message instead of
   trashing the original, and a background picture that can’t be stored
   says so

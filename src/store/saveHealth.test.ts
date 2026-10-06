@@ -10,6 +10,7 @@ import {
   savePersistedBoardNow,
   saveOtherBoardNow,
 } from "./persistBoard";
+import { savePersistedRegistryNow } from "./persistRegistry";
 import { useSaveHealth } from "./saveHealthStore";
 
 /** A tiny localStorage (tests run in Node, which has none) that refuses
@@ -118,5 +119,44 @@ describe("a board whose save failed, read back in the same session", () => {
     const gone = "board-gone" as BoardId;
     expect(openPersistedBoard(gone).damage?.status).toBe("missing");
     expect(hasPersistedBoard(gone)).toBe(false);
+  });
+});
+
+describe("the saved board list", () => {
+  const registryIds = () =>
+    (JSON.parse(localStorage.getItem("boardkit:registry") ?? "{\"boards\":[]}") as { boards: { id: string }[] }).boards.map(
+      (board) => board.id,
+    );
+
+  it("names a new board only once its content is stored", () => {
+    const storage = fillableStorage();
+    const kept = "board-kept" as BoardId;
+    const fresh = "board-fresh" as BoardId;
+    savePersistedBoardNow(createBoard([]), kept);
+    const boards = [
+      { id: kept, name: "Kept" },
+      { id: fresh, name: "Fresh" },
+    ];
+
+    storage.full = true;
+    savePersistedBoardNow(createBoard([]), fresh);
+    storage.full = false;
+    savePersistedRegistryNow(boards, fresh);
+    expect(registryIds()).toEqual([kept]);
+    // The active board falls back to one that is stored.
+    expect(JSON.parse(localStorage.getItem("boardkit:registry")!).activeBoardId).toBe(kept);
+
+    useSaveHealth.getState().retryAll();
+    expect(registryIds()).toEqual([kept, fresh]);
+  });
+
+  it("writes no list at all while no board is stored", () => {
+    const storage = fillableStorage();
+    const only = "board-only" as BoardId;
+    storage.full = true;
+    savePersistedBoardNow(createBoard([]), only);
+    storage.full = false;
+    savePersistedRegistryNow([{ id: only, name: "Only" }], only);
+    expect(localStorage.getItem("boardkit:registry")).toBeNull();
   });
 });

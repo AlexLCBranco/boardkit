@@ -49,7 +49,29 @@ function writeBoard(board: BoardState, boardId: BoardId, track = true): boolean 
   if (ok) unsaved.delete(boardId);
   else if (track) unsaved.set(boardId, board);
   if (track) useSaveHealth.getState().report(key, ok, () => writeBoard(board, boardId));
+  if (ok) for (const listener of storedListeners) listener(boardId);
   return ok;
+}
+
+const storedListeners: ((boardId: BoardId) => void)[] = [];
+
+/** Tells `listener` each time a board's content is stored. How the saved
+    board list (`persistRegistry.ts`, which imports this module, so it can't
+    be called from here directly) adds a board whose first save failed once
+    a retry stores it. */
+export function onBoardStored(listener: (boardId: BoardId) => void): void {
+  storedListeners.push(listener);
+}
+
+/** Whether a board's content is in storage right now (an unsaved copy in
+    memory doesn't count). The saved board list names only these. */
+export function isBoardStored(boardId: BoardId): boolean {
+  try {
+    return localStorage.getItem(STORAGE_KEY_PREFIX + boardId) !== null;
+  } catch {
+    // Unreadable storage: don't drop boards from the list over it.
+    return true;
+  }
 }
 
 function parse(raw: string): BoardRead {
@@ -84,13 +106,7 @@ export function loadPersistedBoard(boardId: BoardId): BoardState | null {
     a save to go through. `false` for a board the list names means its
     content was lost (see `openPersistedBoard`). */
 export function hasPersistedBoard(boardId: BoardId): boolean {
-  if (unsaved.has(boardId)) return true;
-  try {
-    return localStorage.getItem(STORAGE_KEY_PREFIX + boardId) !== null;
-  } catch {
-    // Storage unreadable: nothing can be said, so nothing is claimed lost.
-    return true;
-  }
+  return unsaved.has(boardId) || isBoardStored(boardId);
 }
 
 /** A board's saved text exactly as stored, or `null` -- for telling whether

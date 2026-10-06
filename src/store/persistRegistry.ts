@@ -1,5 +1,6 @@
 import { deserializeRegistry, serializeRegistry, type PersistedRegistryV1 } from "../domain/persistence";
 import type { BoardId, BoardSummary } from "../domain/types";
+import { isBoardStored, onBoardStored } from "./persistBoard";
 import { useSaveHealth } from "./saveHealthStore";
 
 /**
@@ -12,17 +13,53 @@ import { useSaveHealth } from "./saveHealthStore";
  */
 const STORAGE_KEY = "boardkit:registry";
 
+/** The list as the app last asked for it, and the ids last actually
+    written: a board left out (its content not stored yet) is added the
+    moment its content is stored -- see `onBoardStored` below. */
+let requested: { boards: readonly BoardSummary[]; activeBoardId: BoardId } | undefined;
+let writtenIds = new Set<BoardId>();
+let writtenActive: BoardId | undefined;
+
+/**
+ * Writes the list -- but only with boards whose content is in storage, so a
+ * board whose first save failed is never listed with nothing behind it (a
+ * reload would find an entry pointing at nothing). In memory the board is
+ * still there; it joins the saved list once its content stores. The active
+ * board falls back to one that is stored (the last one written, else the
+ * newest). With no board stored at all nothing is written: the next visit
+ * then starts like a first one rather than with an empty list.
+ */
 function writeRegistry(boards: readonly BoardSummary[], activeBoardId: BoardId): void {
+  requested = { boards, activeBoardId };
+  const stored = boards.filter((board) => isBoardStored(board.id));
+  if (stored.length === 0) return;
+  const active = stored.some((board) => board.id === activeBoardId)
+    ? activeBoardId
+    : stored.some((board) => board.id === writtenActive)
+      ? (writtenActive as BoardId)
+      : stored[stored.length - 1].id;
   let ok = true;
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(serializeRegistry(boards, activeBoardId)));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(serializeRegistry(stored, active)));
   } catch {
     // Same reasoning as persistBoard.ts: a failed write stays in-memory
     // only, rather than crashing the session -- and the banner says so.
     ok = false;
   }
+  if (ok) {
+    writtenIds = new Set(stored.map((board) => board.id));
+    writtenActive = active;
+  }
   useSaveHealth.getState().report(STORAGE_KEY, ok, () => writeRegistry(boards, activeBoardId));
 }
+
+// A board left out of the saved list because its content wasn't stored
+// joins it as soon as it is (a retry, or its next edit).
+onBoardStored((boardId) => {
+  if (requested && !writtenIds.has(boardId) && requested.boards.some((board) => board.id === boardId)) {
+    writeRegistry(requested.boards, requested.activeBoardId);
+  }
+});
 
 export function loadPersistedRegistry(): PersistedRegistryV1 | null {
   try {

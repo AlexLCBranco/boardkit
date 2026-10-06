@@ -274,8 +274,8 @@ function loadInitialState(): { boardId: BoardId; boards: readonly BoardSummary[]
   const board = legacyBoard ?? createSeedBoard();
   const boards: BoardSummary[] = [{ id: boardId, name: "Untitled board" }];
 
-  savePersistedRegistryNow(boards, boardId);
   savePersistedBoardNow(board, boardId);
+  savePersistedRegistryNow(boards, boardId);
   if (!legacyBoard) rememberStarterBoard(boardId);
 
   return { boardId, boards, board };
