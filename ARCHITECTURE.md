@@ -487,6 +487,37 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   closes the gap where a new board whose first save failed stayed in the
   saved list pointing at nothing; the missing-board notices still cover
   lists written before this, or content removed some other way.
+- **Shared with Linkkit: board record version 2** (step 3a1 of the
+  shared-store design in Linkkit's PROJECT.md, "The owner's queue" item
+  4). On the gauntlet site Linkkit will read and write `boardkit:board:<id>`
+  itself, so the record gained what that needs, and Boardkit learned to
+  leave alone what it can't understand:
+  - **`status` on lists and cards** (`ItemStatus`: keep / maybe / cut),
+    kept through load and repair like any optional field; an unknown value
+    is dropped silently. Nothing shows it yet. A card stores only its own
+    decision; "looks cut because its list is cut" is to be worked out.
+  - **`rev`**, beside `version`: `writeBoard` reads the stored record and
+    writes `rev + 1`, so the count keeps rising whoever wrote last. Step
+    3a2 builds on it: before a write, compare with the `rev` this tab last
+    read, and take the other tab's version if it moved on.
+  - **No migration.** A version 1 record reads as version 2 at `rev` 0 with
+    no statuses; its next save writes version 2.
+  - **A newer version is read-only, never "unreadable".** Before, a version
+    this build didn't know was unreadable, and the recovery notice offered
+    "Continue with an empty board", which would have saved over it.
+    `readBoard` now returns `newer` with whatever the repair can make of the
+    board; `openPersistedBoard` holds it (never written) with damage status
+    `newer`, and `RecoveryNotice` says it was saved by a newer Boardkit and
+    offers only "Reload". Edits are blocked in two places: the board rail
+    is `inert` (no drags or editors start), and a zustand middleware in
+    `boardStore.ts` (`readOnlyGuard`) drops every content change on that
+    board, so shortcuts and undo can't slip through either; switching,
+    creating or deleting boards still works. Other readers
+    (`loadPersistedBoard`) get `null`, so backups carry the board's last
+    backed-up version, transfers into it fail, and the image sweep deletes
+    nothing. As a last line, `writeBoard` refuses to write over a stored
+    newer record (a newer tab wrote it after this one opened it): that
+    shows as a failed save, and a reload brings the newer version.
 
 ## Decisions
 

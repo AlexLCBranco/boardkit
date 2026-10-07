@@ -1,6 +1,6 @@
 # Boardkit — project summary
 
-_Last updated: 2026-10-06, v0.0.81_
+_Last updated: 2026-10-07, v0.0.82_
 
 ## What it is
 
@@ -66,6 +66,12 @@ normalised state.
   offers restoring it from the latest backup (named by date); add
   `?damage-test` to the address to try it on a throwaway board. Until it is
   answered, backups keep that board's last good version; others back up as usual
+- Saved boards are version 2, ready for sharing with Linkkit: lists and
+  cards keep a keep / maybe / cut decision (not shown yet), and each save
+  counts up a revision number. Older saves open as before. A board saved
+  by a newer Boardkit (this tab was open across a deploy) opens
+  read-only with a "Reload" notice, instead of being offered up as
+  unreadable and continued empty
 - Works under /boardkit (built for the shared gauntlet site) as well as at
   its own address
 - A new address starts empty and offers "Restore all boards from a backup
@@ -74,8 +80,10 @@ normalised state.
 
 ## What's next
 
-- Gauntlet: a shared data store all apps use, then a canvas of live app
-  pieces (not started)
+- Shared store with Linkkit, step 3a2: two tabs stop overwriting each
+  other (reload a board another tab changed; check the revision before
+  each save). Then Linkkit's side (3b)
+- Gauntlet: a canvas of live app pieces (not started)
 - More tests for the pure logic in `domain/` (the drag logic has them)
 
 ## Open problems

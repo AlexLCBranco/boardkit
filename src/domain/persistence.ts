@@ -15,10 +15,19 @@ import type { BoardId, BoardState, BoardSummary } from "./types";
  * transform onto data that already declares what it is, instead of guessing
  * at the shape of something with no tag at all.
  */
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
-export interface PersistedBoardV1 {
-  readonly version: 1;
+/**
+ * Version 2 adds `status` (keep / maybe / cut) on lists and cards, and
+ * `rev`: a count raised by every write of this record, so a writer can tell
+ * whether someone else (another tab, or Linkkit, which will read and write
+ * this same record on the shared site) stored it since it last read it. A
+ * version 1 record reads as version 2 with `rev` 0 and no statuses: nothing
+ * else changed, so there is nothing to migrate.
+ */
+export interface PersistedBoardV2 {
+  readonly version: 2;
+  readonly rev: number;
   readonly board: BoardState;
 }
 
@@ -40,9 +49,26 @@ export function boardContent(board: BoardState): BoardState {
   return { lists, cards, listOrder, cardOrder, trash, trashedLists, background, collapsedLists };
 }
 
-export function serializeBoard(board: BoardState): PersistedBoardV1 {
-  return { version: SCHEMA_VERSION, board: boardContent(board) };
+export function serializeBoard(board: BoardState, rev = 0): PersistedBoardV2 {
+  return { version: SCHEMA_VERSION, rev, board: boardContent(board) };
 }
+
+/** A stored record's `rev`, or 0 when it has none (version 1) or it isn't a
+    whole number of at least 0. */
+export function revOf(data: unknown): number {
+  const rev = isRecord(data) ? data.rev : undefined;
+  return typeof rev === "number" && Number.isSafeInteger(rev) && rev >= 0 ? rev : 0;
+}
+
+/** Whether a stored record was written by a newer Boardkit: its version is
+    a number above the one this build writes. Never written over. */
+export function isNewerVersion(data: unknown): boolean {
+  const version = isRecord(data) ? data.version : undefined;
+  return typeof version === "number" && version > SCHEMA_VERSION;
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
 
 /**
  * What reading a saved board found. `repaired` carries a board rebuilt from
@@ -54,34 +80,59 @@ export function serializeBoard(board: BoardState): PersistedBoardV1 {
 export type BoardRead =
   | { readonly status: "ok"; readonly board: BoardState }
   | { readonly status: "repaired"; readonly board: BoardState; readonly report: RepairReport }
-  | { readonly status: "unreadable" };
+  | { readonly status: "unreadable" }
+  /** Written by a newer Boardkit. `board` is what this build can make of it,
+      for showing read-only, or `null` when that is nothing. */
+  | { readonly status: "newer"; readonly board: BoardState | null };
 
 /**
  * Validates, repairs and migrates persisted data up to the current schema.
- * There is only one version so far, so today this is a validation gate more
- * than a migration -- but the shape, read a version and branch on it, is
- * what a real migration chain slots into later rather than being rewritten
- * around.
+ * Version 2 only adds to version 1 (see `PersistedBoardV2`), so both go
+ * through the same repair; a later shape change branches on `version` here.
  *
  * `unreadable` is reserved for data with nothing to salvage: not an object,
- * a version this build does not know (a newer one -- repairing it would
- * destroy what the newer version wrote), or a board with no list or card
- * left once repaired.
+ * no version this build knows, or a board with no list or card left once
+ * repaired.
+ *
+ * A version above this build's is `newer`, not `unreadable`: the board is
+ * fine, this build is just too old for it. Repairing it and saving the
+ * result would destroy what the newer version added, so it is only ever
+ * shown read-only (`store/persistBoard.ts` never writes over it).
  */
 export function readBoard(data: unknown): BoardRead {
-  if (typeof data !== "object" || data === null) {
+  if (!isRecord(data)) {
     return { status: "unreadable" };
   }
-  const candidate = data as Record<string, unknown>;
-  if (candidate.version !== 1 || typeof candidate.board !== "object" || candidate.board === null) {
+  const raw = isRecord(data.board) ? data.board : null;
+  if (isNewerVersion(data)) {
+    const shown = raw && cleanBoard(raw).board;
+    return { status: "newer", board: shown && !isEmpty(shown) ? shown : null };
+  }
+  if ((data.version !== 1 && data.version !== 2) || raw === null) {
     return { status: "unreadable" };
   }
+  const { board, report } = cleanBoard(raw);
+  if (report.lost === 0 && report.fixed === 0) {
+    return { status: "ok", board };
+  }
+  if (isEmpty(board)) {
+    return { status: "unreadable" };
+  }
+  return { status: "repaired", board, report };
+}
+
+const isEmpty = (board: BoardState) =>
+  Object.keys(board.lists).length === 0 && Object.keys(board.cards).length === 0;
+
+/** A saved board part repaired, minus every optional value this build can't
+    read. */
+function cleanBoard(raw: Record<string, unknown>): { board: BoardState; report: RepairReport } {
   // Also strips any extra fields boards saved by earlier versions carry (a
   // stale `boards` list, `boardId`, `history`) so they cannot reach the
   // store. `trash` and `trashedLists` were both added after v1 shipped, so a
   // board saved before either has no such field; the repair defaults them
   // without counting it as damage.
-  const { board: repaired, report } = repairBoard(candidate.board as Record<string, unknown>);
+  const { board: repaired, report } = repairBoard(raw);
   // A card's `kind` is optional the same way, but one this build doesn't know
   // (from a newer version, or a hand-edited backup) is dropped, so the card
   // loads as a normal one instead of breaking the board.
@@ -94,24 +145,16 @@ export function readBoard(data: unknown): BoardRead {
   const background = knownBackground(repaired.background);
   // Collapse flags for lists that no longer exist are dropped.
   const collapsedLists = knownCollapsed(repaired.collapsedLists, lists);
-  const board = boardContent({ ...repaired, lists, cards, background, collapsedLists });
-
-  if (report.lost === 0 && report.fixed === 0) {
-    return { status: "ok", board };
-  }
-  if (Object.keys(lists).length === 0 && Object.keys(cards).length === 0) {
-    return { status: "unreadable" };
-  }
-  return { status: "repaired", board, report };
+  return { board: boardContent({ ...repaired, lists, cards, background, collapsedLists }), report };
 }
 
 /** The board from `readBoard`, repaired if need be, or `null` when nothing
-    could be salvaged. For reads where a repaired copy is fine as it is: a
-    backup being imported, the pre-multi-board key -- neither overwrites
-    anything. */
+    could be salvaged or it is a newer version's. For reads where a repaired
+    copy is fine as it is: a backup being imported, the pre-multi-board key
+    -- neither overwrites anything. */
 export function deserializeBoard(data: unknown): BoardState | null {
   const read = readBoard(data);
-  return read.status === "unreadable" ? null : read.board;
+  return read.status === "ok" || read.status === "repaired" ? read.board : null;
 }
 
 /**
@@ -222,7 +265,7 @@ export function deserializeBackup(data: unknown): BackupBoard[] | null {
 
 /**
  * The registry: which boards exist and which one is active. Deliberately a
- * separate persisted document from any board's own content (`PersistedBoardV1`
+ * separate persisted document from any board's own content (`PersistedBoardV2`
  * above) -- it stays tiny (an id and a name per board) regardless of how many
  * cards a board holds, so listing boards in a switcher never has to load
  * their content.

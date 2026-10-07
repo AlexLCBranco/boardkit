@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { readBoard, serializeBoard } from "./persistence";
+import { readBoard, revOf, serializeBoard } from "./persistence";
 import { RECOVERED_LIST_TITLE } from "./repair";
 import type { BoardState, CardId, ListId } from "./types";
 
@@ -59,7 +59,7 @@ describe("readBoard", () => {
   it("is unreadable when there is nothing to salvage", () => {
     expect(readBoard(null).status).toBe("unreadable");
     expect(readBoard("text").status).toBe("unreadable");
-    expect(readBoard({ version: 2, board: healthy() }).status).toBe("unreadable");
+    expect(readBoard({ version: "2", board: healthy() }).status).toBe("unreadable");
     expect(readBoard({ version: 1 }).status).toBe("unreadable");
     expect(readBoard({ version: 1, board: {} }).status).toBe("unreadable");
   });
@@ -146,5 +146,57 @@ describe("readBoard", () => {
     );
     expect(read.status).toBe("ok");
     if (read.status === "ok") expect(read.board.lists[todo].icon).toBeUndefined();
+  });
+});
+
+describe("version 2", () => {
+  it("reads a version 1 record as it was, at rev 0", () => {
+    const v1 = { version: 1, board: healthy() };
+    const read = readBoard(JSON.parse(JSON.stringify(v1)));
+    expect(read.status).toBe("ok");
+    if (read.status === "ok") expect(read.board).toEqual(healthy());
+    expect(revOf(v1)).toBe(0);
+  });
+
+  it("writes the version and rev it is given", () => {
+    expect(serializeBoard(healthy(), 7)).toMatchObject({ version: 2, rev: 7 });
+    expect(revOf(serializeBoard(healthy(), 7))).toBe(7);
+    expect(revOf({ version: 2, rev: -1 })).toBe(0);
+    expect(revOf({ version: 2, rev: 1.5 })).toBe(0);
+  });
+
+  it("keeps keep / maybe / cut on lists and cards", () => {
+    const read = readBoard(
+      saved(healthy(), (raw) => {
+        (raw.lists as Record<string, Record<string, unknown>>)[todo].status = "cut";
+        (raw.cards as Record<string, Record<string, unknown>>)[a].status = "maybe";
+        (raw.cards as Record<string, Record<string, unknown>>)[b].status = "keep";
+      }),
+    );
+    expect(read.status).toBe("ok");
+    if (read.status !== "ok") return;
+    expect(read.board.lists[todo].status).toBe("cut");
+    expect(read.board.cards[a].status).toBe("maybe");
+    expect(read.board.cards[b].status).toBe("keep");
+  });
+
+  it("drops a status it doesn't know, silently", () => {
+    const read = readBoard(
+      saved(healthy(), (raw) => {
+        (raw.lists as Record<string, Record<string, unknown>>)[todo].status = "later";
+        (raw.cards as Record<string, Record<string, unknown>>)[a].status = 3;
+      }),
+    );
+    expect(read.status).toBe("ok");
+    if (read.status !== "ok") return;
+    expect(read.board.lists[todo]).not.toHaveProperty("status");
+    expect(read.board.cards[a]).not.toHaveProperty("status");
+  });
+
+  it("calls a newer version newer, never unreadable, and still shows what it can", () => {
+    const read = readBoard({ version: 3, rev: 4, board: healthy() });
+    expect(read.status).toBe("newer");
+    if (read.status === "newer") expect(read.board).toEqual(healthy());
+    expect(readBoard({ version: 3, somethingElse: true })).toEqual({ status: "newer", board: null });
   });
 });

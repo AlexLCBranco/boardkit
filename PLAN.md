@@ -15,7 +15,7 @@ files.
 
 | Item | Owner |
 |------|-------|
-| _nothing_ | — |
+| _nothing_ (next: shared store step 3a2, `storage` events and `rev`-checked writes; see ARCHITECTURE.md, "Shared with Linkkit") | — |
 
 ## Queued
 

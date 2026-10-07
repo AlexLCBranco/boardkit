@@ -1,4 +1,4 @@
-import { create } from "zustand";
+import { create, type StateCreator } from "zustand";
 
 import { imageIdOf } from "../domain/background";
 import { pasteCardsIntoList } from "../domain/clipboard";
@@ -53,7 +53,7 @@ import {
   savePersistedRegistryNow,
   schedulePersistRegistry,
 } from "./persistRegistry";
-import { useRecoveryStore } from "./recoveryStore";
+import { isReadOnlyBoard, useRecoveryStore } from "./recoveryStore";
 import { rememberStarterBoard } from "./starterBoard";
 import {
   cardsOfList,
@@ -284,7 +284,51 @@ function loadInitialState(): { boardId: BoardId; boards: readonly BoardSummary[]
 const initial = loadInitialState();
 removeOrphanedSetAside(initial.boards.map((board) => board.id));
 
-export const useBoardStore = create<BoardStore>((set, get) => ({
+/** What a board's own content is made of: the slices saved with it, its
+    undo history, and a drag in progress. */
+const CONTENT_KEYS = [
+  "lists",
+  "cards",
+  "listOrder",
+  "cardOrder",
+  "trash",
+  "trashedLists",
+  "background",
+  "collapsedLists",
+  "history",
+  "cardDragOrigin",
+] as const satisfies readonly (keyof BoardStore)[];
+
+/**
+ * A board a newer Boardkit saved is read-only (see `isReadOnlyBoard`). Rather
+ * than every action checking that, every update goes through here, which
+ * drops whatever it would change on such a board. Board-level updates still
+ * pass: switching away, making or deleting a board, and the board list.
+ * Edits started in the UI just don't take: a renamed title springs back, a
+ * dragged card returns to its place.
+ */
+function withoutReadOnlyEdits(state: BoardStore, update: Partial<BoardStore>): Partial<BoardStore> {
+  if (update === state || !isReadOnlyBoard(state.boardId)) return update;
+  if (update.boardId !== undefined && update.boardId !== state.boardId) return update;
+  const allowed: Partial<BoardStore> = { ...update };
+  for (const key of CONTENT_KEYS) delete allowed[key];
+  return allowed;
+}
+
+/** Zustand middleware: hands the store a `set` that passes every update
+    through `withoutReadOnlyEdits`. Only the partial-update form of `set` is
+    used in this store. */
+const readOnlyGuard =
+  (config: StateCreator<BoardStore>): StateCreator<BoardStore> =>
+  (setState, get, api) => {
+    const set = ((update: Partial<BoardStore> | ((state: BoardStore) => Partial<BoardStore>)) =>
+      setState((state) =>
+        withoutReadOnlyEdits(state, typeof update === "function" ? update(state) : update),
+      )) as typeof setState;
+    return config(set, get, api);
+  };
+
+export const useBoardStore = create<BoardStore>()(readOnlyGuard((set, get) => ({
   ...initial.board,
   boardId: initial.boardId,
   boards: initial.boards,
@@ -790,7 +834,7 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
     set((state) => ({
       boards: state.boards.map((board) => (board.id === state.boardId ? { ...board, name } : board)),
     })),
-}));
+})));
 
 // The only subscribers that exist outside a component: persist whichever
 // slice changed, debounced, to `localStorage`. `history` is deliberately

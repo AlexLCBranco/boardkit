@@ -36,7 +36,8 @@ export function RecoveryNotice() {
   // the button can say which one. Only while backups are active: the folder
   // is already allowed then, so reading it needs no click.
   const [latest, setLatest] = useState<{ boardId: string; backup: LatestBackup } | null>(null);
-  const damagedBoardId = damage?.boardId;
+  // A newer version's board isn't damaged: there is nothing to restore.
+  const damagedBoardId = damage?.status === "newer" ? undefined : damage?.boardId;
   useEffect(() => {
     if (!damagedBoardId || status !== "active") return;
     let cancelled = false;
@@ -49,6 +50,7 @@ export function RecoveryNotice() {
   }, [damagedBoardId, status]);
 
   if (!damage) return null;
+  if (damage.status === "newer") return <NewerVersionNotice />;
 
   const hasFolder = status === "active" || status === "needs-permission" || status === "folder-error";
   // `undefined` while not looked up yet, `null` when no backup has the board.
@@ -151,6 +153,32 @@ export function RecoveryNotice() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  );
+}
+
+/**
+ * A board saved by a newer Boardkit than this tab's: nothing is wrong with
+ * it, this tab is out of date (it was open across a deploy). It is shown
+ * read-only, so there is no "continue" here -- continuing would mean saving
+ * over the newer version. A reload loads the newer Boardkit, which opens it
+ * normally.
+ */
+function NewerVersionNotice() {
+  return (
+    <div className={styles.notice} role="alert">
+      <div className={styles.text}>
+        <p className={styles.title}>This board was saved by a newer Boardkit</p>
+        <p className={styles.body}>
+          This tab is running an older version, so the board is shown read-only and nothing you do here
+          changes it. Reload the page to get the newer version and edit it. Other boards work as usual.
+        </p>
+      </div>
+      <div className={styles.actions}>
+        <button type="button" className={styles.primary} onClick={() => window.location.reload()}>
+          Reload
+        </button>
+      </div>
     </div>
   );
 }

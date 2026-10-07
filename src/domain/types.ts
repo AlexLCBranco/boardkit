@@ -94,6 +94,13 @@ export type NumberEmphasis = (typeof NUMBER_EMPHASES)[number];
 export const HIGHLIGHT_STYLES = ["outline", "dashed", "double", "bar", "pulse"] as const;
 export type HighlightStyle = (typeof HIGHLIGHT_STYLES)[number];
 
+/** Keep / maybe / cut: a decision on a list or card, set in Linkkit's
+    decision trees and shared with Boardkit through the board record (see
+    ARCHITECTURE.md, "Shared with Linkkit"). Boardkit keeps it but doesn't
+    show it yet. Absent means no decision. */
+export const ITEM_STATUSES = ["keep", "maybe", "cut"] as const;
+export type ItemStatus = (typeof ITEM_STATUSES)[number];
+
 /**
  * What is behind a board's lists. Per board, so boards can be told apart at a
  * glance; `undefined` on the board means the theme's own background. A tagged
@@ -148,6 +155,9 @@ export interface Card {
   /** How the highlight is drawn. Absent means a plain ring. Kept when the
       highlight colour is cleared, so turning it back on restores the style. */
   readonly highlightStyle?: HighlightStyle;
+  /** Keep / maybe / cut (`ItemStatus`). Only a card's own decision is
+      stored; looking cut because its list is cut is worked out, never saved. */
+  readonly status?: ItemStatus;
 }
 
 export interface List {
@@ -169,6 +179,8 @@ export interface List {
       apart from `numberFormat` so the format survives being hidden. Absent
       means false. */
   readonly numbersHidden?: boolean;
+  /** Keep / maybe / cut (`ItemStatus`). */
+  readonly status?: ItemStatus;
 }
 
 /**

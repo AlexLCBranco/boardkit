@@ -2,6 +2,7 @@ import { createListId } from "./ids";
 import { MAX_CARDS_PER_LIST } from "./limits";
 import {
   ICON_KEYS,
+  ITEM_STATUSES,
   NUMBER_EMPHASES,
   NUMBER_FORMATS,
   type BoardState,
@@ -215,6 +216,7 @@ function repairList(key: string, value: Raw, fix: () => void): List {
     continuesNumbering: isBoolean,
     numberFormat: oneOf(NUMBER_FORMATS),
     numbersHidden: isBoolean,
+    status: oneOf(ITEM_STATUSES),
   }) as unknown as List;
 }
 
@@ -223,5 +225,6 @@ function repairCard(key: string, value: Raw, fix: () => void): Card {
     description: isString,
     postgameDescription: isString,
     numberEmphasis: oneOf(NUMBER_EMPHASES),
+    status: oneOf(ITEM_STATUSES),
   }) as unknown as Card;
 }

@@ -2,6 +2,7 @@ import { SortableContext, horizontalListSortingStrategy } from "@dnd-kit/sortabl
 import { useRef, useState } from "react";
 
 import { Composer } from "../../components/Composer";
+import { useIsReadOnly } from "../../store/recoveryStore";
 import { useAddList, useListOrder } from "../../store/selectors";
 import { SearchDialog } from "../search/SearchDialog";
 import { ShortcutsDialog } from "../shortcuts/ShortcutsDialog";
@@ -34,6 +35,7 @@ import { ZoomControls } from "./ZoomControls";
  */
 export function BoardCanvas() {
   const listOrder = useListOrder();
+  const readOnly = useIsReadOnly();
   const [zoom, setZoom] = useState(1);
   const railRef = useRef<HTMLDivElement>(null);
   const marqueeRef = useRef<HTMLDivElement>(null);
@@ -46,7 +48,9 @@ export function BoardCanvas() {
       <BoardToolbar zoom={zoom} onZoomChange={setZoom} railRef={railRef} />
       <div className={styles.scrollArea} data-board-canvas onPointerDown={handleCanvasPointerDown}>
         <BoardDragContext>
-          <div ref={railRef} className={styles.rail} style={{ zoom }}>
+          {/* A board a newer Boardkit saved can be looked at, not changed: inert
+              stops drags and editors starting (scrolling still works). */}
+          <div ref={railRef} className={styles.rail} style={{ zoom }} inert={readOnly}>
             <SortableContext items={[...listOrder]} strategy={horizontalListSortingStrategy}>
               {listOrder.map((listId) => (
                 <ListColumn key={listId} listId={listId} />

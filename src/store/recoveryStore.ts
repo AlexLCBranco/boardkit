@@ -21,3 +21,15 @@ export const useRecoveryStore = create<RecoveryState>((set) => ({
   damage: null,
   setDamage: (damage) => set({ damage }),
 }));
+
+/** Whether `boardId` is open read-only: a newer Boardkit saved it (see
+    `BoardDamage`). Nothing on it can be changed until a reload. */
+export function isReadOnlyBoard(boardId: string): boolean {
+  const { damage } = useRecoveryStore.getState();
+  return damage?.status === "newer" && damage.boardId === boardId;
+}
+
+/** The same, for the board on screen, as a hook. */
+export function useIsReadOnly(): boolean {
+  return useRecoveryStore((state) => state.damage?.status === "newer");
+}

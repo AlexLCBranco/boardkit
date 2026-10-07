@@ -160,3 +160,48 @@ describe("the saved board list", () => {
     expect(localStorage.getItem("boardkit:registry")).toBeNull();
   });
 });
+
+describe("rev and newer versions", () => {
+  const key = `boardkit:board:${id}`;
+  const stored = () => JSON.parse(localStorage.getItem(key)!) as { version: number; rev: number };
+
+  it("raises rev by one with every write, from whatever is stored", () => {
+    fillableStorage();
+    savePersistedBoardNow(createBoard([]), id);
+    expect(stored()).toMatchObject({ version: 2, rev: 1 });
+    savePersistedBoardNow(createBoard([]), id);
+    expect(stored().rev).toBe(2);
+    // Another writer (a tab, Linkkit) moved it on meanwhile.
+    localStorage.setItem(key, JSON.stringify({ ...stored(), rev: 10 }));
+    saveOtherBoardNow(createBoard([]), id);
+    expect(stored().rev).toBe(11);
+  });
+
+  it("never writes over a board a newer Boardkit saved", () => {
+    fillableStorage();
+    const newer = JSON.stringify({ version: 3, rev: 5, board: createBoard([{ title: "New", cards: ["x"] }]) });
+    localStorage.setItem(key, newer);
+    expect(savePersistedBoardNow(createBoard([]), id)).toBe(false);
+    expect(saveOtherBoardNow(createBoard([]), id)).toBe(false);
+    expect(localStorage.getItem(key)).toBe(newer);
+  });
+
+  it("opens a newer board read-only: shown, held, not set aside", () => {
+    fillableStorage();
+    const other = "board-newer" as BoardId;
+    const board = createBoard([{ title: "New", cards: ["x"] }]);
+    const newer = JSON.stringify({ version: 3, rev: 5, board });
+    localStorage.setItem(`boardkit:board:${other}`, newer);
+    const opened = openPersistedBoard(other);
+    expect(opened.board).toEqual(board);
+    expect(opened.damage).toEqual({ boardId: other, status: "newer", lost: 0, setAsideKey: null });
+    expect(loadPersistedBoard(other)).toBeNull();
+    // Held: a save is skipped, not failed, and storage is untouched.
+    expect(savePersistedBoardNow(createBoard([]), other)).toBe(true);
+    expect(localStorage.getItem(`boardkit:board:${other}`)).toBe(newer);
+    expect(useSaveHealth.getState().failing).toEqual([]);
+    expect([...Array(localStorage.length).keys()].map((i) => localStorage.key(i))).toEqual([
+      `boardkit:board:${other}`,
+    ]);
+  });
+});

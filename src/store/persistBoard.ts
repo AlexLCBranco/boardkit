@@ -1,4 +1,11 @@
-import { deserializeBoard, readBoard, serializeBoard, type BoardRead } from "../domain/persistence";
+import {
+  deserializeBoard,
+  isNewerVersion,
+  readBoard,
+  revOf,
+  serializeBoard,
+  type BoardRead,
+} from "../domain/persistence";
 import type { BoardId, BoardState } from "../domain/types";
 import { useSaveHealth } from "./saveHealthStore";
 
@@ -41,7 +48,14 @@ function writeBoard(board: BoardState, boardId: BoardId, track = true): boolean 
   const key = STORAGE_KEY_PREFIX + boardId;
   let ok = true;
   try {
-    localStorage.setItem(key, JSON.stringify(serializeBoard(board)));
+    // Every write raises the stored record's `rev` by one. Read from
+    // storage, not remembered, so it keeps counting up whoever wrote last.
+    const stored = storedRecord(key);
+    // A newer Boardkit (another tab, after a deploy) stored this board
+    // since this tab opened it. Never written over: it reports as a failed
+    // save, and a reload brings the newer version.
+    if (isNewerVersion(stored)) throw new Error("Saved by a newer Boardkit");
+    localStorage.setItem(key, JSON.stringify(serializeBoard(board, revOf(stored) + 1)));
   } catch {
     ok = false;
   }
@@ -71,6 +85,18 @@ export function isBoardStored(boardId: BoardId): boolean {
   } catch {
     // Unreadable storage: don't drop boards from the list over it.
     return true;
+  }
+}
+
+/** A board's stored record as parsed JSON, or `null` when there is none or
+    it isn't JSON. */
+function storedRecord(key: string): unknown {
+  const raw = localStorage.getItem(key);
+  if (raw === null) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
   }
 }
 
@@ -125,8 +151,10 @@ export interface BoardDamage {
   /** `repaired`: some of it was recovered. `unreadable`: none of it.
       `missing`: the board list names it but nothing is stored for it at all
       -- most likely its save failed (storage full) and the tab closed
-      before it was retried. */
-  readonly status: "repaired" | "unreadable" | "missing";
+      before it was retried. `newer`: nothing is wrong with it, but a newer
+      Boardkit saved it, so it opens read-only and is held for the session:
+      only a reload (which loads the newer Boardkit) can edit it. */
+  readonly status: "repaired" | "unreadable" | "missing" | "newer";
   /** Entries that could not be read, when `repaired`. */
   readonly lost: number;
   /** Where the original now sits, untouched; `null` if it could not be
@@ -162,6 +190,12 @@ export function openPersistedBoard(boardId: BoardId): { board: BoardState | null
   if (raw === null) return { board: null, damage: { boardId, status: "missing", lost: 0, setAsideKey: null } };
   const read = parse(raw);
   if (read.status === "ok") return { board: read.board, damage: null };
+  // Not damaged, so nothing to set aside: the original stays where it is,
+  // and holding it means this tab never writes it.
+  if (read.status === "newer") {
+    heldBoards.add(boardId);
+    return { board: read.board, damage: { boardId, status: "newer", lost: 0, setAsideKey: null } };
+  }
 
   const setAsideKey = setAside(boardId, raw);
   if (setAsideKey === null) heldBoards.add(boardId);
