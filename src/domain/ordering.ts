@@ -66,7 +66,9 @@ export function moveBetweenLists(
 ): Readonly<Record<ListId, readonly CardId[]>> {
   const sourceOrder = cardOrder[fromListId].filter((id) => id !== activeId);
 
-  const destinationOrder = cardOrder[toListId].slice();
+  // Filtered too: a drag-over that arrives before the card's own list has
+  // re-rendered still names the list it left, and the card is already here.
+  const destinationOrder = cardOrder[toListId].filter((id) => id !== activeId);
   const insertAt = overId === null ? destinationOrder.length : destinationOrder.indexOf(overId);
   destinationOrder.splice(insertAt === -1 ? destinationOrder.length : insertAt, 0, activeId);
 

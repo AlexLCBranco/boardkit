@@ -1,6 +1,6 @@
 # Boardkit — project summary
 
-_Last updated: 2026-10-07, v0.0.86_
+_Last updated: 2026-10-07, v0.0.87_
 
 ## What it is
 
@@ -83,7 +83,9 @@ normalised state.
   card, list or background was also changed elsewhere since, the undo is
   refused ("Can't undo further: “Rent” was changed in another tab", or
   "in Linkkit or another tab" for a board linked to a map) and older
-  steps go; what was already undone can still be redone
+  steps go; what was already undone can still be redone. (v0.0.87 fixed
+  undoing a move of a card another tab had since erased, which left the
+  board pointing at a missing card; found by the new random stress test)
 - A card or list with a keep / maybe / cut decision (set in Linkkit)
   shows a small grey badge (✓, ?, ✂). A cut card, and every card in a cut
   list, fades with a dashed edge, its colours kept; hovering brings it back
@@ -103,7 +105,6 @@ normalised state.
   the last, step 27 (undo that survives another tab's or Linkkit's
   change), shipped in v0.0.86
 - Gauntlet: a canvas of live app pieces (not started)
-- More tests for the pure logic in `domain/` (the drag logic has them)
 
 ## Open problems
 

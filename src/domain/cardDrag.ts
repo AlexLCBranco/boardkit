@@ -46,18 +46,20 @@ export function sameCardOrder(a: CardOrder, b: CardOrder): boolean {
  * restores the origin itself -- the same references every list rendered
  * before the drag -- and leaves history alone. Anything else becomes one
  * entry spanning origin to final position, however many lists the card
- * visited on the way.
+ * visited on the way. `board` is the rest of the board (its `cardOrder`,
+ * the preview's, is replaced by `origin`).
  */
 export function settleCardDrag(
   history: History,
   origin: CardOrder,
   final: CardOrder,
+  board: BoardState,
 ): { cardOrder: CardOrder; history: History } {
   if (sameCardOrder(origin, final)) {
     return { cardOrder: origin, history };
   }
   return {
     cardOrder: final,
-    history: pushEntry(history, { cardOrder: origin }, { cardOrder: final }),
+    history: pushEntry(history, { ...board, cardOrder: origin }, { cardOrder: final }),
   };
 }

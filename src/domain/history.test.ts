@@ -32,11 +32,7 @@ const renamePatch = (board: BoardState, id: CardId, title: string): BoardPatch =
 
 /** Runs `patch` on `board` the way the store's `withHistory` does. */
 function act(board: BoardState, history: History, patch: BoardPatch): [BoardState, History] {
-  const before: BoardPatch = {};
-  for (const key of Object.keys(patch) as (keyof BoardPatch)[]) {
-    (before as Record<string, unknown>)[key] = board[key];
-  }
-  return [{ ...board, ...patch }, pushEntry(history, before, patch)];
+  return [{ ...board, ...patch }, pushEntry(history, board, patch)];
 }
 
 /** A change taken in from outside: the board changes, the history doesn't. */

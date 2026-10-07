@@ -606,8 +606,14 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
     the step left (reference equality, which `shareUnchanged` keeps
     true for untouched slices), its old slices go back as before.
   - **Merge path:** otherwise `mergeBoards` runs with base = the board
-    with the step's slices as it left them, mine = with them as they were
-    before, theirs = the board now. That reuses the two-tab merge as-is,
+    as the step left it, mine = as it was before, theirs = the board now.
+    Since v0.0.87 each entry keeps `board`, the whole board just before
+    the step (slice references, nothing copied), so base and mine are real
+    earlier boards. v0.0.86 rebuilt them from the step's slices plus
+    today's others, mixing two moments: a card erased elsewhere looked
+    erased in the base too, and undoing a move of it put back an id
+    pointing at nothing. `domain/stress.test.ts` (random edits, merges,
+    undo and redo; every board must load without repair) found it. That reuses the two-tab merge as-is,
     so "an item" means the same thing in both places (a card or list with
     its place, or the background), and only the step's own items go back.
     The result goes through `shareUnchanged` so only those re-render.
@@ -622,6 +628,10 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
     tab." For a board linked to a Linkkit map (`findLinkedMap`, not in
     Linkkit's trash) it says "in Linkkit or another tab": Boardkit can't
     tell which wrote. Looked up only when a step is refused.
+  - `moveBetweenLists` (`domain/ordering.ts`) also drops the card from
+    the destination before inserting it (v0.0.87): a drag-over arriving
+    before the card's list re-rendered names the list it already left,
+    which would have put it in its new list twice.
   - Switching boards, a board deleted elsewhere and the read-only "newer
     Boardkit" case still clear undo: the history belongs to the board
     as this tab had it.

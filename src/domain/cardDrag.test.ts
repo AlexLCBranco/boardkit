@@ -31,7 +31,7 @@ describe("settleCardDrag", () => {
     const viaDoing = moveBetweenLists(origin, a, todo, doing, null);
     const final = moveBetweenLists(viaDoing, a, doing, done, null);
 
-    const settled = settleCardDrag(EMPTY_HISTORY, origin, final);
+    const settled = settleCardDrag(EMPTY_HISTORY, origin, final, createEmptyBoard());
 
     expect(settled.cardOrder).toBe(final);
     expect(settled.history.past).toHaveLength(1);
@@ -42,7 +42,7 @@ describe("settleCardDrag", () => {
     const out = moveBetweenLists(origin, a, todo, doing, null);
     const back = moveBetweenLists(out, a, doing, todo, b);
 
-    const settled = settleCardDrag(EMPTY_HISTORY, origin, back);
+    const settled = settleCardDrag(EMPTY_HISTORY, origin, back, createEmptyBoard());
 
     expect(settled.history).toBe(EMPTY_HISTORY);
     // The origin's own references come back, so no list re-renders.
@@ -53,7 +53,7 @@ describe("settleCardDrag", () => {
     const crossed = moveBetweenLists(origin, a, todo, doing, null);
     const final = { ...crossed, [doing]: moveWithinList(crossed[doing], a, c) };
 
-    const settled = settleCardDrag(EMPTY_HISTORY, origin, final);
+    const settled = settleCardDrag(EMPTY_HISTORY, origin, final, createEmptyBoard());
 
     expect(settled.cardOrder[doing]).toEqual([a, c]);
     expect(settled.history.past).toHaveLength(1);
@@ -61,8 +61,8 @@ describe("settleCardDrag", () => {
 
   it("clears redo, like any other change", () => {
     const final = moveBetweenLists(origin, a, todo, doing, null);
-    const withFuture = { past: [], future: [{ before: {}, after: {} }] };
+    const withFuture = { past: [], future: [{ before: {}, after: {}, board: createEmptyBoard() }] };
 
-    expect(settleCardDrag(withFuture, origin, final).history.future).toEqual([]);
+    expect(settleCardDrag(withFuture, origin, final, createEmptyBoard()).history.future).toEqual([]);
   });
 });

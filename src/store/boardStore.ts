@@ -212,17 +212,12 @@ export type BoardStore = BoardState & {
 /**
  * Every mutating action produces a patch -- an object holding only the
  * slices it changed. This wraps that patch with its own undo record before
- * handing it to `set`: `before` is read straight off the current state for
- * each key the patch touches, which costs nothing extra since those are
- * already the same references the unchanged slices keep. See
+ * handing it to `set`: the record keeps the board's current slices, which
+ * costs nothing extra since they are references, not copies. See
  * `domain/history.ts` for why that makes a snapshot stack unnecessary.
  */
 function withHistory(state: BoardStore, patch: BoardPatch): Partial<BoardStore> {
-  const before: BoardPatch = {};
-  for (const key of Object.keys(patch) as (keyof BoardPatch)[]) {
-    (before as Record<string, unknown>)[key] = state[key];
-  }
-  return { ...patch, history: pushEntry(state.history, before, patch) };
+  return { ...patch, history: pushEntry(state.history, boardContent(state), patch) };
 }
 
 /** One undo or redo, or its refusal (see `undo` in the store below). */
@@ -511,7 +506,7 @@ export const useBoardStore = create<BoardStore>()(readOnlyGuard((set, get) => ({
         return { cardOrder };
       }
       return {
-        ...settleCardDrag(state.history, state.cardDragOrigin, cardOrder),
+        ...settleCardDrag(state.history, state.cardDragOrigin, cardOrder, boardContent(state)),
         cardDragOrigin: null,
       };
     }),

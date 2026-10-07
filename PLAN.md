@@ -32,11 +32,12 @@ effort.
    and settles into one undo step on drop or rolls back on Esc. See
    `domain/cardDrag.ts` and ARCHITECTURE.md.
 
-3. **Tests.** Vitest is set up (`npm test`), and the drag transaction is
-   covered (`domain/cardDrag.test.ts`), and so are loading and repairing a
-   saved board (`domain/persistence.test.ts`) and undo after another
-   tab's change (`domain/history.test.ts`). Still untested:
-   `ordering.ts` and `numbering.ts`.
+3. ~~**Tests.**~~ Done in v0.0.87. Vitest (`npm test`) covers the drag
+   transaction, loading and repairing a saved board, undo (also after
+   another tab's change), ordering and numbering. `domain/stress.test.ts`
+   runs 300 seeded random edit sequences through edits, two-tab merges,
+   undo and redo, and checks every board would load without repair; raise
+   its seed count to hunt harder (20,000 passed when it was added).
 
 4. ~~**Pending saves are not flushed on page hide.**~~ Done in `0e1438c`:
    board and registry saves are written immediately on `pagehide` and when
