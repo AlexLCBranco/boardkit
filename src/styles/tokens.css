@@ -53,6 +53,13 @@
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 
+  /* ---- Keep / maybe / cut ---- */
+  --status-badge-size: 16px;
+  --status-icon-size: 10px;
+  /* How far a card that looks cut fades. Hovering brings it back to full,
+     so its buttons stay usable. */
+  --cut-opacity: 0.45;
+
   /* ---- Layout constants the board engine depends on ---- */
   --list-width: 288px;
   /* Bounds for the per-list resize handle (ListColumn's `.resizeHandle`).

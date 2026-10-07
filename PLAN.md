@@ -15,7 +15,7 @@ files.
 
 | Item | Owner |
 |------|-------|
-| _nothing_ (shared store: Boardkit's side, 3a1 and 3a2, is done; next is Linkkit's side, 3b, in the Linkkit repo) | — |
+| _nothing_ (Linkkit plan step 24, the keep / maybe / cut badge, is done; step 25, naming a linked map when a board is deleted, is next and is built here) | — |
 
 ## Queued
 

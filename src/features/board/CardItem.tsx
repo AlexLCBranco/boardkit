@@ -9,6 +9,7 @@ import { inkOf, specOf } from "../../domain/cardKinds";
 import { accentCss } from "../../domain/colors";
 import { highlightStyleOf } from "../../domain/highlight";
 import { formatNumber } from "../../domain/numberStyle";
+import { cardLooksCut } from "../../domain/status";
 import type { CardId, ItemColor, ListId, NumberFormat } from "../../domain/types";
 import {
   useCard,
@@ -28,6 +29,7 @@ import { useResolvedTheme } from "../../store/themeStore";
 import { guardTrash } from "../../store/trashWarningStore";
 import { sortableTransition } from "../../styles/motion";
 import styles from "./CardItem.module.css";
+import { StatusBadge } from "./StatusBadge";
 import { CardTransferContent } from "./TransferMenus";
 
 interface CardItemProps {
@@ -45,6 +47,9 @@ interface CardItemProps {
   /** The list's number format, passed down as a primitive for the same
       reason as `number`. */
   readonly numberFormat?: NumberFormat;
+  /** Whether the card's list looks cut (domain/status.ts), a boolean so a
+      list's status change re-renders its cards but nothing else does. */
+  readonly listCut: boolean;
 }
 
 /**
@@ -69,6 +74,7 @@ function CardItemImpl({
   thotsMode,
   number,
   numberFormat,
+  listCut,
 }: CardItemProps) {
   const card = useCard(cardId);
   const renameCard = useRenameCard();
@@ -178,6 +184,7 @@ function CardItemImpl({
       // Styles the number (see CardItem.module.css's emphasis rules).
       data-number-emphasis={card.numberEmphasis}
       data-highlight={highlightStyle}
+      data-cut={cardLooksCut(card, listCut) ? "" : undefined}
       onContextMenu={handleCardContextMenu}
       {...attributes}
       {...listeners}
@@ -188,6 +195,7 @@ function CardItemImpl({
             <span className={styles.numberText}>{formatNumber(number, numberFormat)}</span>
           </span>
         )}
+        {card.status && <StatusBadge status={card.status} />}
         <InlineEditable
           value={card.title}
           onCommit={(title) => renameCard(cardId, title)}

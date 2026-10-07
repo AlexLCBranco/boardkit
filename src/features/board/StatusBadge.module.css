@@ -1,0 +1,27 @@
+/* Linkkit's status badge, sitting inline at the start of the title line
+   rather than straddling the corner as in Linkkit: a list's scroller clips
+   anything that sticks out of a card. */
+.badge {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: var(--status-badge-size);
+  height: var(--status-badge-size);
+  margin-right: var(--space-1);
+  vertical-align: text-bottom;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-full);
+  background: var(--surface-raised);
+  color: var(--text-secondary);
+}
+
+.badge svg {
+  width: var(--status-icon-size);
+  height: var(--status-icon-size);
+}
+
+/* Keep reads a touch stronger than maybe, still without colour. */
+.badge[data-status="keep"] {
+  border-color: var(--text-secondary);
+  color: var(--text-primary);
+}

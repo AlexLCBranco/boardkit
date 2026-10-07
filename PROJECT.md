@@ -1,6 +1,6 @@
 # Boardkit — project summary
 
-_Last updated: 2026-10-07, v0.0.83_
+_Last updated: 2026-10-07, v0.0.84_
 
 ## What it is
 
@@ -67,7 +67,7 @@ normalised state.
   `?damage-test` to the address to try it on a throwaway board. Until it is
   answered, backups keep that board's last good version; others back up as usual
 - Saved boards are version 2, ready for sharing with Linkkit: lists and
-  cards keep a keep / maybe / cut decision (not shown yet), and each save
+  cards keep a keep / maybe / cut decision, and each save
   counts up a revision number. Older saves open as before. A board saved
   by a newer Boardkit (this tab was open across a deploy) opens
   read-only with a "Reload" notice, instead of being offered up as
@@ -78,6 +78,9 @@ normalised state.
   card, list or background, the other tab's version stays and a message
   names it. A board deleted in one tab leaves the other (it switches to
   another board and says so). Taking in another tab's change clears undo
+- A card or list with a keep / maybe / cut decision (set in Linkkit)
+  shows a small grey badge (✓, ?, ✂). A cut card, and every card in a cut
+  list, fades with a dashed edge, its colours kept; hovering brings it back
 - Works under /boardkit (built for the shared gauntlet site) as well as at
   its own address
 - A new address starts empty and offers "Restore all boards from a backup
@@ -86,8 +89,9 @@ normalised state.
 
 ## What's next
 
-- Shared store with Linkkit: Boardkit's side is done; Linkkit's side (3b)
-  is next, in Linkkit's repo
+- Linking with Linkkit (steps 20-27 in Linkkit's PROJECT.md): 20-24 are
+  done. Next here: step 25, deleting a linked board names its Linkkit map
+  in the question; later step 27, undo that survives another app's change
 - Gauntlet: a canvas of live app pieces (not started)
 - More tests for the pure logic in `domain/` (the drag logic has them)
 

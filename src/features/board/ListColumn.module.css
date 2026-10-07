@@ -444,3 +444,15 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* A cut list (domain/status.ts): its edge turns dashed and its title fades,
+   like each of its cards (CardItem.module.css's `[data-cut]`). Its colour,
+   icon and status badge stay at full strength. */
+.column[data-cut] {
+  border-style: dashed;
+}
+
+.column[data-cut] .title,
+.column[data-cut] .stripTitle {
+  opacity: var(--cut-opacity);
+}

@@ -37,6 +37,7 @@ import { MAX_CARDS_PER_LIST, cardRoom } from "../../domain/limits";
 import { LIST_TRASH_LIMIT } from "../../domain/trash";
 import { accentCss } from "../../domain/colors";
 import { formatNumber, needsWideGutter } from "../../domain/numberStyle";
+import { listLooksCut } from "../../domain/status";
 import type { ItemColor, ListId, NumberFormat } from "../../domain/types";
 import {
   useAddCard,
@@ -67,6 +68,7 @@ import { toggleListCollapsed } from "./animateCollapse";
 import { CardItem } from "./CardItem";
 import { copyAsImage } from "./copyAsImage";
 import styles from "./ListColumn.module.css";
+import { StatusBadge } from "./StatusBadge";
 import { ListTransferItems } from "./TransferMenus";
 import { useErasedDescription } from "../../store/trashWarningStore";
 
@@ -97,6 +99,7 @@ interface ListColumnProps {
  */
 function ListColumnImpl({ listId }: ListColumnProps) {
   const list = useList(listId);
+  const listCut = listLooksCut(list);
   const cardIds = useCardIds(listId);
   const cardCount = useCardCount(listId);
   const isFull = useIsListFull(listId);
@@ -397,6 +400,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
         style={style}
         className={`${styles.column} ${styles.collapsed} ${isDragging ? styles.dragging : ""}`}
         data-list-id={listId}
+        data-cut={listCut ? "" : undefined}
       >
         <CollapsedStrip
           listId={listId}
@@ -416,12 +420,14 @@ function ListColumnImpl({ listId }: ListColumnProps) {
       style={style}
       className={`${styles.column} ${isDragging ? styles.dragging : ""} ${isResizing ? styles.resizing : ""}`}
       data-list-id={listId}
+      data-cut={listCut ? "" : undefined}
     >
       {/* The menu wraps the header only, and its content portals out, so
           clicks inside it never bubble through the header's drag listeners. */}
       <ContextMenu>
         <ContextMenuTrigger asChild>
       <header className={styles.header} data-list-header {...attributes} {...listeners}>
+        {list.status && <StatusBadge status={list.status} />}
         {list.icon && <Icon name={list.icon} className={styles.headerIcon} />}
         <h2 className={styles.title}>
           <InlineEditable
@@ -536,6 +542,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
                     thotsMode={columnThotsMode}
                     number={numbersHidden ? null : (cardNumbers[index] ?? null)}
                     numberFormat={list.numberFormat}
+                    listCut={listCut}
                   />
                 </li>
               ))}
@@ -669,6 +676,7 @@ export function CollapsedStrip({
         ›
       </span>
       {list.icon && <Icon name={list.icon} className={styles.headerIcon} />}
+      {list.status && <StatusBadge status={list.status} />}
       <span className={styles.count}>{cardCount}</span>
       <h2 className={styles.stripTitle}>{title}</h2>
     </div>

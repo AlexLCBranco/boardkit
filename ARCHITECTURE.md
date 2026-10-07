@@ -563,6 +563,26 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
     (`features/board/SyncToasts.tsx`): "“Rent” was just changed in another
     tab, so that version was kept." / "“Week 3” was deleted in another tab."
 
+- **Keep / maybe / cut badge** (v0.0.84, Linkkit's plan step 24). Shows
+  the `status` that version 2 stores on lists and cards; Boardkit doesn't
+  set one yet (owner's call: show only, statuses come from Linkkit).
+  - **Looks cut is computed, never stored** (`domain/status.ts`), by
+    Linkkit's definition: cut itself, or every way in looks cut. On a
+    board every item has one way in, so it reduces to `listLooksCut(list)`
+    and `cardLooksCut(card, listCut)`. `ListColumn` hands each card
+    `listCut` as a boolean prop, so cutting a list re-renders its own cards
+    and nothing else, and a card dragged to another list picks up that
+    list's answer with no extra bookkeeping.
+  - **The badge** (`features/board/StatusBadge.tsx`) uses Linkkit's labels
+    and lucide icons, grey only so it never competes with the item's
+    colours. It sits inline before the title (card, list header, collapsed
+    strip) rather than straddling the corner as in Linkkit: a list's
+    scroller would clip a corner badge.
+  - **The fade** is `opacity` (`--cut-opacity`) plus a dashed edge, not a
+    recolour, so the item's colours stay underneath and it costs no paint.
+    A cut card returns to full on hover so its title and buttons are
+    readable; a cut list fades only its title (its cards fade themselves).
+
 ## Decisions
 
 - **Vite + React + TypeScript.** Fast HMR matters when tuning drag feel.

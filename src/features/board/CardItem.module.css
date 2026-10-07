@@ -267,6 +267,19 @@
   cursor: grabbing;
 }
 
+/* A card that looks cut (domain/status.ts): cut itself, or in a cut list.
+   It fades and its edge turns dashed, its colours kept underneath; hovering
+   brings it back to full so its title and buttons stay readable. Opacity,
+   not a recolour, so the fade costs the compositor nothing. */
+.card[data-cut] {
+  opacity: var(--cut-opacity);
+  border-style: dashed;
+}
+
+.card[data-cut]:hover:not(.dragging) {
+  opacity: 1;
+}
+
 .dragging:hover {
   box-shadow: var(--highlight-ring), var(--shadow-sm);
   transform: none;
