@@ -15,7 +15,7 @@ files.
 
 | Item | Owner |
 |------|-------|
-| _nothing_ (Linkkit plan step 25, naming a linked map when a board is deleted, is done; step 26 is Linkkit's, and step 27, cross-app undo, is built here) | — |
+| _nothing_ (Linkkit plan step 27, undo that keeps working after another tab's or Linkkit's change, is done: steps 20-27 are all built) | — |
 
 ## Queued
 
@@ -33,9 +33,10 @@ effort.
    `domain/cardDrag.ts` and ARCHITECTURE.md.
 
 3. **Tests.** Vitest is set up (`npm test`), and the drag transaction is
-   covered (`domain/cardDrag.test.ts`), and so is loading and repairing a
-   saved board (`domain/persistence.test.ts`). Still untested:
-   `history.ts`, `ordering.ts` and `numbering.ts`.
+   covered (`domain/cardDrag.test.ts`), and so are loading and repairing a
+   saved board (`domain/persistence.test.ts`) and undo after another
+   tab's change (`domain/history.test.ts`). Still untested:
+   `ordering.ts` and `numbering.ts`.
 
 4. ~~**Pending saves are not flushed on page hide.**~~ Done in `0e1438c`:
    board and registry saves are written immediately on `pagehide` and when

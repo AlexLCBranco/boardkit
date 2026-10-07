@@ -1,3 +1,4 @@
+import { mergeBoards, shareUnchanged, type MergeConflict } from "./merge";
 import type { BoardState } from "./types";
 
 /**
@@ -11,6 +12,19 @@ import type { BoardState } from "./types";
  * reapplying them later needs no per-action knowledge of what changed or how
  * to reverse it. A snapshot-per-step approach would instead copy the whole
  * board on every keystroke, most of it unchanged.
+ *
+ * Changes from outside -- another tab, or Linkkit for a board linked to one
+ * of its maps (Linkkit's plan, step 27) -- don't clear the history. A step
+ * whose slices are still exactly the ones it left is undone by putting its
+ * old slices back, as always. Otherwise something came in since, and
+ * putting whole slices back would quietly erase it, so the step is undone
+ * as a merge (`mergeBoards`): base = the board as the step left it, mine =
+ * as it was before the step, theirs = the board now. Only the cards, lists
+ * or background the step changed go back; everything else stays as it is
+ * now. An item the step changed that was also changed from outside is a
+ * conflict: the undo is refused, and that step and every older one are
+ * dropped (skipping just it could make a board that never existed). Redo
+ * the same way round.
  */
 export type BoardPatch = Partial<BoardState>;
 
@@ -47,24 +61,64 @@ export function pushEntry(history: History, before: BoardPatch, after: BoardPatc
   return { past: [...history.past, { before, after }].slice(-HISTORY_LIMIT), future: [] };
 }
 
-export function stepUndo(history: History): { history: History; patch: BoardPatch } | null {
+/**
+ * An undo or redo taken: the new history, and the patch to apply to the
+ * board. Refused when `conflicts` isn't empty (items changed from outside
+ * since): `patch` is then empty, and `history` has lost the refused step and
+ * everything behind it.
+ */
+export interface Step {
+  readonly history: History;
+  readonly patch: BoardPatch;
+  readonly conflicts: readonly MergeConflict[];
+}
+
+/** The patch turning `from`'s slices back into `to`'s on `board`: `to`
+    itself while `board` still holds `from`'s very slices, else the whole
+    board merged item by item (see the file comment). */
+function apply(
+  board: BoardState,
+  from: BoardPatch,
+  to: BoardPatch,
+): { patch: BoardPatch; conflicts: readonly MergeConflict[] } {
+  const keys = Object.keys(from) as (keyof BoardPatch)[];
+  if (keys.every((key) => board[key] === from[key])) return { patch: to, conflicts: [] };
+  const merged = mergeBoards({ ...board, ...from }, { ...board, ...to }, board);
+  // Unchanged objects kept, so only what the step puts back re-renders.
+  return { patch: shareUnchanged(board, merged.board), conflicts: merged.conflicts };
+}
+
+/** `board` is the open board's content as it is now. */
+export function stepUndo(history: History, board: BoardState): Step | null {
   const entry = history.past.at(-1);
   if (!entry) {
     return null;
   }
+  const done = apply(board, entry.after, entry.before);
+  if (done.conflicts.length > 0) {
+    // Refused: what was undone before stays to redo.
+    return { history: { past: [], future: history.future }, patch: {}, conflicts: done.conflicts };
+  }
   return {
     history: { past: history.past.slice(0, -1), future: [...history.future, entry] },
-    patch: entry.before,
+    patch: done.patch,
+    conflicts: [],
   };
 }
 
-export function stepRedo(history: History): { history: History; patch: BoardPatch } | null {
+export function stepRedo(history: History, board: BoardState): Step | null {
   const entry = history.future.at(-1);
   if (!entry) {
     return null;
   }
+  const done = apply(board, entry.before, entry.after);
+  if (done.conflicts.length > 0) {
+    // Refused: this step and every one redoable after it go.
+    return { history: { past: history.past, future: [] }, patch: {}, conflicts: done.conflicts };
+  }
   return {
     history: { past: [...history.past, entry], future: history.future.slice(0, -1) },
-    patch: entry.after,
+    patch: done.patch,
+    conflicts: [],
   };
 }

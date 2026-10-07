@@ -39,6 +39,7 @@ import type {
   NumberFormat,
 } from "../domain/types";
 import { releaseImageIfUnused } from "./imageStore";
+import { findLinkedMap } from "./linkedMap";
 import {
   allowBoardWrites,
   boardIdOfKey,
@@ -222,6 +223,22 @@ function withHistory(state: BoardStore, patch: BoardPatch): Partial<BoardStore> 
     (before as Record<string, unknown>)[key] = state[key];
   }
   return { ...patch, history: pushEntry(state.history, before, patch) };
+}
+
+/** One undo or redo, or its refusal (see `undo` in the store below). */
+function takeStep(state: BoardStore, action: "undo" | "redo", set: (update: Partial<BoardStore>) => void): void {
+  if (state.cardDragOrigin) {
+    return;
+  }
+  const step = (action === "undo" ? stepUndo : stepRedo)(state.history, boardContent(state));
+  if (!step) {
+    return;
+  }
+  set({ ...step.patch, history: step.history });
+  if (step.conflicts.length > 0) {
+    const linked = findLinkedMap(state.boardId);
+    useSyncNotice.getState().refused(step.conflicts, action, linked !== null && !linked.inTrash);
+  }
 }
 
 /**
@@ -666,26 +683,13 @@ export const useBoardStore = create<BoardStore>()(readOnlyGuard((set, get) => ({
   // Undo and redo apply a recorded patch directly and move it between the
   // two stacks -- they never go through `withHistory`, or undoing would push
   // a fresh "undo the undo" entry and the redo stack could never be reached.
+  // A step whose items were changed in another tab (or Linkkit) since is
+  // refused, and the user told why (`domain/history.ts`).
   //
   // Both are ignored mid-drag: undoing under a lifted card would rewrite the
   // `cardOrder` the drag is about to settle against its origin.
-  undo: () =>
-    set((state) => {
-      if (state.cardDragOrigin) {
-        return state;
-      }
-      const step = stepUndo(state.history);
-      return step ? { ...step.patch, history: step.history } : state;
-    }),
-
-  redo: () =>
-    set((state) => {
-      if (state.cardDragOrigin) {
-        return state;
-      }
-      const step = stepRedo(state.history);
-      return step ? { ...step.patch, history: step.history } : state;
-    }),
+  undo: () => takeStep(get(), "undo", set),
+  redo: () => takeStep(get(), "redo", set),
 
   // `flushPersist()` in both actions below: the debounce in `persistBoard.ts`
   // is a single shared timer, so switching away within its 400ms window
@@ -912,10 +916,10 @@ if (typeof document !== "undefined") {
  *    same address when one tab writes, brings another tab's save in at
  *    once, merged with whatever this tab has not saved yet.
  *
- * Taking in another tab's change clears this board's undo history: an undo
- * step stores whole slices as they were before, so undoing would quietly
- * put back what the other tab just changed. (Undo that steps around the
- * other tab's changes is a later step of the shared-store plan.)
+ * Taking in another tab's change keeps this board's undo history (Linkkit's
+ * plan, step 27): an undo then puts back only the items its step changed,
+ * and is refused when one of them was changed in the other tab too
+ * (`domain/history.ts`).
  */
 
 /** Work held back until the card being dragged is dropped: applying another
@@ -934,7 +938,7 @@ function adoptBoard(board: BoardState): void {
   useBoardStore.setState((state) => {
     const current = boardContent(state);
     const next = shareUnchanged(current, board);
-    return next === current ? state : { ...next, history: EMPTY_HISTORY };
+    return next === current ? state : next;
   });
 }
 

@@ -1,6 +1,6 @@
 # Boardkit — project summary
 
-_Last updated: 2026-10-07, v0.0.85_
+_Last updated: 2026-10-07, v0.0.86_
 
 ## What it is
 
@@ -77,7 +77,13 @@ normalised state.
   other tab stored, keeping both tabs' changes. When both changed the same
   card, list or background, the other tab's version stays and a message
   names it. A board deleted in one tab leaves the other (it switches to
-  another board and says so). Taking in another tab's change clears undo
+  another board and says so)
+- Undo keeps working after another tab's (or Linkkit's) change: an undo
+  puts back only what its own step changed, keeping what came in. If that
+  card, list or background was also changed elsewhere since, the undo is
+  refused ("Can't undo further: “Rent” was changed in another tab", or
+  "in Linkkit or another tab" for a board linked to a map) and older
+  steps go; what was already undone can still be redone
 - A card or list with a keep / maybe / cut decision (set in Linkkit)
   shows a small grey badge (✓, ?, ✂). A cut card, and every card in a cut
   list, fades with a dashed edge, its colours kept; hovering brings it back
@@ -93,9 +99,9 @@ normalised state.
 
 ## What's next
 
-- Linking with Linkkit (steps 20-27 in Linkkit's PROJECT.md): 20-24 are
-  done, and so is 25 (deleting a linked board names its map). Next here:
-  step 27, undo that survives another app's change (after Linkkit's 26)
+- Linking with Linkkit (steps 20-27 in Linkkit's PROJECT.md) is done:
+  the last, step 27 (undo that survives another tab's or Linkkit's
+  change), shipped in v0.0.86
 - Gauntlet: a canvas of live app pieces (not started)
 - More tests for the pure logic in `domain/` (the drag logic has them)
 

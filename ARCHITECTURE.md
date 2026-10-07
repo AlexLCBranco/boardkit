@@ -552,10 +552,8 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
     again by this one; if it was open, the newest board left opens.
   - **Applying it.** `shareUnchanged` keeps every object whose content
     didn't change, so a remote change to one card re-renders only that
-    card. Taking in another tab's change clears the undo history (an undo
-    step restores whole slices, so it would quietly revert the other tab's
-    change); undo that steps around it is the shared-store plan's later
-    cross-app undo. During a card drag nothing is saved (preview moves
+    card. Taking in another tab's change keeps the undo history (since
+    v0.0.86, see "Undo after another tab's change" below). During a card drag nothing is saved (preview moves
     aren't changes until the drop) and other tabs' saves wait for the drop.
     Store updates from a merge run in a microtask: a write can happen
     inside another store update (switching boards flushes the save).
@@ -598,6 +596,35 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   then. A map in Linkkit's trash is named too ("restored there, it comes
   back as an ordinary tree"), and the question adds that the map's
   deleted boxes, which live in this board's trash, go with it.
+
+- **Undo after another tab's change** (v0.0.86, Linkkit's plan step 27,
+  the same rule as Linkkit's step 26). Before, taking in another tab's or
+  Linkkit's save cleared undo: a step stores whole slices (`cards`,
+  `cardOrder`, ...), so putting them back would quietly erase what came
+  in. Now `domain/history.ts` undoes a step one of two ways:
+  - **Fast path, unchanged:** if the board still holds the very slices
+    the step left (reference equality, which `shareUnchanged` keeps
+    true for untouched slices), its old slices go back as before.
+  - **Merge path:** otherwise `mergeBoards` runs with base = the board
+    with the step's slices as it left them, mine = with them as they were
+    before, theirs = the board now. That reuses the two-tab merge as-is,
+    so "an item" means the same thing in both places (a card or list with
+    its place, or the background), and only the step's own items go back.
+    The result goes through `shareUnchanged` so only those re-render.
+  - **A conflict refuses the step:** the patch is empty, and that step
+    and every older one are dropped (undoing an older one past it could
+    make a board that never existed); the redo stack is kept. A refused
+    redo drops the redo stack instead. No per-item bookkeeping on each
+    step: the merge works out what changed, which is why the history
+    format didn't change.
+  - **The message** (`refusedText` in `store/syncNoticeStore.ts`, shown
+    by `SyncToasts`): "Can't undo further: “Rent” was changed in another
+    tab." For a board linked to a Linkkit map (`findLinkedMap`, not in
+    Linkkit's trash) it says "in Linkkit or another tab": Boardkit can't
+    tell which wrote. Looked up only when a step is refused.
+  - Switching boards, a board deleted elsewhere and the read-only "newer
+    Boardkit" case still clear undo: the history belongs to the board
+    as this tab had it.
 
 ## Decisions
 

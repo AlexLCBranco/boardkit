@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { sameCardOrder, settleCardDrag } from "./cardDrag";
 import { EMPTY_HISTORY, stepUndo } from "./history";
 import { moveBetweenLists, moveWithinList } from "./ordering";
+import { createEmptyBoard } from "./seed";
 import type { BoardState, CardId, ListId } from "./types";
 
 const [a, b, c, d] = ["a", "b", "c", "d"] as CardId[];
@@ -34,7 +35,7 @@ describe("settleCardDrag", () => {
 
     expect(settled.cardOrder).toBe(final);
     expect(settled.history.past).toHaveLength(1);
-    expect(stepUndo(settled.history)?.patch.cardOrder).toBe(origin);
+    expect(stepUndo(settled.history, { ...createEmptyBoard(), cardOrder: final })?.patch.cardOrder).toBe(origin);
   });
 
   it("records nothing for a drag that ends where it began", () => {
