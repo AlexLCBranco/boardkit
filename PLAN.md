@@ -15,7 +15,7 @@ files.
 
 | Item | Owner |
 |------|-------|
-| _nothing_ (Linkkit plan step 24, the keep / maybe / cut badge, is done; step 25, naming a linked map when a board is deleted, is next and is built here) | — |
+| _nothing_ (Linkkit plan step 25, naming a linked map when a board is deleted, is done; step 26 is Linkkit's, and step 27, cross-app undo, is built here) | — |
 
 ## Queued
 

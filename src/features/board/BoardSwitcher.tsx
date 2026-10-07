@@ -29,6 +29,7 @@ import {
   useRenameBoard,
   useSwitchBoard,
 } from "../../store/selectors";
+import { findLinkedMap, type LinkedMap } from "../../store/linkedMap";
 import { BackgroundPanel } from "./BackgroundPanel";
 import { exportBackup, importBackup } from "./backup";
 import { AutomaticBackupItems, BackupStatusLine, useBackupAttention } from "./BackupMenuItems";
@@ -61,6 +62,8 @@ export function BoardSwitcher() {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [choosingBackground, setChoosingBackground] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  // Looked up as the question opens, so it names the map as Linkkit has it now.
+  const [linkedMap, setLinkedMap] = useState<LinkedMap | null>(null);
   const [namingNewBoard, setNamingNewBoard] = useState(false);
   const [namingLayoutBoard, setNamingLayoutBoard] = useState(false);
   // Stored oldest-first (creation order); listed newest-first, so this
@@ -118,7 +121,13 @@ export function BoardSwitcher() {
           <DropdownMenuItem onSelect={() => setChoosingBackground(true)}>
             Background…
           </DropdownMenuItem>
-          <DropdownMenuItem disabled={boards.length <= 1} onSelect={() => setConfirmingDelete(true)}>
+          <DropdownMenuItem
+            disabled={boards.length <= 1}
+            onSelect={() => {
+              setLinkedMap(findLinkedMap(boardId));
+              setConfirmingDelete(true);
+            }}
+          >
             Delete this board…
           </DropdownMenuItem>
           <DropdownMenuSeparator />
@@ -168,6 +177,14 @@ export function BoardSwitcher() {
               This removes the board and everything in it, including its trash. It cannot be undone —
               export a backup first if you might want it back.
             </AlertDialogDescription>
+            {linkedMap && (
+              <AlertDialogDescription>
+                {linkedMap.inTrash
+                  ? `“${linkedMap.name}” is a map in Linkkit’s trash, linked to this board; restored there, it comes back as an ordinary tree.`
+                  : `“${linkedMap.name}” is also a map in Linkkit; Linkkit keeps its copy as an ordinary tree.`}{" "}
+                Boxes deleted from that map are in this board’s trash and go with it.
+              </AlertDialogDescription>
+            )}
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>

@@ -583,6 +583,22 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
     A cut card returns to full on hover so its title and buttons are
     readable; a cut list fades only its title (its cards fade themselves).
 
+- **Deleting a linked board names its map** (v0.0.85, Linkkit's plan step
+  25). `store/linkedMap.ts` `findLinkedMap(boardId)` reads Linkkit's map
+  list (`linkkit:registry`), then its deleted maps (`linkkit:trash:maps`),
+  and each listed map's record for version 2 with `linkedBoard` equal to
+  the board. Read only: Linkkit's keys are written by Linkkit alone (it
+  already turns the map into an ordinary tree when the board is gone).
+  Boardkit copies only the few fields it needs, not Linkkit's types, and
+  anything unrecognised (no Linkkit, damaged, a newer format) means "no
+  link", so the question stays as it was. In `store/`, not `domain/`,
+  because it reads storage; the getter is a parameter so tests pass a
+  plain object. Looked up when the menu item is chosen, not subscribed:
+  it changes only when Linkkit writes, and the question only needs it
+  then. A map in Linkkit's trash is named too ("restored there, it comes
+  back as an ordinary tree"), and the question adds that the map's
+  deleted boxes, which live in this board's trash, go with it.
+
 ## Decisions
 
 - **Vite + React + TypeScript.** Fast HMR matters when tuning drag feel.

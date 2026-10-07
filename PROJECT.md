@@ -1,6 +1,6 @@
 # Boardkit — project summary
 
-_Last updated: 2026-10-07, v0.0.84_
+_Last updated: 2026-10-07, v0.0.85_
 
 ## What it is
 
@@ -81,6 +81,10 @@ normalised state.
 - A card or list with a keep / maybe / cut decision (set in Linkkit)
   shows a small grey badge (✓, ?, ✂). A cut card, and every card in a cut
   list, fades with a dashed edge, its colours kept; hovering brings it back
+- Deleting a board linked to a Linkkit map names the map in the question
+  (Linkkit keeps its copy as an ordinary tree; one in Linkkit's trash is
+  named too), and says the map's deleted boxes, kept in this board's
+  trash, go with it
 - Works under /boardkit (built for the shared gauntlet site) as well as at
   its own address
 - A new address starts empty and offers "Restore all boards from a backup
@@ -90,8 +94,8 @@ normalised state.
 ## What's next
 
 - Linking with Linkkit (steps 20-27 in Linkkit's PROJECT.md): 20-24 are
-  done. Next here: step 25, deleting a linked board names its Linkkit map
-  in the question; later step 27, undo that survives another app's change
+  done, and so is 25 (deleting a linked board names its map). Next here:
+  step 27, undo that survives another app's change (after Linkkit's 26)
 - Gauntlet: a canvas of live app pieces (not started)
 - More tests for the pure logic in `domain/` (the drag logic has them)
 
