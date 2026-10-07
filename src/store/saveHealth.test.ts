@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { serializeBoard } from "../domain/persistence";
 import { createBoard } from "../domain/seed";
-import type { BoardId } from "../domain/types";
+import type { BoardId, BoardState } from "../domain/types";
 import {
+  catchUpBoard,
   hasPersistedBoard,
   loadPersistedBoard,
   openPersistedBoard,
@@ -12,6 +14,7 @@ import {
 } from "./persistBoard";
 import { savePersistedRegistryNow } from "./persistRegistry";
 import { useSaveHealth } from "./saveHealthStore";
+import { useSyncNotice } from "./syncNoticeStore";
 
 /** A tiny localStorage (tests run in Node, which has none) that refuses
     writes while `state.full` is set, like a browser over its quota. */
@@ -169,8 +172,12 @@ describe("rev and newer versions", () => {
     fillableStorage();
     savePersistedBoardNow(createBoard([]), id);
     expect(stored()).toMatchObject({ version: 2, rev: 1 });
-    savePersistedBoardNow(createBoard([]), id);
+    savePersistedBoardNow(createBoard([{ title: "Changed", cards: [] }]), id);
     expect(stored().rev).toBe(2);
+    // Nothing changed: nothing written, so other tabs aren't woken for it.
+    const unchanged = localStorage.getItem(key);
+    savePersistedBoardNow((JSON.parse(unchanged!) as { board: BoardState }).board, id);
+    expect(localStorage.getItem(key)).toBe(unchanged);
     // Another writer (a tab, Linkkit) moved it on meanwhile.
     localStorage.setItem(key, JSON.stringify({ ...stored(), rev: 10 }));
     saveOtherBoardNow(createBoard([]), id);
@@ -203,5 +210,73 @@ describe("rev and newer versions", () => {
     expect([...Array(localStorage.length).keys()].map((i) => localStorage.key(i))).toEqual([
       `boardkit:board:${other}`,
     ]);
+  });
+});
+
+describe("another tab saved the board since (the rev check)", () => {
+  type Stored = { rev: number; board: BoardState };
+  const stored = (boardId: BoardId) => JSON.parse(localStorage.getItem(`boardkit:board:${boardId}`)!) as Stored;
+  /** What another tab does: its own change, written at the next rev. */
+  const writeAsOtherTab = (boardId: BoardId, change: (board: BoardState) => BoardState) => {
+    const { rev, board } = stored(boardId);
+    localStorage.setItem(`boardkit:board:${boardId}`, JSON.stringify(serializeBoard(change(board), rev + 1)));
+  };
+  const retitle = (board: BoardState, index: number, title: string): BoardState => {
+    const listId = board.listOrder[index];
+    return { ...board, lists: { ...board.lists, [listId]: { ...board.lists[listId], title } } };
+  };
+
+  /** A stored board this tab has open, with lists A and B. */
+  function openTwoLists(boardId: BoardId) {
+    const storage = fillableStorage();
+    savePersistedBoardNow(createBoard([{ title: "A", cards: [] }, { title: "B", cards: [] }]), boardId);
+    const { board } = openPersistedBoard(boardId);
+    return { storage, board: board! };
+  }
+
+  it("keeps the other tab's change and this tab's", () => {
+    const boardId = "board-merge" as BoardId;
+    const { board } = openTwoLists(boardId);
+    writeAsOtherTab(boardId, (theirs) => retitle(theirs, 0, "Theirs"));
+    savePersistedBoardNow(retitle(board, 1, "Mine"), boardId);
+    const { rev, board: saved } = stored(boardId);
+    expect(rev).toBe(3);
+    expect(saved.listOrder.map((listId) => saved.lists[listId].title)).toEqual(["Theirs", "Mine"]);
+  });
+
+  it("keeps theirs when both changed the same list, and says so", () => {
+    const boardId = "board-conflict" as BoardId;
+    const { board } = openTwoLists(boardId);
+    writeAsOtherTab(boardId, (theirs) => retitle(theirs, 0, "Theirs"));
+    savePersistedBoardNow(retitle(board, 0, "Mine"), boardId);
+    const saved = stored(boardId).board;
+    expect(saved.lists[saved.listOrder[0]].title).toBe("Theirs");
+    expect(useSyncNotice.getState().message?.text).toBe(
+      "“Theirs” was just changed in another tab, so that version was kept.",
+    );
+  });
+
+  it("“Try again” merges too, never writing over the other tab's save", () => {
+    const boardId = "board-retry" as BoardId;
+    const { storage, board } = openTwoLists(boardId);
+    storage.full = true;
+    expect(savePersistedBoardNow(retitle(board, 1, "Mine"), boardId)).toBe(false);
+    storage.full = false;
+    writeAsOtherTab(boardId, (theirs) => retitle(theirs, 0, "Theirs"));
+    useSaveHealth.getState().retryAll();
+    const saved = stored(boardId).board;
+    expect(saved.listOrder.map((listId) => saved.lists[listId].title)).toEqual(["Theirs", "Mine"]);
+    expect(useSaveHealth.getState().failing).toEqual([]);
+  });
+
+  it("brings another tab's save into the board this tab has open", () => {
+    const boardId = "board-pull" as BoardId;
+    const { board } = openTwoLists(boardId);
+    writeAsOtherTab(boardId, (theirs) => retitle(theirs, 0, "Theirs"));
+    const result = catchUpBoard(boardId, board);
+    expect(result.kind).toBe("merged");
+    if (result.kind === "merged") expect(result.board.lists[board.listOrder[0]].title).toBe("Theirs");
+    // Taken in, so there is nothing new to catch up with any more.
+    expect(catchUpBoard(boardId, result.kind === "merged" ? result.board : board).kind).toBe("current");
   });
 });

@@ -6,6 +6,7 @@ import { RecoveryNotice } from "../features/board/RecoveryNotice";
 import { MissingBoardsNotice } from "../features/board/MissingBoardsNotice";
 import { SaveFailedNotice } from "../features/board/SaveFailedNotice";
 import { StartFreshNotice } from "../features/board/StartFreshNotice";
+import { SyncToasts } from "../features/board/SyncToasts";
 import { TrashFullDialog } from "../features/board/TrashFullDialog";
 import { TrashPanel } from "../features/board/TrashPanel";
 import { useResolvedTheme } from "../store/themeStore";
@@ -40,6 +41,7 @@ export function App() {
         <BoardCanvas />
       </main>
       <TrashFullDialog />
+      <SyncToasts />
       <VersionBadge />
       <Toaster position="bottom-center" theme={theme} />
     </div>

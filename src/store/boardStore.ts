@@ -8,8 +8,9 @@ import { listOfCard, withCollapsed } from "../domain/collapse";
 import { createBoardId, createCardId, createListId } from "../domain/ids";
 import { EMPTY_HISTORY, pushEntry, stepRedo, stepUndo, type BoardPatch, type History } from "../domain/history";
 import { isListFull } from "../domain/limits";
+import { mergeBoardLists, mergeBoards, sameValue, shareUnchanged } from "../domain/merge";
 import { insertAt, moveBetweenLists, moveList, moveWithinList } from "../domain/ordering";
-import type { BackupBoard } from "../domain/persistence";
+import { boardContent, type BackupBoard } from "../domain/persistence";
 import { createEmptyBoard, createSeedBoard } from "../domain/seed";
 import {
   emptyListTrash as emptyListTrashState,
@@ -39,8 +40,13 @@ import type {
 } from "../domain/types";
 import { releaseImageIfUnused } from "./imageStore";
 import {
+  allowBoardWrites,
+  boardIdOfKey,
+  catchUpBoard,
   flushPersist,
+  forgetBoardDeletedElsewhere,
   loadLegacyPersistedBoard,
+  onBoardMerged,
   openPersistedBoard,
   removeOrphanedSetAside,
   removePersistedBoard,
@@ -48,13 +54,18 @@ import {
   schedulePersist,
 } from "./persistBoard";
 import {
+  catchUpBoardList,
   flushPersistRegistry,
+  isBoardListKey,
   loadPersistedRegistry,
+  onBoardListMerged,
   savePersistedRegistryNow,
   schedulePersistRegistry,
+  type BoardListCatchUp,
 } from "./persistRegistry";
 import { isReadOnlyBoard, useRecoveryStore } from "./recoveryStore";
 import { rememberStarterBoard } from "./starterBoard";
+import { useSyncNotice } from "./syncNoticeStore";
 import {
   cardsOfList,
   copyCardToBoard,
@@ -778,6 +789,7 @@ export const useBoardStore = create<BoardStore>()(readOnlyGuard((set, get) => ({
     set((state) => {
       if (entries.length === 0) return state;
       for (const entry of entries) {
+        allowBoardWrites(entry.id);
         savePersistedBoardNow(entry.board, entry.id);
       }
       return {
@@ -841,7 +853,18 @@ export const useBoardStore = create<BoardStore>()(readOnlyGuard((set, get) => ({
 // excluded from both comparisons and both writes -- undo stacks are a
 // live-session convenience, not saved content, so a reload starts with a
 // clean one.
+//
+// A card drag in progress is never saved: its preview moves are not a
+// change until the card is dropped (`endCardDrag`), and Esc puts it all
+// back. Other tabs' saves wait for the drop too (`whenNotDragging`).
 useBoardStore.subscribe((state, previous) => {
+  // After this update's own save is scheduled below, not in the middle of it.
+  if (previous.cardDragOrigin && !state.cardDragOrigin && afterDrag.length > 0) {
+    queueMicrotask(() => {
+      for (const run of afterDrag.splice(0)) run();
+    });
+  }
+  if (state.cardDragOrigin) return;
   if (
     state.lists !== previous.lists ||
     state.cards !== previous.cards ||
@@ -874,4 +897,123 @@ if (typeof document !== "undefined") {
     if (document.visibilityState === "hidden") flushAllPersistence();
   });
   window.addEventListener("pagehide", flushAllPersistence);
+}
+
+/*
+ * Other tabs. Two tabs of Boardkit -- or, on the shared site, Boardkit and
+ * Linkkit -- may have the same board open. Each saves the whole record, so
+ * without this the last save would silently undo the other's changes.
+ * Two halves:
+ *
+ *  - Every write checks the record's `rev` first and merges in what another
+ *    tab stored since (`persistBoard.ts`, `domain/merge.ts`); the merged
+ *    board comes back here through `onBoardMerged`.
+ *  - The browser's `storage` event, which fires in every *other* tab of the
+ *    same address when one tab writes, brings another tab's save in at
+ *    once, merged with whatever this tab has not saved yet.
+ *
+ * Taking in another tab's change clears this board's undo history: an undo
+ * step stores whole slices as they were before, so undoing would quietly
+ * put back what the other tab just changed. (Undo that steps around the
+ * other tab's changes is a later step of the shared-store plan.)
+ */
+
+/** Work held back until the card being dragged is dropped: applying another
+    tab's board mid-drag would move cards out from under the pointer. */
+const afterDrag: (() => void)[] = [];
+
+function whenNotDragging(run: () => void): void {
+  if (useBoardStore.getState().cardDragOrigin) afterDrag.push(run);
+  else run();
+}
+
+/** Puts `board` on screen as the open board's content, keeping every object
+    that didn't change (`shareUnchanged`), so only what the other tab
+    changed re-renders. */
+function adoptBoard(board: BoardState): void {
+  useBoardStore.setState((state) => {
+    const current = boardContent(state);
+    const next = shareUnchanged(current, board);
+    return next === current ? state : { ...next, history: EMPTY_HISTORY };
+  });
+}
+
+/** Another tab stored `boardId`. Only the open board needs anything now; any
+    other board is read fresh when it is opened. */
+function pullBoard(boardId: BoardId, removed: boolean): void {
+  // Stored again (another tab restored it from a backup): writable again.
+  if (!removed) allowBoardWrites(boardId);
+  if (boardId !== useBoardStore.getState().boardId) {
+    if (removed) forgetBoardDeletedElsewhere(boardId);
+    return;
+  }
+  whenNotDragging(() => {
+    const state = useBoardStore.getState();
+    if (state.boardId !== boardId) return;
+    const result = catchUpBoard(boardId, boardContent(state));
+    if (result.kind === "merged") adoptBoard(result.board);
+    // Opened again, read-only, with the "newer Boardkit" notice.
+    else if (result.kind === "newer") useBoardStore.setState({ ...openBoard(boardId), history: EMPTY_HISTORY });
+    // "deleted": the board list's own event, a moment later, switches away.
+  });
+}
+
+/**
+ * Shows another tab's board list, merged with this tab's: boards it added
+ * appear, boards it renamed are renamed. A board it deleted goes from the
+ * list; if that was the open board, the newest board left opens and the
+ * user is told. `from` is the list `merged` was worked out from: if this
+ * tab's list has moved on since, the two are merged again.
+ */
+function adoptBoardList(from: readonly BoardSummary[], merged: BoardListCatchUp): void {
+  const state = useBoardStore.getState();
+  const boards = sameValue(state.boards, from)
+    ? merged.boards
+    : mergeBoardLists(from, state.boards, merged.boards).boards;
+  const gone = state.boards.filter((board) => !boards.some((kept) => kept.id === board.id));
+  for (const board of gone) forgetBoardDeletedElsewhere(board.id);
+
+  const goneIds = new Set<string>(gone.map((board) => board.id));
+  const notice = useSyncNotice.getState();
+  notice.conflicted(merged.conflicts.filter((conflict) => !goneIds.has(conflict.id ?? "")));
+
+  const active = gone.find((board) => board.id === state.boardId);
+  if (active && boards.length > 0) {
+    const nextId = boards[boards.length - 1].id;
+    useBoardStore.setState({ ...openBoard(nextId), boardId: nextId, boards, history: EMPTY_HISTORY });
+    notice.boardDeleted(active.name);
+  } else if (!sameValue(boards, state.boards)) {
+    useBoardStore.setState({ boards });
+  }
+}
+
+// A write that merged in another tab's save. Applied once the current store
+// update is over: a write can happen inside one (switching boards flushes the
+// outgoing board's save), and setting state from inside it would be lost.
+onBoardMerged((boardId, from, merged) =>
+  queueMicrotask(() =>
+    whenNotDragging(() => {
+      const state = useBoardStore.getState();
+      if (state.boardId !== boardId || isReadOnlyBoard(boardId)) return;
+      // If this tab changed the board again since `from`, that change is
+      // kept on top too.
+      adoptBoard(mergeBoards(from, boardContent(state), merged).board);
+    }),
+  ),
+);
+onBoardListMerged((from, merged) => queueMicrotask(() => adoptBoardList(from, merged)));
+
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (event) => {
+    // `key` is null when another tab cleared all of storage: nothing to merge.
+    if (event.key === null || event.storageArea !== localStorage) return;
+    if (isBoardListKey(event.key)) {
+      const { boards } = useBoardStore.getState();
+      const merged = catchUpBoardList(boards);
+      if (merged) adoptBoardList(boards, merged);
+      return;
+    }
+    const boardId = boardIdOfKey(event.key);
+    if (boardId) pullBoard(boardId, event.newValue === null);
+  });
 }

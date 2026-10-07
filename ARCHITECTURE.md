@@ -518,6 +518,50 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
     nothing. As a last line, `writeBoard` refuses to write over a stored
     newer record (a newer tab wrote it after this one opened it): that
     shows as a failed save, and a reload brings the newer version.
+- **Two tabs stop overwriting each other** (step 3a2 of the same design).
+  Each tab writes whole records, so before this the last save silently
+  undid the other tab's changes.
+  - **The merge is pure** (`domain/merge.ts`, tested). Three versions:
+    `base` (the board as this tab last read or wrote it), `mine` (this
+    tab now) and `theirs` (stored by the other tab). Result: theirs, with
+    this tab's changes since `base` re-applied item by item. An item is a
+    card or list (its fields *and* where it sits: list, position, trash)
+    or the background; folded lists merge flag by flag, silently. Both
+    tabs changed the same item: theirs stays and the item is named. Moves
+    are found with a longest-common-run diff (`movedIds`), so only the card
+    that moved counts as changed, not the ones it shifted, and are
+    re-applied next to the same neighbour, not at an index. A list erased
+    here that the other tab put a card into stays. The board list merges
+    the same way (`mergeBoardLists`).
+  - **Rev-checked writes** (`store/persistBoard.ts`). `synced` remembers,
+    per board, the `rev` and content this tab last read or wrote. Every
+    write first reads the stored `rev`; if it moved, it merges, writes the
+    result at the stored `rev + 1`, and hands the merged board to the
+    store (`onBoardMerged`). "Try again" retries go through the same
+    function, so a retry never writes over another tab's save. A write
+    whose content equals the stored record is skipped: otherwise taking in
+    the other tab's save would write it straight back and wake that tab.
+    The board list has no `rev`; it is compared whole
+    (`store/persistRegistry.ts`), and a tab that only took in the other
+    tab's list doesn't overwrite which board that tab opened last.
+  - **`storage` events** (end of `store/boardStore.ts`). The browser fires
+    them in every *other* tab of the address on each write. The open board
+    is caught up at once (merged with whatever this tab hasn't saved yet);
+    other boards are read fresh when opened, and an unsaved copy of one is
+    merged as it opens. A board deleted in another tab is never written
+    again by this one; if it was open, the newest board left opens.
+  - **Applying it.** `shareUnchanged` keeps every object whose content
+    didn't change, so a remote change to one card re-renders only that
+    card. Taking in another tab's change clears the undo history (an undo
+    step restores whole slices, so it would quietly revert the other tab's
+    change); undo that steps around it is the shared-store plan's later
+    cross-app undo. During a card drag nothing is saved (preview moves
+    aren't changes until the drop) and other tabs' saves wait for the drop.
+    Store updates from a merge run in a microtask: a write can happen
+    inside another store update (switching boards flushes the save).
+  - **Messages** go through `store/syncNoticeStore.ts` to a toast
+    (`features/board/SyncToasts.tsx`): "“Rent” was just changed in another
+    tab, so that version was kept." / "“Week 3” was deleted in another tab."
 
 ## Decisions
 

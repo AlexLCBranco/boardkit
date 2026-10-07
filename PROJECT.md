@@ -1,6 +1,6 @@
 # Boardkit — project summary
 
-_Last updated: 2026-10-07, v0.0.82_
+_Last updated: 2026-10-07, v0.0.83_
 
 ## What it is
 
@@ -72,6 +72,12 @@ normalised state.
   by a newer Boardkit (this tab was open across a deploy) opens
   read-only with a "Reload" notice, instead of being offered up as
   unreadable and continued empty
+- Two tabs open at once no longer overwrite each other: a change saved in
+  one tab shows in the other at once, and a save first takes in what the
+  other tab stored, keeping both tabs' changes. When both changed the same
+  card, list or background, the other tab's version stays and a message
+  names it. A board deleted in one tab leaves the other (it switches to
+  another board and says so). Taking in another tab's change clears undo
 - Works under /boardkit (built for the shared gauntlet site) as well as at
   its own address
 - A new address starts empty and offers "Restore all boards from a backup
@@ -80,9 +86,8 @@ normalised state.
 
 ## What's next
 
-- Shared store with Linkkit, step 3a2: two tabs stop overwriting each
-  other (reload a board another tab changed; check the revision before
-  each save). Then Linkkit's side (3b)
+- Shared store with Linkkit: Boardkit's side is done; Linkkit's side (3b)
+  is next, in Linkkit's repo
 - Gauntlet: a canvas of live app pieces (not started)
 - More tests for the pure logic in `domain/` (the drag logic has them)
 
