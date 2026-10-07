@@ -1,6 +1,6 @@
 # Boardkit — project summary
 
-_Last updated: 2026-10-07, v0.0.87_
+_Last updated: 2026-10-07, v0.0.88_
 
 ## What it is
 
@@ -8,8 +8,8 @@ A fast, visual board app in the browser: lists of cards you drag around,
 rename instantly, and style per list and per card. Not a project-management
 tool or a Trello clone. Trello is the benchmark for drag feel only. Built by
 the owner, who is learning frontend, with Claude Code and Codex. Repo:
-github.com/AlexLCBranco/boardkit; every push to main deploys on Vercel, at
-its own address and, once the gauntlet site forwards it, at /boardkit there.
+github.com/AlexLCBranco/boardkit; every push to main deploys on Vercel.
+Its home is gauntlet-home.vercel.app/boardkit.
 Priorities: drag-and-drop, animation, instant editing, clean code. What
 matters most: colours, the two text fields per card ("pregame" and
 "postgame thots"), and drag smoothness. Out of scope: accounts, teams,
@@ -93,8 +93,11 @@ normalised state.
   (Linkkit keeps its copy as an ordinary tree; one in Linkkit's trash is
   named too), and says the map's deleted boxes, kept in this board's
   trash, go with it
-- Works under /boardkit (built for the shared gauntlet site) as well as at
-  its own address
+- Runs at gauntlet-home.vercel.app/boardkit and on localhost. Any other
+  address (the old boardkit-iota.vercel.app) shows only a "This app moved"
+  page: a button to the new address and "Export everything saved here",
+  a backup file to restore there. Nothing saved at the old address is
+  changed or cleared (v0.0.88)
 - A new address starts empty and offers "Restore all boards from a backup
   folder": the newest backup is loaded, every board and its pictures come
   back, and nothing already there is replaced

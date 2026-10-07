@@ -402,6 +402,16 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   `/boardkit/...` back to the root of this deployment. There is no client
   routing, so no other path handling is needed.
 
+- **Old addresses show a "moved" notice (v0.0.88).** `domain/address.ts`
+  decides by exact hostname: `gauntlet-home.vercel.app` and local hosts run
+  the app; anything else (the app's own Vercel address, preview URLs)
+  renders `app/MovedNotice.tsx` instead, from `main.tsx`. It is a link, not
+  a redirect, so it can never loop, and the target is always the home host.
+  At an old address automatic backups, the image sweep and `?damage-test`
+  are skipped, so nothing saved there is written over or cleared; the
+  board store still loads, which is what lets "Export everything saved
+  here" reuse the ordinary backup export.
+
 - **Storage shared with other apps.** On the shared site every app shares one
   origin, so one `localStorage` and one set of IndexedDB databases. Every
   Boardkit `localStorage` key starts with `boardkit:` (including the theme,
