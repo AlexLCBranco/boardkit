@@ -81,6 +81,7 @@ const CONTENT_KEYS = [
   "trashedLists",
   "background",
   "collapsedLists",
+  "extras",
 ] as const satisfies readonly (keyof BoardState)[];
 
 /** Whether two boards hold the same content. Only the saved fields count:
@@ -327,6 +328,9 @@ export function mergeBoards(base: BoardState, mine: BoardState, theirs: BoardSta
       trashedLists,
       background,
       collapsedLists: mergeCollapsed(base, mine, theirs, lists),
+      // Fields this build doesn't know: whole, this tab's only if it alone
+      // changed them (it never does itself; a copy restored from a backup can).
+      extras: sameValue(base.extras, mine.extras) ? theirs.extras : mine.extras,
     },
     conflicts,
   };

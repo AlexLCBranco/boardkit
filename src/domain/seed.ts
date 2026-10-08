@@ -35,7 +35,7 @@ export function createBoard(blueprints: readonly ListBlueprint[]): BoardState {
     }
   }
 
-  // `background` and `collapsedLists` are spelled out so that spreading a
+  // `background`, `collapsedLists` and `extras` are spelled out so that spreading a
   // new board over the live store clears the previous board's rather than
   // keeping them.
   return {
@@ -47,6 +47,7 @@ export function createBoard(blueprints: readonly ListBlueprint[]): BoardState {
     trashedLists: [],
     background: undefined,
     collapsedLists: undefined,
+    extras: undefined,
   };
 }
 

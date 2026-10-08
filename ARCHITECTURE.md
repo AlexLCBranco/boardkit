@@ -1291,3 +1291,16 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   - **Tidying up.** Deleting a board removes its set-aside copies, and
     startup drops any whose board no longer exists
     (`removeOrphanedSetAside`), so repeated tests leave nothing behind.
+
+## Unknown fields are kept (2026-10-08)
+
+A saved board can carry fields this build does not know: a newer Boardkit's,
+or Linkkit's on the shared site. An older tab must never drop them when it
+saves. Lists and cards were already kept whole by `repair.ts`; now the board
+too: its unknown top-level fields are read into `BoardState.extras` (a
+sub-object, so they can never land on the store's own fields) and written
+back at the top level by `serializeBoard`. Trash entries keep their extra
+fields as well. `extras` is merged whole across tabs (`merge.ts`) and copied
+by duplicate. The stale fields early versions saved (`boards`, `boardId`,
+`history`) are still dropped. Unknown *values* of known fields (a colour
+this build can't read) are still dropped, as before.

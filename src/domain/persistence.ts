@@ -44,13 +44,16 @@ export interface PersistedBoardV2 {
  * `JSON.stringify` drops an undefined value, so nothing extra is saved.
  */
 export function boardContent(board: BoardState): BoardState {
-  const { lists, cards, listOrder, cardOrder, trash, trashedLists, background, collapsedLists } =
+  const { lists, cards, listOrder, cardOrder, trash, trashedLists, background, collapsedLists, extras } =
     board;
-  return { lists, cards, listOrder, cardOrder, trash, trashedLists, background, collapsedLists };
+  return { lists, cards, listOrder, cardOrder, trash, trashedLists, background, collapsedLists, extras };
 }
 
+/** Fields this build doesn't know (`extras`) go back where they came from,
+    at the top of the saved board, under the ones it does know. */
 export function serializeBoard(board: BoardState, rev = 0): PersistedBoardV2 {
-  return { version: SCHEMA_VERSION, rev, board: boardContent(board) };
+  const { extras, ...content } = boardContent(board);
+  return { version: SCHEMA_VERSION, rev, board: { ...extras, ...content } };
 }
 
 /** A stored record's `rev`, or 0 when it has none (version 1) or it isn't a

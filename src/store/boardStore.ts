@@ -733,6 +733,7 @@ export const useBoardStore = create<BoardStore>()(readOnlyGuard((set, get) => ({
         trashedLists: [],
         background: state.background,
         collapsedLists: state.collapsedLists,
+        extras: state.extras,
       };
       const boards = [...state.boards, { id: boardId, name }];
       savePersistedBoardNow(board, boardId);
@@ -839,6 +840,7 @@ export const useBoardStore = create<BoardStore>()(readOnlyGuard((set, get) => ({
         background: board.background,
       }),
       collapsedLists: board.collapsedLists,
+      extras: board.extras,
     })),
 
   renameBoard: (name) =>

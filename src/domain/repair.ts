@@ -98,7 +98,7 @@ export function repairBoard(raw: Raw): { board: BoardState; report: RepairReport
       !listOrder.includes(entry.listId) &&
       !trashedLists.some((kept) => kept.listId === entry.listId)
     ) {
-      trashedLists.push({ listId: entry.listId, deletedAt: timeOr(entry.deletedAt, fix) });
+      trashedLists.push({ ...entry, listId: entry.listId, deletedAt: timeOr(entry.deletedAt, fix) });
     } else {
       fix();
     }
@@ -132,7 +132,7 @@ export function repairBoard(raw: Raw): { board: BoardState; report: RepairReport
   const trash: TrashEntry[] = [];
   for (const entry of arrayOr(raw.trash, () => {})) {
     if (isRecord(entry) && hasCard(entry.cardId) && !placed.has(entry.cardId) && typeof entry.listId === "string") {
-      trash.push({ cardId: entry.cardId, listId: entry.listId as ListId, deletedAt: timeOr(entry.deletedAt, fix) });
+      trash.push({ ...entry, cardId: entry.cardId, listId: entry.listId as ListId, deletedAt: timeOr(entry.deletedAt, fix) });
       placed.add(entry.cardId);
     } else {
       fix();
@@ -160,9 +160,37 @@ export function repairBoard(raw: Raw): { board: BoardState; report: RepairReport
       trashedLists,
       background: raw.background as BoardState["background"],
       collapsedLists: raw.collapsedLists as BoardState["collapsedLists"],
+      extras: unknownBoardFields(raw),
     },
     report: { lost, fixed },
   };
+}
+
+/** The board's own fields, and the stale ones boards saved by early
+    versions carry (a `boards` list, `boardId`, `history`), which must
+    never come back. Everything else on a saved board is a field this build
+    doesn't know, kept as it is (`BoardState.extras`). */
+const BOARD_FIELDS = new Set([
+  "lists",
+  "cards",
+  "listOrder",
+  "cardOrder",
+  "trash",
+  "trashedLists",
+  "background",
+  "collapsedLists",
+  "extras",
+  "boards",
+  "boardId",
+  "history",
+]);
+
+function unknownBoardFields(raw: Raw): BoardState["extras"] {
+  const extras: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(raw)) {
+    if (!BOARD_FIELDS.has(key) && isSafeKey(key) && value !== undefined) extras[key] = value;
+  }
+  return Object.keys(extras).length > 0 ? extras : undefined;
 }
 
 function arrayOr(value: unknown, onMissing: () => void): readonly unknown[] {

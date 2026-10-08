@@ -49,6 +49,26 @@ describe("readBoard", () => {
     expect(read.status).toBe("ok");
   });
 
+  it("keeps fields it doesn't know (a newer version's), and saves them back where they were", () => {
+    const read = readBoard(
+      saved(healthy(), (raw) => {
+        raw.theme = { tone: "sepia" };
+        (raw.trash as Record<string, unknown>[])[0].reason = "tidy";
+        (raw.lists as Record<string, Record<string, unknown>>)[todo].note = "kept";
+        raw.boardId = "stale"; // an early version's leftover: still dropped
+      }),
+    );
+    expect(read.status).toBe("ok");
+    if (read.status !== "ok") return;
+    expect(read.board.extras).toEqual({ theme: { tone: "sepia" } });
+    const again = JSON.parse(JSON.stringify(serializeBoard(read.board, 3))).board;
+    expect(again.theme).toEqual({ tone: "sepia" });
+    expect(again.extras).toBeUndefined();
+    expect(again.boardId).toBeUndefined();
+    expect(again.trash[0].reason).toBe("tidy");
+    expect(again.lists[todo].note).toBe("kept");
+  });
+
   it("keeps a trashed list out of the columns", () => {
     const board = { ...healthy(), listOrder: [todo], trashedLists: [{ listId: done, deletedAt: 5 }] };
     const read = readBoard(saved(board));

@@ -1,6 +1,6 @@
 # Boardkit — project summary
 
-_Last updated: 2026-10-07, v0.0.88_
+_Last updated: 2026-10-08, v0.0.88_
 
 ## What it is
 
@@ -101,6 +101,10 @@ normalised state.
 - A new address starts empty and offers "Restore all boards from a backup
   folder": the newest backup is loaded, every board and its pictures come
   back, and nothing already there is replaced
+- A save keeps fields this version doesn't know (added by a newer
+  Boardkit, or by Linkkit on the shared site): on the board, its lists
+  and cards, and its trash entries. An older Boardkit tab still open can
+  no longer drop them (2026-10-08)
 
 ## What's next
 

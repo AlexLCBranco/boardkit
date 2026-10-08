@@ -224,6 +224,11 @@ export interface BoardState {
       kept apart from `lists` so undo never touches it; saved with the board.
       Absent means every list is open. */
   readonly collapsedLists?: Readonly<Record<ListId, true>>;
+  /** Fields of the saved board this build doesn't know (a newer Boardkit's,
+      or Linkkit's, on the shared site), kept whole so a save by this build
+      never drops them. Never read or changed here; written back at the top
+      level of the saved board, where they came from. Absent: none. */
+  readonly extras?: Readonly<Record<string, unknown>>;
 }
 
 /** One card sitting in the trash: which list to put it back into, and when
