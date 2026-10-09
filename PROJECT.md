@@ -1,6 +1,6 @@
 # Boardkit — project summary
 
-_Last updated: 2026-10-08, v0.0.88_
+_Last updated: 2026-10-09, v0.0.89_
 
 ## What it is
 
@@ -44,7 +44,8 @@ normalised state.
 - Collapse a list to a thin strip; cards can still be dropped on it
 - Deleted cards and lists go to the trash (up to 200 cards and 30 lists
   per board); when it is full, deleting asks first and names the oldest
-  item it would erase for good, instead of erasing it silently
+  item it would erase for good, instead of erasing it silently. A restored
+  card goes back between its old neighbours (at the end if both are gone)
 - When the browser’s storage is full and a save fails, a banner says
   changes aren’t being saved and stays until they are, with “Back up
   now”, “Empty trash…” (asks first) and “Try again” (retries every save

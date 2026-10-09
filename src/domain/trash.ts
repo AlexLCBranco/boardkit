@@ -54,6 +54,8 @@ export function listTrashOverflow(state: Pick<BoardState, "trashedLists">): Tras
  * Moves a card out of its list and into the trash. The card's own record is
  * left alone in `cards` -- only `cardOrder` and `trash` change -- so
  * restoring later is just re-inserting the id, not reconstructing the card.
+ * The entry remembers the card's neighbours, so a restore can put it back
+ * where it was (see `restoreCardFromTrash`).
  *
  * When the trash is already at `TRASH_LIMIT`, the oldest entry is forgotten
  * for real (its `cards` record removed too) to make room. Only call this
@@ -65,7 +67,11 @@ export function moveCardToTrash(
   cardId: CardId,
   deletedAt: number,
 ): Pick<BoardState, "cards" | "cardOrder" | "trash"> {
-  const trash = [...state.trash, { cardId, listId, deletedAt }];
+  const order = state.cardOrder[listId];
+  const index = order.indexOf(cardId);
+  const prevCardId = index > 0 ? order[index - 1] : null;
+  const nextCardId = index >= 0 && index < order.length - 1 ? order[index + 1] : null;
+  const trash = [...state.trash, { cardId, listId, deletedAt, prevCardId, nextCardId }];
   const cards = { ...state.cards };
 
   while (trash.length > TRASH_LIMIT) {
@@ -86,7 +92,10 @@ export function moveCardToTrash(
 }
 
 /**
- * Puts a trashed card back at the end of its original list. Returns `null`
+ * Puts a trashed card back into its original list, where it was: right
+ * after the card that was above it, else right before the one that was
+ * below it, else -- neither is in that list any more, or the entry predates
+ * neighbours being recorded -- at the end. Returns `null`
  * if that list isn't currently on the board -- either it was trashed too in
  * the meantime (its own record still exists, but `listOrder` doesn't have
  * it) or it was permanently deleted -- callers should fall back to offering
@@ -109,10 +118,22 @@ export function restoreCardFromTrash(
   return {
     cardOrder: {
       ...state.cardOrder,
-      [entry.listId]: [...state.cardOrder[entry.listId], cardId],
+      [entry.listId]: insertNearNeighbours(state.cardOrder[entry.listId], entry),
     },
     trash: state.trash.filter((e) => e.cardId !== cardId),
   };
+}
+
+/** `order` with the entry's card put back beside whichever old neighbour is
+    still there; at the end when neither is. */
+function insertNearNeighbours(order: readonly CardId[], entry: TrashEntry): CardId[] {
+  const next = [...order];
+  const prev = entry.prevCardId ? order.indexOf(entry.prevCardId) : -1;
+  const following = entry.nextCardId ? order.indexOf(entry.nextCardId) : -1;
+  if (prev >= 0) next.splice(prev + 1, 0, entry.cardId);
+  else if (following >= 0) next.splice(following, 0, entry.cardId);
+  else next.push(entry.cardId);
+  return next;
 }
 
 /** Forgets one trashed card for good: its `cards` record and trash entry

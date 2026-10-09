@@ -7,6 +7,7 @@ import {
   listTrashOverflow,
   moveCardToTrash,
   moveListToTrash,
+  restoreCardFromTrash,
 } from "./trash";
 import type { BoardState, CardId, ListId, TrashEntry, TrashedListEntry } from "./types";
 
@@ -92,5 +93,47 @@ describe("listTrashOverflow", () => {
     // part of the change at all.
     expect(next.cardOrder[keep]).toHaveLength(40);
     expect(next).not.toHaveProperty("trash");
+  });
+});
+
+describe("restoreCardFromTrash", () => {
+  const c = (i: number) => `c${i}` as CardId;
+  /** `keep` holding c0..c4, then `cardId` deleted. */
+  const deleted = (cardId: CardId) => {
+    const state = board({ cardCount: 5 });
+    return { ...state, ...moveCardToTrash(state, keep, cardId, 1) };
+  };
+  const restored = (state: BoardState, cardId: CardId) => restoreCardFromTrash(state, cardId)!.cardOrder[keep];
+
+  it("puts a card back where it was", () => {
+    expect(restored(deleted(c(2)), c(2))).toEqual([c(0), c(1), c(2), c(3), c(4)]);
+    expect(restored(deleted(c(0)), c(0))).toEqual([c(0), c(1), c(2), c(3), c(4)]);
+    expect(restored(deleted(c(4)), c(4))).toEqual([c(0), c(1), c(2), c(3), c(4)]);
+  });
+
+  it("follows its old neighbours when the list was reordered", () => {
+    const state = deleted(c(2));
+    const moved = { ...state, cardOrder: { ...state.cardOrder, [keep]: [c(3), c(4), c(0), c(1)] } };
+    expect(restored(moved, c(2))).toEqual([c(3), c(4), c(0), c(1), c(2)]);
+  });
+
+  it("goes before the card below when the one above is gone", () => {
+    const state = deleted(c(2));
+    const gone = { ...state, cardOrder: { ...state.cardOrder, [keep]: [c(0), c(3), c(4)] } };
+    expect(restored(gone, c(2))).toEqual([c(0), c(2), c(3), c(4)]);
+  });
+
+  it("goes to the end when both neighbours are gone", () => {
+    const state = deleted(c(2));
+    const gone = { ...state, cardOrder: { ...state.cardOrder, [keep]: [c(0), c(4)] } };
+    expect(restored(gone, c(2))).toEqual([c(0), c(4), c(2)]);
+  });
+
+  it("goes to the end for an entry saved without neighbours", () => {
+    expect(restoreCardFromTrash(board({ cardCount: 2, trashed: 1 }), "t0" as CardId)!.cardOrder[keep]).toEqual([
+      c(0),
+      c(1),
+      "t0",
+    ]);
   });
 });

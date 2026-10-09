@@ -141,7 +141,7 @@ describe("mergeBoards", () => {
     const theirs = rename(base(), c(1), "Theirs");
     const { board } = mergeBoards(base(), mine, theirs);
     expect(board.cardOrder[a]).toEqual([c(1), c(3)]);
-    expect(board.trash).toEqual([{ cardId: c(2), listId: a, deletedAt: 100 }]);
+    expect(board.trash).toEqual([{ cardId: c(2), listId: a, deletedAt: 100, prevCardId: c(1), nextCardId: c(3) }]);
     expect(board.cards[c(1)].title).toBe("Theirs");
     expectHealthy(board);
   });

@@ -220,8 +220,13 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   id out of `cardOrder` and into a new `trash: TrashEntry[]` on `BoardState`
   (`domain/trash.ts`), where `TrashEntry` is `{ cardId, listId, deletedAt }`.
   The card's own record stays in `cards`, untouched, so restoring
-  (`restoreCard`) is just re-inserting the id at the end of `cardOrder[listId]`
-  -- no reconstruction. `trash` is capped at `TRASH_LIMIT` (now 200, see
+  (`restoreCard`) is just re-inserting the id into `cardOrder[listId]` -- no
+  reconstruction. The entry also records `prevCardId` / `nextCardId`, the
+  card's neighbours when it was deleted, and the restore puts it back after
+  the first (else before the second) if still in that list, at the end
+  otherwise. Neighbours rather than an index, so the card returns to the
+  same company even after the list was reordered; optional, so older entries
+  (and ones Linkkit wrote before it recorded them) just go to the end. `trash` is capped at `TRASH_LIMIT` (now 200, see
   "Trash caps and the full-trash warning" below); past that the oldest entry
   is forgotten for real, `cards` record included. Both
   `deleteCard` and `restoreCard` go through the existing `withHistory` wrapper

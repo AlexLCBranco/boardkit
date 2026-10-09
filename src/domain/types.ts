@@ -233,11 +233,16 @@ export interface BoardState {
 
 /** One card sitting in the trash: which list to put it back into, and when
     it landed there (shown in the trash panel, and used to evict the oldest
-    entry once the trash is full). */
+    entry once the trash is full). `prevCardId` / `nextCardId` are the cards
+    just above and below it when it was deleted (`null` at either end), so a
+    restore can put it back between them. Optional: entries saved before
+    they existed restore to the end of the list. */
 export interface TrashEntry {
   readonly cardId: CardId;
   readonly listId: ListId;
   readonly deletedAt: number;
+  readonly prevCardId?: CardId | null;
+  readonly nextCardId?: CardId | null;
 }
 
 /** One list sitting in the trash, and when it landed there. */
