@@ -762,6 +762,17 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   in no backup yet is left out. The menu warning says which. Manual export
   leaves that board out of the file and toasts. Pure rules (staleness, age text, filename,
   rotation, dot) are in `domain/backupStatus.ts`.
+  Tested (2026-10-16): `domain/backupStatus.test.ts` covers the pure rules;
+  `features/board/autoBackup.test.ts` runs the real engine against an
+  in-memory folder (a `FakeFolder` that writes only on `close()`, like the
+  real API), with the board store, `collectBoards`, IndexedDB and `sonner`
+  swapped for small stand-ins (Node has none of them) and fake timers for
+  the quiet period. It checks the first write, the 10s quiet period, the
+  skip when nothing changed, rotation, both failure statuses (and that a
+  failure deletes nothing), "Resume backups", a restart, held-back boards
+  and `findLatestBackupWith`. The real folder picker can't be scripted; the
+  Linkkit repo's `npm run e2e` checks real files land in a browser (OPFS)
+  folder.
 - **Clickable links in thots (v0.0.37).** A web address in a pregame or
   postgame thot shows as a link when the thot is not being edited; editing
   still shows the raw text. Finding links is `domain/links.ts` (pure):

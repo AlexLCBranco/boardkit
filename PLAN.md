@@ -15,7 +15,7 @@ files.
 
 | Item | Owner |
 |------|-------|
-| _nothing_ (Linkkit plan step 27, undo that keeps working after another tab's or Linkkit's change, is done: steps 20-27 are all built) | — |
+| _nothing_ (automatic-backup tests, Linkkit bridge follow-up 5, are done: `domain/backupStatus.test.ts`, `features/board/autoBackup.test.ts`) | — |
 
 ## Queued
 
