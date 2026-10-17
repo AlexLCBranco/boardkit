@@ -10,6 +10,7 @@ import { accentCss } from "../../domain/colors";
 import { highlightStyleOf } from "../../domain/highlight";
 import { formatNumber } from "../../domain/numberStyle";
 import { nextCheck } from "../../domain/check";
+import { thotsLabel, type ColumnThotsMode, type ThotsSlot } from "../../domain/thots";
 import { cardLooksCut } from "../../domain/status";
 import type { CardId, ItemColor, ListId, NumberFormat } from "../../domain/types";
 import {
@@ -42,7 +43,7 @@ interface CardItemProps {
       effect, below, so it overrides this card's own open/slot state
       whenever the list-wide control changes, without taking away this
       card's ability to be toggled individually the rest of the time. */
-  readonly thotsMode: "hidden" | "pregame" | "postgame";
+  readonly thotsMode: ColumnThotsMode;
   /** This card's display number, or `null` for a type that isn't numbered.
       Numbered by the column in one pass (domain/numbering.ts) and handed
       down as a primitive, so only cards whose number changed re-render. */
@@ -55,6 +56,8 @@ interface CardItemProps {
   readonly listCut: boolean;
   /** Whether the card's list has check circles turned on. */
   readonly hasChecks: boolean;
+  /** Whether the card's list gives it one thots box instead of two. */
+  readonly singleThots: boolean;
 }
 
 /**
@@ -81,6 +84,7 @@ function CardItemImpl({
   numberFormat,
   listCut,
   hasChecks,
+  singleThots,
 }: CardItemProps) {
   const card = useCard(cardId);
   const renameCard = useRenameCard();
@@ -111,7 +115,10 @@ function CardItemImpl({
   // same kind of state: which of the two fields is currently shown, not
   // which ones exist -- that lives on the card itself.
   const [isDescriptionOpen, setIsDescriptionOpen] = useState(false);
-  const [thotsSlot, setThotsSlot] = useState<"pregame" | "postgame">("pregame");
+  const [chosenThotsSlot, setThotsSlot] = useState<ThotsSlot>("pregame");
+  // A single-thots list only ever shows the pregame field. The chosen slot
+  // is kept, so switching the list back to double returns to it.
+  const thotsSlot: ThotsSlot = singleThots ? "pregame" : chosenThotsSlot;
 
   // What this card's type allows, read from one table (domain/cardKinds.ts)
   // so nothing here checks `kind === "divider"`. A type without thots keeps
@@ -221,16 +228,18 @@ function CardItemImpl({
             onClick={() => setIsDescriptionOpen(false)}
             aria-expanded={isDescriptionOpen}
           >
-            ▾ {thotsSlot === "pregame" ? "pregame thots" : "postgame thots"}
+            ▾ {thotsLabel(thotsSlot, singleThots)}
           </button>
-          <button
-            type="button"
-            className={styles.descriptionFlip}
-            onClick={flipThotsSlot}
-            aria-label="Switch between pregame and postgame thots"
-          >
-            ⇄
-          </button>
+          {!singleThots && (
+            <button
+              type="button"
+              className={styles.descriptionFlip}
+              onClick={flipThotsSlot}
+              aria-label="Switch between pregame and postgame thots"
+            >
+              ⇄
+            </button>
+          )}
         </div>
       )}
       {showsThots &&
@@ -239,8 +248,8 @@ function CardItemImpl({
             <InlineEditable
               value={card.description ?? ""}
               onCommit={(description) => setCardDescription(cardId, description || undefined)}
-              ariaLabel="Pregame thots"
-              placeholder="Add your pregame thots…"
+              ariaLabel={singleThots ? "Thots" : "Pregame thots"}
+              placeholder={`Add your ${thotsLabel("pregame", singleThots)}…`}
               multiline
               linkify
             />
@@ -277,7 +286,7 @@ function CardItemImpl({
           className={styles.thotsButton}
           onClick={() => setIsDescriptionOpen((open) => !open)}
           data-thots-toggle
-          aria-label={isDescriptionOpen ? "Hide pregame thots" : "Show pregame thots"}
+          aria-label={`${isDescriptionOpen ? "Hide" : "Show"} ${thotsLabel(thotsSlot, singleThots)}`}
           aria-expanded={isDescriptionOpen}
         >
           ▤

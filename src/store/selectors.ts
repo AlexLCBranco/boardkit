@@ -290,6 +290,10 @@ export function useSetListHasChecks() {
   return useBoardStore((state) => state.setListHasChecks);
 }
 
+export function useSetListSingleThots() {
+  return useBoardStore((state) => state.setListSingleThots);
+}
+
 export function useSetCardCheck() {
   return useBoardStore((state) => state.setCardCheck);
 }

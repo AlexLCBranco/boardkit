@@ -246,6 +246,7 @@ function repairList(key: string, value: Raw, fix: () => void): List {
     numberFormat: oneOf(NUMBER_FORMATS),
     numbersHidden: isBoolean,
     hasChecks: isBoolean,
+    singleThots: isBoolean,
     status: oneOf(ITEM_STATUSES),
   }) as unknown as List;
 }

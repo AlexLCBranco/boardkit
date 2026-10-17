@@ -53,6 +53,10 @@ interface CustomizePanelProps {
       Omit the handler and there is no "Checks" section. */
   readonly hasChecks?: boolean;
   readonly onHasChecksChange?: (hasChecks: boolean) => void;
+  /** Lists only: one thots box per card or two (domain/thots.ts). Omit the
+      handler and there is no "Thots" section. */
+  readonly singleThots?: boolean;
+  readonly onSingleThotsChange?: (single: boolean) => void;
   /** Lists other than the leftmost: whether numbering picks up where the
       list to the left finished. Omit the handler and there is no
       "Numbering" section. */
@@ -75,6 +79,8 @@ interface CustomizePanelProps {
 function ignore() {}
 
 const CHECKS_LABELS = { off: "Off", on: "Check circles" };
+
+const THOTS_LABELS = { double: "Pregame + postgame", single: "Just one" };
 
 const NUMBERING_LABELS = { restart: "Start at 1", continue: "Continue from previous list" };
 
@@ -111,6 +117,8 @@ export function CustomizePanel({
   onNumbersHiddenChange,
   hasChecks,
   onHasChecksChange,
+  singleThots,
+  onSingleThotsChange,
   continuesNumbering,
   onContinuesNumberingChange,
   numberEmphasis,
@@ -208,6 +216,16 @@ export function CustomizePanel({
           value={hasChecks ? "on" : undefined}
           absent="off"
           onChange={(choice) => onHasChecksChange(choice === "on")}
+        />
+      )}
+      {onSingleThotsChange && (
+        <ChoiceSection
+          label="Thots"
+          choices={["double", "single"] as const}
+          labels={THOTS_LABELS}
+          value={singleThots ? "single" : undefined}
+          absent="double"
+          onChange={(choice) => onSingleThotsChange(choice === "single")}
         />
       )}
       {onContinuesNumberingChange && (

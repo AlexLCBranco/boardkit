@@ -6,6 +6,7 @@
  */
 
 import { specOf } from "./cardKinds";
+import { isSingleThots } from "./thots";
 import type { BoardId, BoardState, CardId, ListId } from "./types";
 
 /** Which part of a card matched. Titles win over thots, pregame over
@@ -99,13 +100,14 @@ export function searchBoards(sources: readonly SearchSource[], query: string): S
         const card = board.cards[cardId];
         if (!card) continue;
 
-        // A card type with no thots section keeps any it had, hidden; a hit
-        // on text the card can't show would lead nowhere.
+        // A card type with no thots section keeps any it had, hidden, and so
+        // does a single-thots list its postgame text; a hit on text the card
+        // can't show would lead nowhere.
         const showsThots = specOf(card).hasThots;
         const candidates: readonly [SearchField, string | undefined][] = [
           ["title", card.title],
           ["pregame", showsThots ? card.description : undefined],
-          ["postgame", showsThots ? card.postgameDescription : undefined],
+          ["postgame", showsThots && !isSingleThots(list) ? card.postgameDescription : undefined],
         ];
         for (const [field, text] of candidates) {
           const excerpt = text ? excerptAround(text, query) : null;

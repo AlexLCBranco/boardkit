@@ -191,6 +191,10 @@ export interface List {
   /** Give every card in this list a check circle (domain/check.ts). Absent
       means false. */
   readonly hasChecks?: boolean;
+  /** Give each card one thots box instead of pregame + postgame
+      (domain/thots.ts). Cards keep their postgame text, hidden. Absent
+      means false: two. */
+  readonly singleThots?: boolean;
   /** Keep / maybe / cut (`ItemStatus`). */
   readonly status?: ItemStatus;
 }

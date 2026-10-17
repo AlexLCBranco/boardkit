@@ -38,6 +38,7 @@ import { LIST_TRASH_LIMIT } from "../../domain/trash";
 import { accentCss } from "../../domain/colors";
 import { formatNumber, needsWideGutter } from "../../domain/numberStyle";
 import { listLooksCut } from "../../domain/status";
+import { isSingleThots, nextColumnThotsMode, type ColumnThotsMode } from "../../domain/thots";
 import type { ItemColor, ListId, NumberFormat } from "../../domain/types";
 import {
   useAddCard,
@@ -62,6 +63,7 @@ import {
   useSetListNumberFormat,
   useSetListNumbersHidden,
   useSetListHasChecks,
+  useSetListSingleThots,
 } from "../../store/selectors";
 import { LIST_WIDTH_MAX, LIST_WIDTH_MIN } from "../../styles/layout";
 import { sortableTransition } from "../../styles/motion";
@@ -117,6 +119,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
   const setListNumberFormat = useSetListNumberFormat();
   const setListNumbersHidden = useSetListNumbersHidden();
   const setListHasChecks = useSetListHasChecks();
+  const setListSingleThots = useSetListSingleThots();
   const numbersHidden = list.numbersHidden === true;
   const cardNumbers = useCardNumbers(listId);
   const isFirstList = useIsFirstList(listId);
@@ -145,19 +148,16 @@ function ListColumnImpl({ listId }: ListColumnProps) {
   const columnRef = useRef<HTMLElement>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
   // Drives every card's thots section at once: cycling hidden -> pregame ->
-  // postgame -> hidden. Ephemeral UI state, not persisted, same as a card's
+  // postgame -> hidden (just hidden <-> thots in a single-thots list). Ephemeral UI state, not persisted, same as a card's
   // own `isDescriptionOpen` -- it's just scoped to the whole list instead of
   // one card. Handed down as a prop, so every `CardItem` in this list
   // re-renders when it changes (the point of a bulk toggle) but nothing
   // outside this list is touched.
-  const [columnThotsMode, setColumnThotsMode] = useState<"hidden" | "pregame" | "postgame">(
-    "hidden",
-  );
+  const [columnThotsMode, setColumnThotsMode] = useState<ColumnThotsMode>("hidden");
+  const singleThots = isSingleThots(list);
 
   function cycleColumnThotsMode() {
-    setColumnThotsMode((mode) =>
-      mode === "hidden" ? "pregame" : mode === "pregame" ? "postgame" : "hidden",
-    );
+    setColumnThotsMode((mode) => nextColumnThotsMode(mode, singleThots));
   }
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -358,6 +358,12 @@ function ListColumnImpl({ listId }: ListColumnProps) {
       >
         Check circles on cards
       </ContextMenuCheckboxItem>
+      <ContextMenuCheckboxItem
+        checked={singleThots}
+        onCheckedChange={(checked) => setListSingleThots(listId, checked)}
+      >
+        Just one thots box per card
+      </ContextMenuCheckboxItem>
       <ListTransferItems listId={listId} />
       {isCollapsed && (
         <>
@@ -473,11 +479,13 @@ function ListColumnImpl({ listId }: ListColumnProps) {
           onClick={cycleColumnThotsMode}
           data-capture-exclude="true"
           aria-label={
-            columnThotsMode === "hidden"
-              ? "Show pregame thots on every card"
-              : columnThotsMode === "pregame"
-                ? "Show postgame thots on every card"
-                : "Hide thots on every card"
+            nextColumnThotsMode(columnThotsMode, singleThots) === "hidden"
+              ? "Hide thots on every card"
+              : singleThots
+                ? "Show thots on every card"
+                : columnThotsMode === "hidden"
+                  ? "Show pregame thots on every card"
+                  : "Show postgame thots on every card"
           }
         >
           ▤
@@ -532,6 +540,8 @@ function ListColumnImpl({ listId }: ListColumnProps) {
           onNumbersHiddenChange={(hidden) => setListNumbersHidden(listId, hidden)}
           hasChecks={list.hasChecks === true}
           onHasChecksChange={(on) => setListHasChecks(listId, on)}
+          singleThots={singleThots}
+          onSingleThotsChange={(single) => setListSingleThots(listId, single)}
           continuesNumbering={continuesNumbering}
           onContinuesNumberingChange={
             isFirstList ? undefined : (continues) => setListContinuesNumbering(listId, continues)
@@ -554,6 +564,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
                     numberFormat={list.numberFormat}
                     listCut={listCut}
                     hasChecks={list.hasChecks === true}
+                    singleThots={singleThots}
                   />
                 </li>
               ))}

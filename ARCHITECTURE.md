@@ -667,6 +667,16 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   red mark is an X: v0.0.90 drew a red tick, which reads as "yes"). Not a checklist inside a card (out of
   scope): one mark per card, like a status.
 
+- **Single thots (v0.0.92).** A list can give its cards one thots box
+  instead of pregame + postgame (`List.singleThots`, "Thots" in its
+  customise panel or right-click menu). The single box is the pregame
+  field (`Card.description`), labelled just "thots", with no ⇄ flip;
+  postgame text is kept, hidden (and skipped by search), so switching
+  back brings it back. The list header's bulk ▤ cycle drops its postgame
+  step. Labels and the cycle live in `domain/thots.ts`; `CardItem` gets
+  `singleThots` as a boolean prop, like `hasChecks`, and keeps its own
+  chosen slot so a switch back to double returns to it.
+
 ## Decisions
 
 - **Vite + React + TypeScript.** Fast HMR matters when tuning drag feel.

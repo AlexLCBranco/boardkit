@@ -145,6 +145,9 @@ export interface BoardActions {
   /** Turns the list's check circles on or off. Cards keep their marks
       either way. One undo step. */
   setListHasChecks: (listId: ListId, hasChecks: boolean) => void;
+  /** One thots box per card or two. Cards keep their postgame text either
+      way. One undo step. */
+  setListSingleThots: (listId: ListId, single: boolean) => void;
   setListWidths: (updates: Readonly<Record<ListId, ListWidth | undefined>>) => void;
   /** Folds a list to a strip or opens it again. A view setting: saved with
       the board, never an undo step (see domain/collapse.ts). */
@@ -609,6 +612,16 @@ export const useBoardStore = create<BoardStore>()(readOnlyGuard((set, get) => ({
         lists: {
           ...state.lists,
           [listId]: { ...state.lists[listId], hasChecks: hasChecks || undefined },
+        },
+      }),
+    ),
+
+  setListSingleThots: (listId, single) =>
+    set((state) =>
+      withHistory(state, {
+        lists: {
+          ...state.lists,
+          [listId]: { ...state.lists[listId], singleThots: single || undefined },
         },
       }),
     ),

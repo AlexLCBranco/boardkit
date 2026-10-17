@@ -194,6 +194,29 @@ describe("readBoard", () => {
   });
 });
 
+describe("single thots", () => {
+  it("keeps a list's single-thots setting", () => {
+    const board = healthy();
+    const single: BoardState = {
+      ...board,
+      lists: { ...board.lists, [todo]: { ...board.lists[todo], singleThots: true } },
+    };
+    const read = readBoard(saved(single));
+    expect(read.status).toBe("ok");
+    if (read.status === "ok") expect(read.board.lists[todo].singleThots).toBe(true);
+  });
+
+  it("silently drops a single-thots setting it can't read", () => {
+    const read = readBoard(
+      saved(healthy(), (raw) => {
+        (raw.lists as Record<string, Record<string, unknown>>)[todo].singleThots = "yes";
+      }),
+    );
+    expect(read.status).toBe("ok");
+    if (read.status === "ok") expect(read.board.lists[todo].singleThots).toBeUndefined();
+  });
+});
+
 describe("version 2", () => {
   it("reads a version 1 record as it was, at rev 0", () => {
     const v1 = { version: 1, board: healthy() };

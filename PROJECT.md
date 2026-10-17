@@ -1,6 +1,6 @@
 # Boardkit — project summary
 
-_Last updated: 2026-10-17, v0.0.91_
+_Last updated: 2026-10-17, v0.0.92_
 
 ## What it is
 
@@ -43,6 +43,7 @@ normalised state.
 - Card numbering that can continue across lists, be styled, or be hidden
 - Check circles: turn them on for a list, then click a card's circle to
   give it a green check, a red X, or clear it (v0.0.91)
+- Per list, cards can have pregame + postgame thots or just one (v0.0.92)
 - Multi-select cards with a selection bar
 - Collapse a list to a thin strip; cards can still be dropped on it
 - Deleted cards and lists go to the trash (up to 200 cards and 30 lists

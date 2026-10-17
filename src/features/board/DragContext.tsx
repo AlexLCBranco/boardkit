@@ -19,6 +19,7 @@ import { inkOf, specOf } from "../../domain/cardKinds";
 import { accentCss } from "../../domain/colors";
 import { highlightStyleOf } from "../../domain/highlight";
 import { formatNumber, needsWideGutter } from "../../domain/numberStyle";
+import { isSingleThots, thotsLabel } from "../../domain/thots";
 import type { CardId, ListId } from "../../domain/types";
 import {
   useCard,
@@ -286,9 +287,10 @@ function CardOverlay({ cardId, listId }: { readonly cardId: CardId; readonly lis
         {list.hasChecks && specOf(card).checkable && <CheckCircle mark={card.check} />}
         {card.title || "​"}
       </p>
-      {specOf(card).hasThots && (card.description || card.postgameDescription) && (
-        <div className={cardStyles.descriptionToggle}>▸ pregame thots</div>
-      )}
+      {specOf(card).hasThots &&
+        (card.description || (!isSingleThots(list) && card.postgameDescription)) && (
+          <div className={cardStyles.descriptionToggle}>▸ {thotsLabel("pregame", isSingleThots(list))}</div>
+        )}
     </article>
   );
 }
