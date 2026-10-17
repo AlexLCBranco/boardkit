@@ -28,15 +28,19 @@ export interface CardKindSpec {
   /** Whether the card can wear a highlight border. A divider has no border
       to draw it on, so it keeps its highlight, hidden, like thots. */
   readonly highlightable: boolean;
+  /** Whether the card gets a check circle in a list with checks on. A
+      divider is a heading and a note a reminder, neither a thing to tick
+      off; they keep any mark they had, hidden, like thots. */
+  readonly checkable: boolean;
 }
 
 /** `"normal"` is the absent `kind`, listed so the panel can offer it. */
 export const NORMAL_KIND = "normal";
 
 export const CARD_KIND_SPECS: Readonly<Record<CardKind | typeof NORMAL_KIND, CardKindSpec>> = {
-  normal: { label: "Normal", numbered: true, hasThots: true, tintsBackground: true, inheritsListColor: true, highlightable: true },
-  divider: { label: "Divider", numbered: false, hasThots: false, tintsBackground: false, inheritsListColor: true, highlightable: false },
-  note: { label: "Note", numbered: false, hasThots: false, tintsBackground: true, inheritsListColor: false, highlightable: true },
+  normal: { label: "Normal", numbered: true, hasThots: true, tintsBackground: true, inheritsListColor: true, highlightable: true, checkable: true },
+  divider: { label: "Divider", numbered: false, hasThots: false, tintsBackground: false, inheritsListColor: true, highlightable: false, checkable: false },
+  note: { label: "Note", numbered: false, hasThots: false, tintsBackground: true, inheritsListColor: false, highlightable: true, checkable: false },
 };
 
 /** The order the customise panel lists the types in. */

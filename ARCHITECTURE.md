@@ -651,6 +651,21 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
     Boardkit" case still clear undo: the history belongs to the board
     as this tab had it.
 
+- **Check marks (v0.0.90).** A list can turn on check circles
+  (`List.hasChecks`, in its customise panel or right-click menu); each
+  normal card in it then shows a circle at the start of its title, and a
+  click steps it empty -> green check -> red check -> empty
+  (`nextCheck`, `domain/check.ts`), one undo step each. One cycling
+  button rather than a menu, so marking a card stays a single click.
+  The mark lives on the card (`Card.check`), and is hidden, never
+  cleared, when the list turns checks off, the card moves to a list
+  without them, or it becomes a divider or note (`checkable: false` in
+  `cardKinds.ts`), so turning them back on brings every mark back.
+  `CardItem` gets `hasChecks` as a boolean prop, so toggling a list
+  re-renders only its own cards. Colours are `--check-green` /
+  `--check-red` in tokens.css. Not a checklist inside a card (out of
+  scope): one mark per card, like a status.
+
 ## Decisions
 
 - **Vite + React + TypeScript.** Fast HMR matters when tuning drag feel.

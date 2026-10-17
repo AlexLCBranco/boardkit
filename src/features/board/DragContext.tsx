@@ -35,6 +35,7 @@ import {
 } from "../../store/selectors";
 import { useResolvedTheme } from "../../store/themeStore";
 import cardStyles from "./CardItem.module.css";
+import { CheckCircle } from "./CheckCircle";
 import { CollapsedStrip } from "./ListColumn";
 import listStyles from "./ListColumn.module.css";
 
@@ -282,6 +283,7 @@ function CardOverlay({ cardId, listId }: { readonly cardId: CardId; readonly lis
             <span className={cardStyles.numberText}>{formatNumber(number, list.numberFormat)}</span>
           </span>
         )}
+        {list.hasChecks && specOf(card).checkable && <CheckCircle mark={card.check} />}
         {card.title || "​"}
       </p>
       {specOf(card).hasThots && (card.description || card.postgameDescription) && (

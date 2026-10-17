@@ -1,0 +1,52 @@
+/* Inline at the start of the title line, like the status badge, and the
+   same size, so a card with both lines them up. */
+.circle {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  /* Centred on the title's first line, so a wrapped title doesn't pull the
+     circle down to its middle. */
+  align-self: flex-start;
+  margin-top: calc((var(--font-size-md) * var(--line-normal) - var(--check-size)) / 2);
+  width: var(--check-size);
+  height: var(--check-size);
+  margin-right: var(--space-1);
+  padding: 0;
+  border: 1.5px solid var(--text-muted);
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--check-ink);
+  /* Only colour and transform change, so a click never moves the title. */
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-spring);
+}
+
+button.circle {
+  cursor: pointer;
+}
+
+button.circle:hover {
+  border-color: var(--text-primary);
+  transform: scale(1.12);
+}
+
+button.circle:active {
+  transform: scale(0.92);
+}
+
+.circle svg {
+  width: var(--check-icon-size);
+  height: var(--check-icon-size);
+}
+
+.circle[data-check="green"] {
+  border-color: var(--check-green);
+  background: var(--check-green);
+}
+
+.circle[data-check="red"] {
+  border-color: var(--check-red);
+  background: var(--check-red);
+}

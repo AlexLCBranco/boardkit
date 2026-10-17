@@ -101,6 +101,11 @@ export type HighlightStyle = (typeof HIGHLIGHT_STYLES)[number];
 export const ITEM_STATUSES = ["keep", "maybe", "cut"] as const;
 export type ItemStatus = (typeof ITEM_STATUSES)[number];
 
+/** A card's check mark, shown only in a list that has checks turned on
+    (domain/check.ts). Absent means an empty circle. */
+export const CHECK_MARKS = ["green", "red"] as const;
+export type CheckMark = (typeof CHECK_MARKS)[number];
+
 /**
  * What is behind a board's lists. Per board, so boards can be told apart at a
  * glance; `undefined` on the board means the theme's own background. A tagged
@@ -158,6 +163,10 @@ export interface Card {
   /** Keep / maybe / cut (`ItemStatus`). Only a card's own decision is
       stored; looking cut because its list is cut is worked out, never saved. */
   readonly status?: ItemStatus;
+  /** Green or red check (`CheckMark`). Kept when the card moves to a list
+      without checks, or its list turns them off: hidden, not cleared, so
+      turning checks back on brings the marks back. Absent means unchecked. */
+  readonly check?: CheckMark;
 }
 
 export interface List {
@@ -179,6 +188,9 @@ export interface List {
       apart from `numberFormat` so the format survives being hidden. Absent
       means false. */
   readonly numbersHidden?: boolean;
+  /** Give every card in this list a check circle (domain/check.ts). Absent
+      means false. */
+  readonly hasChecks?: boolean;
   /** Keep / maybe / cut (`ItemStatus`). */
   readonly status?: ItemStatus;
 }

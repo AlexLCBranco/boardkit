@@ -9,6 +9,7 @@ import { inkOf, specOf } from "../../domain/cardKinds";
 import { accentCss } from "../../domain/colors";
 import { highlightStyleOf } from "../../domain/highlight";
 import { formatNumber } from "../../domain/numberStyle";
+import { nextCheck } from "../../domain/check";
 import { cardLooksCut } from "../../domain/status";
 import type { CardId, ItemColor, ListId, NumberFormat } from "../../domain/types";
 import {
@@ -17,6 +18,7 @@ import {
   useIsCardSelected,
   useListColor,
   useRenameCard,
+  useSetCardCheck,
   useSetCardColor,
   useSetCardsHighlight,
   useSetCardsHighlightStyle,
@@ -29,6 +31,7 @@ import { useResolvedTheme } from "../../store/themeStore";
 import { guardTrash } from "../../store/trashWarningStore";
 import { sortableTransition } from "../../styles/motion";
 import styles from "./CardItem.module.css";
+import { CheckCircle } from "./CheckCircle";
 import { StatusBadge } from "./StatusBadge";
 import { CardTransferContent } from "./TransferMenus";
 
@@ -50,6 +53,8 @@ interface CardItemProps {
   /** Whether the card's list looks cut (domain/status.ts), a boolean so a
       list's status change re-renders its cards but nothing else does. */
   readonly listCut: boolean;
+  /** Whether the card's list has check circles turned on. */
+  readonly hasChecks: boolean;
 }
 
 /**
@@ -75,11 +80,13 @@ function CardItemImpl({
   number,
   numberFormat,
   listCut,
+  hasChecks,
 }: CardItemProps) {
   const card = useCard(cardId);
   const renameCard = useRenameCard();
   const deleteCard = useDeleteCard();
   const setCardColor = useSetCardColor();
+  const setCardCheck = useSetCardCheck();
   const setCardKind = useSetCardKind();
   const setCardsHighlight = useSetCardsHighlight();
   const setCardsHighlightStyle = useSetCardsHighlightStyle();
@@ -194,6 +201,9 @@ function CardItemImpl({
           <span className={styles.number}>
             <span className={styles.numberText}>{formatNumber(number, numberFormat)}</span>
           </span>
+        )}
+        {hasChecks && spec.checkable && (
+          <CheckCircle mark={card.check} onCycle={() => setCardCheck(cardId, nextCheck(card.check))} />
         )}
         {card.status && <StatusBadge status={card.status} />}
         <InlineEditable

@@ -167,6 +167,31 @@ describe("readBoard", () => {
     expect(read.status).toBe("ok");
     if (read.status === "ok") expect(read.board.lists[todo].icon).toBeUndefined();
   });
+
+  it("keeps a list's check circles and a card's check mark", () => {
+    const board = healthy();
+    const checked: BoardState = {
+      ...board,
+      lists: { ...board.lists, [todo]: { ...board.lists[todo], hasChecks: true } },
+      cards: { ...board.cards, [a]: { ...board.cards[a], check: "green" }, [b]: { ...board.cards[b], check: "red" } },
+    };
+    const read = readBoard(saved(checked));
+    expect(read.status).toBe("ok");
+    if (read.status === "ok") expect(read.board).toEqual(checked);
+  });
+
+  it("silently drops a check mark or setting it can't read", () => {
+    const read = readBoard(
+      saved(healthy(), (raw) => {
+        (raw.lists as Record<string, Record<string, unknown>>)[todo].hasChecks = "yes";
+        (raw.cards as Record<string, Record<string, unknown>>)[a].check = "purple";
+      }),
+    );
+    expect(read.status).toBe("ok");
+    if (read.status !== "ok") return;
+    expect(read.board.lists[todo].hasChecks).toBeUndefined();
+    expect(read.board.cards[a].check).toBeUndefined();
+  });
 });
 
 describe("version 2", () => {

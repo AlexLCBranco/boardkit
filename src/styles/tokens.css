@@ -60,6 +60,10 @@
      so its buttons stay usable. */
   --cut-opacity: 0.45;
 
+  /* ---- Check marks (domain/check.ts) ---- */
+  --check-size: 16px;
+  --check-icon-size: 11px;
+
   /* ---- Layout constants the board engine depends on ---- */
   --list-width: 288px;
   /* Bounds for the per-list resize handle (ListColumn's `.resizeHandle`).
@@ -109,6 +113,13 @@
 
   /* The colour a note card takes when it has none of its own. */
   --note-accent: var(--palette-yellow);
+
+  /* A card's check mark fills its circle with one of these, the same in
+     both themes like the palette they come from. White on either clears
+     3:1, the bar for an icon. */
+  --check-green: var(--palette-green);
+  --check-red: var(--palette-red);
+  --check-ink: var(--ink-light);
 
   /* The two text colours a card switches to when a custom colour makes the
      theme's text unreadable (domain/colors.ts `cardInk`). Pure white and

@@ -49,6 +49,10 @@ interface CustomizePanelProps {
       last "Hidden" choice in the same row; picking a format unhides. */
   readonly numbersHidden?: boolean;
   readonly onNumbersHiddenChange?: (hidden: boolean) => void;
+  /** Lists only: whether each card gets a check circle (domain/check.ts).
+      Omit the handler and there is no "Checks" section. */
+  readonly hasChecks?: boolean;
+  readonly onHasChecksChange?: (hasChecks: boolean) => void;
   /** Lists other than the leftmost: whether numbering picks up where the
       list to the left finished. Omit the handler and there is no
       "Numbering" section. */
@@ -69,6 +73,8 @@ interface CustomizePanelProps {
 }
 
 function ignore() {}
+
+const CHECKS_LABELS = { off: "Off", on: "Check circles" };
 
 const NUMBERING_LABELS = { restart: "Start at 1", continue: "Continue from previous list" };
 
@@ -103,6 +109,8 @@ export function CustomizePanel({
   onNumberFormatChange,
   numbersHidden,
   onNumbersHiddenChange,
+  hasChecks,
+  onHasChecksChange,
   continuesNumbering,
   onContinuesNumberingChange,
   numberEmphasis,
@@ -190,6 +198,16 @@ export function CustomizePanel({
           onChange={(choice) =>
             choice === HIDDEN_NUMBERS ? onNumbersHiddenChange?.(true) : onNumberFormatChange(choice)
           }
+        />
+      )}
+      {onHasChecksChange && (
+        <ChoiceSection
+          label="Checks"
+          choices={["off", "on"] as const}
+          labels={CHECKS_LABELS}
+          value={hasChecks ? "on" : undefined}
+          absent="off"
+          onChange={(choice) => onHasChecksChange(choice === "on")}
         />
       )}
       {onContinuesNumberingChange && (

@@ -286,6 +286,14 @@ export function useSetListNumbersHidden() {
   return useBoardStore((state) => state.setListNumbersHidden);
 }
 
+export function useSetListHasChecks() {
+  return useBoardStore((state) => state.setListHasChecks);
+}
+
+export function useSetCardCheck() {
+  return useBoardStore((state) => state.setCardCheck);
+}
+
 export function useSetListColor() {
   return useBoardStore((state) => state.setListColor);
 }

@@ -30,6 +30,7 @@ import type {
   Card,
   CardId,
   CardKind,
+  CheckMark,
   HighlightStyle,
   IconKey,
   ListId,
@@ -141,6 +142,9 @@ export interface BoardActions {
   setListNumberFormat: (listId: ListId, format: NumberFormat | undefined) => void;
   /** Display only -- numbering still counts the list's cards. One undo step. */
   setListNumbersHidden: (listId: ListId, hidden: boolean) => void;
+  /** Turns the list's check circles on or off. Cards keep their marks
+      either way. One undo step. */
+  setListHasChecks: (listId: ListId, hasChecks: boolean) => void;
   setListWidths: (updates: Readonly<Record<ListId, ListWidth | undefined>>) => void;
   /** Folds a list to a strip or opens it again. A view setting: saved with
       the board, never an undo step (see domain/collapse.ts). */
@@ -152,6 +156,8 @@ export interface BoardActions {
   /** `undefined` makes it a normal card again. One undo step. */
   setCardKind: (cardId: CardId, kind: CardKind | undefined) => void;
   setCardColor: (cardId: CardId, color: ItemColor | undefined) => void;
+  /** `undefined` empties the circle. One undo step. */
+  setCardCheck: (cardId: CardId, check: CheckMark | undefined) => void;
   /** Sets the emphasis on every card given -- one card from its customise
       panel, or a whole marquee selection -- in one undo step. `undefined`
       goes back to normal. */
@@ -596,6 +602,17 @@ export const useBoardStore = create<BoardStore>()(readOnlyGuard((set, get) => ({
       }),
     ),
 
+  // `false` is stored as absent, like `continuesNumbering`.
+  setListHasChecks: (listId, hasChecks) =>
+    set((state) =>
+      withHistory(state, {
+        lists: {
+          ...state.lists,
+          [listId]: { ...state.lists[listId], hasChecks: hasChecks || undefined },
+        },
+      }),
+    ),
+
   // A single resize/auto-fit is `updates` with one entry; the Alt-modified
   // "every list at once" form has one per column (ListColumn.tsx). Either
   // way, every affected list lands in one `lists` patch, so the gesture is
@@ -634,6 +651,13 @@ export const useBoardStore = create<BoardStore>()(readOnlyGuard((set, get) => ({
     set((state) =>
       withHistory(state, {
         cards: { ...state.cards, [cardId]: { ...state.cards[cardId], color } },
+      }),
+    ),
+
+  setCardCheck: (cardId, check) =>
+    set((state) =>
+      withHistory(state, {
+        cards: { ...state.cards, [cardId]: { ...state.cards[cardId], check } },
       }),
     ),
 

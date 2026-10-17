@@ -15,7 +15,7 @@ files.
 
 | Item | Owner |
 |------|-------|
-| _nothing_ (automatic-backup tests, Linkkit bridge follow-up 5, are done: `domain/backupStatus.test.ts`, `features/board/autoBackup.test.ts`) | — |
+| _nothing_ (check marks, v0.0.90, are done: `domain/check.ts`, `features/board/CheckCircle.tsx`) | — |
 
 ## Queued
 

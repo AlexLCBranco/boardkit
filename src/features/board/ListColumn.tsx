@@ -61,6 +61,7 @@ import {
   useSetListWidths,
   useSetListNumberFormat,
   useSetListNumbersHidden,
+  useSetListHasChecks,
 } from "../../store/selectors";
 import { LIST_WIDTH_MAX, LIST_WIDTH_MIN } from "../../styles/layout";
 import { sortableTransition } from "../../styles/motion";
@@ -115,6 +116,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
   const setListWidths = useSetListWidths();
   const setListNumberFormat = useSetListNumberFormat();
   const setListNumbersHidden = useSetListNumbersHidden();
+  const setListHasChecks = useSetListHasChecks();
   const numbersHidden = list.numbersHidden === true;
   const cardNumbers = useCardNumbers(listId);
   const isFirstList = useIsFirstList(listId);
@@ -350,6 +352,12 @@ function ListColumnImpl({ listId }: ListColumnProps) {
       >
         Continue numbering from previous list
       </ContextMenuCheckboxItem>
+      <ContextMenuCheckboxItem
+        checked={list.hasChecks === true}
+        onCheckedChange={(checked) => setListHasChecks(listId, checked)}
+      >
+        Check circles on cards
+      </ContextMenuCheckboxItem>
       <ListTransferItems listId={listId} />
       {isCollapsed && (
         <>
@@ -522,6 +530,8 @@ function ListColumnImpl({ listId }: ListColumnProps) {
           onNumberFormatChange={(format) => setListNumberFormat(listId, format)}
           numbersHidden={numbersHidden}
           onNumbersHiddenChange={(hidden) => setListNumbersHidden(listId, hidden)}
+          hasChecks={list.hasChecks === true}
+          onHasChecksChange={(on) => setListHasChecks(listId, on)}
           continuesNumbering={continuesNumbering}
           onContinuesNumberingChange={
             isFirstList ? undefined : (continues) => setListContinuesNumbering(listId, continues)
@@ -543,6 +553,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
                     number={numbersHidden ? null : (cardNumbers[index] ?? null)}
                     numberFormat={list.numberFormat}
                     listCut={listCut}
+                    hasChecks={list.hasChecks === true}
                   />
                 </li>
               ))}
