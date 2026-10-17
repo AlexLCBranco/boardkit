@@ -535,3 +535,7 @@ export function useRememberColor() {
 export function useForgetColor() {
   return useRecentColorsStore((state) => state.forget);
 }
+
+export function useMoveTitleTextToThots() {
+  return useBoardStore((state) => state.moveTitleTextToThots);
+}

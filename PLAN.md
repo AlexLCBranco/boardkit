@@ -15,7 +15,7 @@ files.
 
 | Item | Owner |
 |------|-------|
-| _nothing_ (check marks, v0.0.90, are done: `domain/check.ts`, `features/board/CheckCircle.tsx`) | — |
+| _nothing_ (moving title text into thots, v0.0.93, is done: `components/SelectionMenu.tsx`, `domain/thots.ts`) | — |
 
 ## Queued
 

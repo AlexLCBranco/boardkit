@@ -677,6 +677,20 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   `singleThots` as a boolean prop, like `hasChecks`, and keeps its own
   chosen slot so a switch back to double returns to it.
 
+- **Move title text into thots (v0.0.93).** While a card title is being
+  edited, right-clicking selected text opens a small menu at the pointer
+  (`components/SelectionMenu.tsx`): "Move to thots" in a single-thots
+  list, or numbered pregame / postgame choices in a double one, each
+  hinting at what that box already holds ("empty" or its first line).
+  1 / 2 pick from the keyboard; Esc goes back to editing with the text
+  still selected. The text leaves the title and goes under the box's
+  existing text, then that box opens. `InlineEditable` takes an opt-in
+  `selectionActions` prop; picking one ends the edit *without* saving the
+  draft and hands the action the draft plus the selection, so the store's
+  `moveTitleTextToThots` writes title and box together as one undo step.
+  The cut/append rules are pure functions in `domain/thots.ts`. A
+  right-click with nothing selected still toggles the card's thots.
+
 ## Decisions
 
 - **Vite + React + TypeScript.** Fast HMR matters when tuning drag feel.

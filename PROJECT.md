@@ -1,6 +1,6 @@
 # Boardkit — project summary
 
-_Last updated: 2026-10-17, v0.0.92_
+_Last updated: 2026-10-17, v0.0.93_
 
 ## What it is
 
@@ -44,6 +44,9 @@ normalised state.
 - Check circles: turn them on for a list, then click a card's circle to
   give it a green check, a red X, or clear it (v0.0.91)
 - Per list, cards can have pregame + postgame thots or just one (v0.0.92)
+- Select part of a card title while editing it, right-click, and move
+  that text into the thots (asks pregame or postgame when there are two;
+  1 / 2 on the keyboard). One undo puts it back (v0.0.93)
 - Multi-select cards with a selection bar
 - Collapse a list to a thin strip; cards can still be dropped on it
 - Deleted cards and lists go to the trash (up to 200 cards and 30 lists

@@ -3,14 +3,14 @@ import { CSS } from "@dnd-kit/utilities";
 import { memo, useEffect, useRef, useState, type CSSProperties } from "react";
 
 import { CustomizePanel } from "../../components/CustomizePanel";
-import { InlineEditable } from "../../components/InlineEditable";
+import { InlineEditable, type SelectionAction } from "../../components/InlineEditable";
 import { DropdownMenu, DropdownMenuTrigger } from "../../components/ui/dropdown-menu";
 import { inkOf, specOf } from "../../domain/cardKinds";
 import { accentCss } from "../../domain/colors";
 import { highlightStyleOf } from "../../domain/highlight";
 import { formatNumber } from "../../domain/numberStyle";
 import { nextCheck } from "../../domain/check";
-import { thotsLabel, type ColumnThotsMode, type ThotsSlot } from "../../domain/thots";
+import { thotPreview, thotsLabel, type ColumnThotsMode, type ThotsSlot } from "../../domain/thots";
 import { cardLooksCut } from "../../domain/status";
 import type { CardId, ItemColor, ListId, NumberFormat } from "../../domain/types";
 import {
@@ -27,6 +27,7 @@ import {
   useSetCardsNumberEmphasis,
   useSetCardDescription,
   useSetCardPostgameDescription,
+  useMoveTitleTextToThots,
 } from "../../store/selectors";
 import { useResolvedTheme } from "../../store/themeStore";
 import { guardTrash } from "../../store/trashWarningStore";
@@ -97,6 +98,7 @@ function CardItemImpl({
   const setCardsNumberEmphasis = useSetCardsNumberEmphasis();
   const setCardDescription = useSetCardDescription();
   const setCardPostgameDescription = useSetCardPostgameDescription();
+  const moveTitleTextToThots = useMoveTitleTextToThots();
   const isSelected = useIsCardSelected(cardId);
 
   const listColor = useListColor(listId);
@@ -130,6 +132,21 @@ function CardItemImpl({
     setThotsSlot((slot) => (slot === "pregame" ? "postgame" : "pregame"));
     setIsDescriptionOpen(true);
   }
+
+  // Right-clicking selected text in the title offers to move it into a
+  // thots box: one choice in a single-thots list, pregame or postgame in a
+  // double one, each hinting at what that box already holds. The box opens
+  // afterwards, so the moved text is seen landing.
+  const slots: readonly ThotsSlot[] = singleThots ? ["pregame"] : ["pregame", "postgame"];
+  const thotsMoveActions: SelectionAction[] = slots.map((slot) => ({
+    label: `Move to ${thotsLabel(slot, singleThots)}`,
+    hint: thotPreview(slot === "pregame" ? card.description : card.postgameDescription),
+    onPick: (draft, start, end) => {
+      moveTitleTextToThots(cardId, draft, start, end, slot);
+      setThotsSlot(slot);
+      setIsDescriptionOpen(true);
+    },
+  }));
 
   // Reruns only when the list's bulk control (ListColumn's `columnThotsMode`)
   // actually changes, forcing every card in the list to the same slot in
@@ -218,6 +235,7 @@ function CardItemImpl({
           onCommit={(title) => renameCard(cardId, title)}
           ariaLabel="Card title"
           allowEmpty
+          selectionActions={spec.hasThots ? thotsMoveActions : undefined}
         />
       </p>
       {showsThots && (

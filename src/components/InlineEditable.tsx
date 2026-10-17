@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 
 import { linkLabel, splitLinks } from "../domain/links";
 
+import { SelectionMenu } from "./SelectionMenu";
+
 import styles from "./InlineEditable.module.css";
 
 interface InlineEditableProps {
@@ -22,7 +24,22 @@ interface InlineEditableProps {
       a new tab). Off for titles: clicking a title renames it, and a link
       there would fight that. Editing always shows the raw text. */
   readonly linkify?: boolean;
+  /** Offered in a menu when text is selected while editing and then
+      right-clicked. Picking one ends the edit *without* saving the draft,
+      so the action is handed the draft and the selection and must save
+      whatever it changes itself -- that is what lets a move out of a title
+      be a single undo step instead of "save title, then move". */
+  readonly selectionActions?: readonly SelectionAction[];
 }
+
+export interface SelectionAction {
+  readonly label: string;
+  readonly hint?: string;
+  readonly onPick: (draft: string, start: number, end: number) => void;
+}
+
+/** How much of the selection the menu's heading quotes. */
+const HEADING_QUOTE_LENGTH = 32;
 
 /**
  * A generic click-to-edit text control.
@@ -57,6 +74,7 @@ export function InlineEditable({
   allowEmpty = false,
   placeholder,
   linkify = false,
+  selectionActions,
 }: InlineEditableProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(value);
@@ -64,6 +82,11 @@ export function InlineEditable({
   // Set when Enter or Esc ends an edit, so focus can go back to whatever
   // owned this field once the textarea is gone -- see the effect below.
   const returnFocusRef = useRef<HTMLElement | null>(null);
+  // The selection menu, while open. The ref mirrors it synchronously: the
+  // menu takes focus as it opens, which blurs the textarea before React
+  // re-renders, and that blur must not end the edit.
+  const [menu, setMenu] = useState<{ x: number; y: number; start: number; end: number } | null>(null);
+  const menuOpenRef = useRef(false);
 
   useEffect(() => {
     if (isEditing) return;
@@ -137,6 +160,38 @@ export function InlineEditable({
     if (trimmed === value) return;
     if (!multiline && !allowEmpty && !trimmed) return;
     onCommit(trimmed);
+  }
+
+  function closeMenu() {
+    menuOpenRef.current = false;
+    setMenu(null);
+  }
+
+  function openMenu(event: React.MouseEvent<HTMLTextAreaElement>) {
+    if (!selectionActions?.length) return;
+    const { selectionStart: start, selectionEnd: end } = event.currentTarget;
+    // No selection: leave the right-click to the card (it toggles thots).
+    if (!draft.slice(start, end).trim()) return;
+    event.preventDefault();
+    event.stopPropagation();
+    menuOpenRef.current = true;
+    setMenu({ x: event.clientX, y: event.clientY, start, end });
+  }
+
+  // Escape (or the board scrolling) goes back to editing with the same text
+  // still selected; a press in the field itself just carries on editing;
+  // a press anywhere else ends the edit as any click away does.
+  function dismissMenu(target: EventTarget | null) {
+    if (!menu) return;
+    closeMenu();
+    const el = textareaRef.current;
+    if (target === el) return;
+    if (target === null) {
+      el?.focus();
+      el?.setSelectionRange(menu.start, menu.end);
+      return;
+    }
+    commit();
   }
 
   function cancel() {
@@ -225,7 +280,10 @@ export function InlineEditable({
         rows={1}
         placeholder={placeholder}
         onChange={(event) => setDraft(event.target.value)}
-        onBlur={commit}
+        onBlur={() => {
+          if (!menuOpenRef.current) commit();
+        }}
+        onContextMenu={openMenu}
         // The pointer equivalent of the keydown guard below: a press inside
         // the field -- placing the caret, drag-selecting text -- must not
         // reach the card's or list header's drag listeners, or moving the
@@ -252,6 +310,31 @@ export function InlineEditable({
         }}
         aria-label={ariaLabel}
       />
+      {menu && selectionActions && (
+        <SelectionMenu
+          x={menu.x}
+          y={menu.y}
+          heading={quote(draft.slice(menu.start, menu.end))}
+          items={selectionActions.map((action) => ({
+            label: action.label,
+            hint: action.hint,
+            onPick: () => {
+              closeMenu();
+              setIsEditing(false);
+              action.onPick(draft, menu.start, menu.end);
+            },
+          }))}
+          onDismiss={dismissMenu}
+        />
+      )}
     </span>
   );
+}
+
+/** The selection as the menu's heading shows it: quoted, on one line, cut short. */
+function quote(text: string): string {
+  const line = text.trim().replace(/\s+/g, " ");
+  const short =
+    line.length > HEADING_QUOTE_LENGTH ? `${line.slice(0, HEADING_QUOTE_LENGTH - 1).trimEnd()}…` : line;
+  return `“${short}”`;
 }

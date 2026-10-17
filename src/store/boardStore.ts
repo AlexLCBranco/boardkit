@@ -12,6 +12,7 @@ import { mergeBoardLists, mergeBoards, sameValue, shareUnchanged } from "../doma
 import { insertAt, moveBetweenLists, moveList, moveWithinList } from "../domain/ordering";
 import { boardContent, type BackupBoard } from "../domain/persistence";
 import { createEmptyBoard, createSeedBoard } from "../domain/seed";
+import { moveTitleTextToThots, type ThotsSlot } from "../domain/thots";
 import {
   emptyListTrash as emptyListTrashState,
   emptyTrash as emptyTrashState,
@@ -175,6 +176,15 @@ export interface BoardActions {
   resetCardsStyle: (cardIds: readonly CardId[]) => void;
   setCardDescription: (cardId: CardId, description: string | undefined) => void;
   setCardPostgameDescription: (cardId: CardId, description: string | undefined) => void;
+  /** Moves `title[start, end)` out of the card's title into a thots box,
+      in one undo step (domain/thots.ts). `title` is the field's draft. */
+  moveTitleTextToThots: (
+    cardId: CardId,
+    title: string,
+    start: number,
+    end: number,
+    slot: ThotsSlot,
+  ) => void;
   undo: () => void;
   redo: () => void;
   createBoard: (name: string) => void;
@@ -711,6 +721,14 @@ export const useBoardStore = create<BoardStore>()(readOnlyGuard((set, get) => ({
         },
       }),
     ),
+
+  moveTitleTextToThots: (cardId, title, start, end, slot) =>
+    set((state) => {
+      const card = state.cards[cardId];
+      const moved = moveTitleTextToThots(card, title, start, end, slot);
+      if (moved === card) return {};
+      return withHistory(state, { cards: { ...state.cards, [cardId]: moved } });
+    }),
 
   // Undo and redo apply a recorded patch directly and move it between the
   // two stacks -- they never go through `withHistory`, or undoing would push
