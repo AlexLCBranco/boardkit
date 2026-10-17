@@ -654,7 +654,7 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
 - **Check marks (v0.0.90).** A list can turn on check circles
   (`List.hasChecks`, in its customise panel or right-click menu); each
   normal card in it then shows a circle at the start of its title, and a
-  click steps it empty -> green check -> red check -> empty
+  click steps it empty -> green check -> red X -> empty
   (`nextCheck`, `domain/check.ts`), one undo step each. One cycling
   button rather than a menu, so marking a card stays a single click.
   The mark lives on the card (`Card.check`), and is hidden, never
@@ -663,7 +663,8 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   `cardKinds.ts`), so turning them back on brings every mark back.
   `CardItem` gets `hasChecks` as a boolean prop, so toggling a list
   re-renders only its own cards. Colours are `--check-green` /
-  `--check-red` in tokens.css. Not a checklist inside a card (out of
+  `--check-red` in tokens.css; the symbol for each is `CHECK_SYMBOLS` (a
+  red mark is an X: v0.0.90 drew a red tick, which reads as "yes"). Not a checklist inside a card (out of
   scope): one mark per card, like a status.
 
 ## Decisions

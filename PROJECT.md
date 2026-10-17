@@ -1,6 +1,6 @@
 # Boardkit — project summary
 
-_Last updated: 2026-10-17, v0.0.90_
+_Last updated: 2026-10-17, v0.0.91_
 
 ## What it is
 
@@ -42,7 +42,7 @@ normalised state.
 - Light/dark/system theme; per-board background colour or image
 - Card numbering that can continue across lists, be styled, or be hidden
 - Check circles: turn them on for a list, then click a card's circle to
-  give it a green check, a red check, or clear it (v0.0.90)
+  give it a green check, a red X, or clear it (v0.0.91)
 - Multi-select cards with a selection bar
 - Collapse a list to a thin strip; cards can still be dropped on it
 - Deleted cards and lists go to the trash (up to 200 cards and 30 lists
