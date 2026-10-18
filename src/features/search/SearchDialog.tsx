@@ -11,6 +11,7 @@ import {
   CommandList,
 } from "../../components/ui/command";
 import { MAX_SEARCH_RESULTS, searchBoards, type Excerpt, type SearchHit } from "../../domain/search";
+import { embedded } from "../../store/embedStore";
 import { loadSearchSources } from "../../store/searchSources";
 import {
   useBoardId,
@@ -82,10 +83,10 @@ function SearchPanel({ onDone }: { readonly onDone: () => void }) {
 
   return (
     <Command shouldFilter={false}>
-      <CommandInput value={query} onValueChange={setQuery} placeholder="Search cards and thots on every board…" />
+      <CommandInput value={query} onValueChange={setQuery} placeholder={embedded() ? "Search cards and thots on this board…" : "Search cards and thots on every board…"} />
       <CommandList>
         <CommandEmpty>
-          {isSearching ? "No cards found." : "Type to search every board's titles and thots."}
+          {isSearching ? "No cards found." : embedded() ? "Type to search this board's titles and thots." : "Type to search every board's titles and thots."}
         </CommandEmpty>
         {hits.map((hit) => (
           <CommandItem

@@ -1,6 +1,6 @@
 # Boardkit — project summary
 
-_Last updated: 2026-10-17, v0.0.93_
+_Last updated: 2026-10-18, v0.0.94_
 
 ## What it is
 
@@ -113,13 +113,29 @@ normalised state.
   Boardkit, or by Linkkit on the shared site): on the board, its lists
   and cards, and its trash entries. An older Boardkit tab still open can
   no longer drop them (2026-10-08)
+- Embed mode for the gauntlet canvas (v0.0.94):
+  `/boardkit/?embed=1&id=<board id>` shows that one board with no header
+  (board switcher, theme, trash) and no version badge; the board's own
+  toolbar (undo / redo, zoom, search of this board) stays, and editing
+  works as usual. A frame never changes which board the app opens next
+  and never opens, makes or deletes another board: a board that isn't
+  there says "This board isn't here", one deleted while shown says "This
+  board was deleted", and neither saves anything. Every notice still
+  shows in a frame (without "Open …" for another board), plus a "Resume
+  backups" strip when automatic backup is paused. Only one copy of
+  Boardkit writes backups however many tabs and frames are open (a Web
+  Lock), and it also backs up changes made in other tabs, frames and
+  Linkkit. Frames talk to the canvas by `postMessage` (`domain/embed.ts`).
+  Tested in `src/store/embed.test.ts`, `autoBackup.test.ts`, and end to
+  end in Linkkit's `e2e/embed.e2e.ts`
 
 ## What's next
 
 - Linking with Linkkit (steps 20-27 in Linkkit's PROJECT.md) is done:
   the last, step 27 (undo that survives another tab's or Linkkit's
   change), shipped in v0.0.86
-- Gauntlet: a canvas of live app pieces (not started)
+- Gauntlet: a canvas of live app pieces. Embed mode is done (phase 3);
+  the canvas itself is next, in the gauntlet repo (`GAUNTLET-PLAN.md`)
 
 ## Open problems
 

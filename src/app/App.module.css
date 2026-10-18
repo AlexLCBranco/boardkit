@@ -33,3 +33,21 @@
 .notices {
   grid-area: notice;
 }
+
+/* Embed mode: a frame whose board is missing or was deleted says so. */
+.embedGone {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
+  padding: var(--space-4);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  text-align: center;
+}
+
+.embedGoneTitle {
+  margin: 0;
+  color: var(--text-primary);
+  font-weight: var(--weight-bold);
+}

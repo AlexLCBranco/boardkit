@@ -1,5 +1,6 @@
 import type { SearchSource } from "../domain/search";
 import { useBoardStore } from "./boardStore";
+import { embedded } from "./embedStore";
 import { flushPersist, loadPersistedBoard } from "./persistBoard";
 
 /**
@@ -30,6 +31,9 @@ export function loadSearchSources(): readonly SearchSource[] {
       board: { cards, lists, listOrder, cardOrder, trash, trashedLists },
     });
   }
+
+  // A frame on the gauntlet canvas shows one board, and never opens another.
+  if (embedded()) return sources;
 
   // Stored oldest-first; searched newest-first, matching the board switcher.
   for (const summary of [...boards].reverse()) {

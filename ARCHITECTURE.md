@@ -1360,3 +1360,36 @@ fields as well. `extras` is merged whole across tabs (`merge.ts`) and copied
 by duplicate. The stale fields early versions saved (`boards`, `boardId`,
 `history`) are still dropped. Unknown *values* of known fields (a colour
 this build can't read) are still dropped, as before.
+
+## Embed mode for the gauntlet canvas (2026-10-18, v0.0.94)
+
+`?embed=1&id=<board id>` makes the page a frame on the gauntlet canvas
+(gauntlet `GAUNTLET-PLAN.md`, phase 3). `store/embedStore.ts` reads the
+address once, as the stores load, because the board store's first state
+depends on it.
+
+- **Which board.** `loadInitialState` opens the named board, not the
+  registry's active one, and writes nothing while opening (no first-run
+  seed, no orphan sweep, no image sweep). A board not in the list sets the
+  status to `missing`; the empty board in the store is a placeholder that
+  is never shown or saved.
+- **Never writes "active".** `persistRegistry.ts`'s `writeRegistry` keeps
+  the stored `activeBoardId` in embed mode, so a registry write from a
+  frame (a merge, a rename) can't change which board `/boardkit` opens.
+- **Never another board.** `switchBoard`, `createBoard`, `duplicateBoard`,
+  `createBoardFromLayout` and `deleteBoard` do nothing in a frame; search
+  looks at this board only; `?damage-test` is ignored; the missing-boards
+  notice has no "Open". When the open board is deleted elsewhere,
+  `adoptBoardList` sets the status to `deleted` instead of opening the
+  newest board. While the status isn't `ok` the store saves nothing and
+  ignores other tabs (`mayWrite`), so a deleted board is never brought back.
+- **One backup writer.** `autoBackup.ts` takes a Web Lock
+  (`boardkit-auto-backup`) in every copy, tabs and frames alike; only the
+  holder writes. It also schedules a backup on `storage` events for
+  `boardkit:board:*` and the registry, since the writer may not have the
+  edited board open, and a BroadcastChannel tells the other copies when the
+  folder is chosen, resumed or turned off. The stop function `initAutoBackup`
+  returns releases the lock (tests start the module afresh each time).
+- **Protocol.** `app/embedBridge.ts` speaks the canvas protocol in
+  `domain/embed.ts` (same as Linkkit's): ready / status / scroll (of
+  `[data-board-canvas]`) / flushed with `busy` while a text field has focus.

@@ -63,6 +63,8 @@ class FakeFolder {
   permission: PermissionState = "granted";
   /** Set to make every write fail, as a deleted folder or withdrawn permission does. */
   failWrites: DOMException | null = null;
+  /** Every file write started, including ones that replace a file. */
+  writes = 0;
 
   readonly name: string;
 
@@ -87,6 +89,7 @@ class FakeFolder {
     return {
       getFile: async () => ({ text: async () => this.files.get(name) ?? "" }),
       createWritable: async () => {
+        this.writes++;
         if (this.failWrites) throw this.failWrites;
         let text = "";
         return {
@@ -253,6 +256,71 @@ describe("after edits", () => {
     expect(picked.backups()).toHaveLength(1);
     expect(backupStore.getState().status).toBe("off");
     expect(env.idb.has("backupFolder")).toBe(false);
+  });
+});
+
+describe("several copies of Boardkit open (tabs, canvas frames)", () => {
+  /** What the browser sends every other copy when one saves a board. */
+  function storageEvent(key: string): Event {
+    const event = new Event("storage");
+    Object.defineProperty(event, "key", { value: key });
+    return event;
+  }
+
+  it("only one writes a backup for a change; another takes over when it closes", async () => {
+    const page = Object.assign(new EventTarget(), { showDirectoryPicker: async () => picked.asFolder() });
+    vi.stubGlobal("window", page);
+    await startAndChoose();
+    expect(picked.writes).toBe(1);
+
+    // A second copy: its own modules, the same browser (lock, folder, storage).
+    vi.resetModules();
+    const other = await import("./autoBackup");
+    const otherBoards = (await import("../../store/boardStore")).useBoardStore;
+    const stopOther = other.initAutoBackup();
+    try {
+      await settle();
+      expect((await import("../../store/backupStore")).useBackupStore.getState().status).toBe("active");
+
+      // An edit in the second copy: both hear of it (its own store, and the
+      // storage event in the first), but only the writer writes.
+      vi.setSystemTime(new Date(2026, 9, 16, 9, 41));
+      env.collected = { boards: [board(A, "Week 36", "Rent paid")], unreadable: [] };
+      otherBoards.setState({ lists: {} });
+      page.dispatchEvent(storageEvent("boardkit:board:boardA"));
+      await vi.advanceTimersByTimeAsync(10_000);
+      await settle();
+      expect(picked.writes).toBe(2);
+      expect(picked.read(picked.backups()[0]!)[0]!.firstCard).toBe("Rent paid");
+
+      // The writer closes: the second copy takes over, and backs up what
+      // changed since.
+      vi.setSystemTime(new Date(2026, 9, 16, 9, 52));
+      env.collected = { boards: [board(A, "Week 36", "Rent paid twice")], unreadable: [] };
+      stopWatching();
+      stopWatching = () => {};
+      await settle();
+      await vi.advanceTimersByTimeAsync(10_000);
+      await settle();
+      expect(picked.writes).toBe(3);
+      expect(picked.read(picked.backups()[0]!)[0]!.firstCard).toBe("Rent paid twice");
+    } finally {
+      stopOther();
+    }
+  });
+
+  it("backs up a change made in another copy, though this one's store didn't change", async () => {
+    const page = Object.assign(new EventTarget(), { showDirectoryPicker: async () => picked.asFolder() });
+    vi.stubGlobal("window", page);
+    await startAndChoose();
+    vi.setSystemTime(new Date(2026, 9, 16, 9, 41));
+    env.collected = { boards: [board(A, "Week 36", "Edited in a frame")], unreadable: [] };
+    page.dispatchEvent(storageEvent("boardkit:board:boardA"));
+    page.dispatchEvent(storageEvent("boardkit:theme"));
+    await vi.advanceTimersByTimeAsync(10_000);
+    await settle();
+    expect(picked.backups()).toHaveLength(2);
+    expect(picked.read(picked.backups()[0]!)[0]!.firstCard).toBe("Edited in a frame");
   });
 });
 

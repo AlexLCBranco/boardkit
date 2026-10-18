@@ -1,5 +1,6 @@
 import { useState } from "react";
 
+import { embedded } from "../../store/embedStore";
 import { hasPersistedBoard } from "../../store/persistBoard";
 import { useSaveHealth } from "../../store/saveHealthStore";
 import { useBoardId, useBoards, useSwitchBoard } from "../../store/selectors";
@@ -40,9 +41,12 @@ export function MissingBoardsNotice() {
         </p>
       </div>
       <div className={styles.actions}>
-        <button type="button" className={styles.primary} onClick={() => switchBoard(missing[0].id)}>
-          Open “{missing[0].name}”
-        </button>
+        {/* A frame on the gauntlet canvas never opens another board. */}
+        {!embedded() && (
+          <button type="button" className={styles.primary} onClick={() => switchBoard(missing[0].id)}>
+            Open “{missing[0].name}”
+          </button>
+        )}
         <button type="button" className={styles.secondary} onClick={() => setDismissed(true)}>
           Not now
         </button>

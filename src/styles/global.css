@@ -168,3 +168,10 @@ textarea {
     @apply font-sans;
   }
 }
+/* Embed mode (a frame on the gauntlet canvas): a scroll that reaches the
+   board's edge stays in the frame instead of moving the canvas around it. */
+html[data-embed],
+html[data-embed] body,
+html[data-embed] [data-board-canvas] {
+  overscroll-behavior: contain;
+}

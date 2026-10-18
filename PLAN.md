@@ -15,7 +15,7 @@ files.
 
 | Item | Owner |
 |------|-------|
-| Embed mode for the gauntlet canvas (`?embed=1&id=<board id>`, gauntlet phase 3): `app/EmbedApp.tsx`, `app/embedBridge.ts`, `domain/embed.ts`, `store/embedStore.ts`, `store/persistRegistry.ts`, `store/boardStore.ts`, `features/board/autoBackup.ts`, `main.tsx` | Claude |
+| _nothing_ (embed mode for the gauntlet canvas, v0.0.94, is done: `app/EmbedApp.tsx`, `app/embedBridge.ts`, `store/embedStore.ts`) | — |
 
 ## Queued
 

@@ -1,5 +1,6 @@
 import { isHomeAddress } from "../domain/address";
 import { plantDamageTestBoard } from "../store/damageTest";
+import { embedded } from "../store/embedStore";
 
 /**
  * Opening the app with `?damage-test` adds a throwaway board with one
@@ -8,10 +9,11 @@ import { plantDamageTestBoard } from "../store/damageTest";
  *
  * Imported first in `main.tsx`, for its side effect only: modules run in
  * import order, so this writes to storage before `boardStore` reads it.
- * Not at an old address, where the app does not run (`MovedNotice`).
+ * Not at an old address, where the app does not run (`MovedNotice`), and
+ * not in a frame on the gauntlet canvas, which never opens another board.
  */
 const url = new URL(window.location.href);
-if (isHomeAddress(url.hostname) && url.searchParams.has("damage-test")) {
+if (isHomeAddress(url.hostname) && !embedded() && url.searchParams.has("damage-test")) {
   plantDamageTestBoard();
   url.searchParams.delete("damage-test");
   window.history.replaceState(null, "", url);

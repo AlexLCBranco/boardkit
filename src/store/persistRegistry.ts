@@ -1,6 +1,7 @@
 import { mergeBoardLists, sameValue, type MergeConflict } from "../domain/merge";
 import { deserializeRegistry, serializeRegistry, type PersistedRegistryV1 } from "../domain/persistence";
 import type { BoardId, BoardSummary } from "../domain/types";
+import { embedded } from "./embedStore";
 import { isBoardStored, onBoardStored } from "./persistBoard";
 import { useSaveHealth } from "./saveHealthStore";
 
@@ -78,9 +79,12 @@ export function catchUpBoardList(mine: readonly BoardSummary[]): BoardListCatchU
  * newest). With no board stored at all nothing is written: the next visit
  * then starts like a first one rather than with an empty list.
  */
-function writeRegistry(mine: readonly BoardSummary[], activeBoardId: BoardId): void {
+function writeRegistry(mine: readonly BoardSummary[], requestedActive: BoardId): void {
   // Another tab changed the list since: theirs, with this tab's changes on top.
   const current = storedRegistry();
+  // A frame on the gauntlet canvas never changes which board the app opens
+  // next: a write (a merge, a rename) keeps the stored one.
+  const activeBoardId = embedded() ? (current?.activeBoardId ?? writtenActive ?? requestedActive) : requestedActive;
   const merged = caughtUp(mine, current);
   const boards = merged ? merged.boards : mine;
   requested = { boards, activeBoardId };

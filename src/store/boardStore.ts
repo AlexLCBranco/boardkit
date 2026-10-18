@@ -40,6 +40,7 @@ import type {
   NumberEmphasis,
   NumberFormat,
 } from "../domain/types";
+import { embedded, setEmbedStatus, useEmbedStatus } from "./embedStore";
 import { releaseImageIfUnused } from "./imageStore";
 import { findLinkedMap } from "./linkedMap";
 import {
@@ -305,6 +306,8 @@ function clearDamage(): void {
  *     address offers restoring from a backup while it is the only board.
  */
 function loadInitialState(): { boardId: BoardId; boards: readonly BoardSummary[]; board: BoardState } {
+  const embed = embedded();
+  if (embed) return embeddedState(embed.id as BoardId);
   const registry = loadPersistedRegistry();
   if (registry) {
     const board = openBoard(registry.activeBoardId);
@@ -323,8 +326,30 @@ function loadInitialState(): { boardId: BoardId; boards: readonly BoardSummary[]
   return { boardId, boards, board };
 }
 
+/**
+ * A frame on the gauntlet canvas: the one board its address names, and
+ * nothing written while opening (no first-run seed, no board list, not the
+ * active board). A board that isn't listed opens nothing: the frame says so,
+ * and the empty board here is only a placeholder that is never shown or
+ * saved.
+ */
+function embeddedState(boardId: BoardId): { boardId: BoardId; boards: readonly BoardSummary[]; board: BoardState } {
+  const registry = loadPersistedRegistry();
+  const boards = registry?.boards ?? [];
+  if (!boards.some((board) => board.id === boardId)) {
+    setEmbedStatus("missing");
+    return { boardId, boards, board: createEmptyBoard() };
+  }
+  return { boardId, boards, board: openBoard(boardId) };
+}
+
+/** Whether this page may save: a frame whose board is missing or was
+    deleted saves nothing (it would bring a deleted board back). */
+const mayWrite = () => useEmbedStatus.getState().status === "ok";
+
 const initial = loadInitialState();
-removeOrphanedSetAside(initial.boards.map((board) => board.id));
+// Housekeeping is the full app's: a frame leaves storage as it found it.
+if (!embedded()) removeOrphanedSetAside(initial.boards.map((board) => board.id));
 
 /** What a board's own content is made of: the slices saved with it, its
     undo history, and a drag in progress. */
@@ -753,6 +778,7 @@ export const useBoardStore = create<BoardStore>()(readOnlyGuard((set, get) => ({
   // closed tab even if that happens inside the 400ms window.
   createBoard: (name) =>
     set((state) => {
+      if (embedded()) return state;
       flushPersist();
       const boardId = createBoardId();
       const board = createEmptyBoard();
@@ -777,6 +803,7 @@ export const useBoardStore = create<BoardStore>()(readOnlyGuard((set, get) => ({
   // copy changes none of the ones it compares except `trash`.
   duplicateBoard: (name) =>
     set((state) => {
+      if (embedded()) return state;
       flushPersist();
       const boardId = createBoardId();
       const board: BoardState = {
@@ -802,6 +829,7 @@ export const useBoardStore = create<BoardStore>()(readOnlyGuard((set, get) => ({
   // board may still have an edit waiting in the 400ms save window.
   createBoardFromLayout: (name) =>
     set((state) => {
+      if (embedded()) return state;
       flushPersist();
       const boardId = createBoardId();
       const board = layoutOnly(state);
@@ -858,7 +886,7 @@ export const useBoardStore = create<BoardStore>()(readOnlyGuard((set, get) => ({
   // active, matching the newest-first order the switcher lists them in.
   deleteBoard: () =>
     set((state) => {
-      if (state.boards.length <= 1) return state;
+      if (state.boards.length <= 1 || embedded()) return state;
       flushPersist();
       removePersistedBoard(state.boardId);
       const boards = state.boards.filter((board) => board.id !== state.boardId);
@@ -873,7 +901,8 @@ export const useBoardStore = create<BoardStore>()(readOnlyGuard((set, get) => ({
 
   switchBoard: (boardId) =>
     set((state) => {
-      if (boardId === state.boardId) return state;
+      // A frame on the gauntlet canvas shows only its own board.
+      if (boardId === state.boardId || embedded()) return state;
       flushPersist();
       const board = openBoard(boardId);
       return { ...board, boardId, history: EMPTY_HISTORY };
@@ -920,7 +949,7 @@ useBoardStore.subscribe((state, previous) => {
       for (const run of afterDrag.splice(0)) run();
     });
   }
-  if (state.cardDragOrigin) return;
+  if (state.cardDragOrigin || !mayWrite()) return;
   if (
     state.lists !== previous.lists ||
     state.cards !== previous.cards ||
@@ -1034,6 +1063,13 @@ function adoptBoardList(from: readonly BoardSummary[], merged: BoardListCatchUp)
   notice.conflicted(merged.conflicts.filter((conflict) => !goneIds.has(conflict.id ?? "")));
 
   const active = gone.find((board) => board.id === state.boardId);
+  // A frame says its board was deleted instead of opening another (and,
+  // status first, saves nothing from then on).
+  if (active && embedded()) {
+    setEmbedStatus("deleted");
+    useBoardStore.setState({ boards });
+    return;
+  }
   if (active && boards.length > 0) {
     const nextId = boards[boards.length - 1].id;
     useBoardStore.setState({ ...openBoard(nextId), boardId: nextId, boards, history: EMPTY_HISTORY });
@@ -1062,7 +1098,7 @@ onBoardListMerged((from, merged) => queueMicrotask(() => adoptBoardList(from, me
 if (typeof window !== "undefined") {
   window.addEventListener("storage", (event) => {
     // `key` is null when another tab cleared all of storage: nothing to merge.
-    if (event.key === null || event.storageArea !== localStorage) return;
+    if (event.key === null || event.storageArea !== localStorage || !mayWrite()) return;
     if (isBoardListKey(event.key)) {
       const { boards } = useBoardStore.getState();
       const merged = catchUpBoardList(boards);

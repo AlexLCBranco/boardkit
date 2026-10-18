@@ -50,6 +50,19 @@ let rerun = false;
 /** The boards as last written, so a switch or rename-back that changes
     nothing does not spend one of the 20 slots on an identical file. */
 let lastWritten: string | null = null;
+/** Whether this copy of Boardkit writes the backups. With Boardkit open in
+    several tabs and canvas frames at once, only one does (a Web Lock), or
+    each would write its own file of the same boards and the 20 kept files
+    would cover minutes instead of days. The others still show the status,
+    and one takes over when the writer closes. */
+let writer = false;
+const WRITER_LOCK = "boardkit-auto-backup";
+/** Tells the other copies that the folder changed (chosen, resumed, off). */
+let channel: BroadcastChannel | null = null;
+
+/** Storage keys whose change is a change to what a backup holds: a board
+    (Linkkit writes linked boards here too) and the board list. */
+const BACKED_UP_KEYS = ["boardkit:board:", "boardkit:registry"];
 
 export function isAutoBackupSupported(): boolean {
   return typeof (window as PickerWindow).showDirectoryPicker === "function";
@@ -65,6 +78,7 @@ export function initAutoBackup(): () => void {
     return () => {};
   }
   void restoreFolder();
+  const stopOthers = watchOtherCopies();
   const unsubscribe = useBoardStore.subscribe((state, previous) => {
     // The same slices the persistence subscriber watches, plus the board
     // list and active board: create, delete, rename, import and switch.
@@ -84,9 +98,55 @@ export function initAutoBackup(): () => void {
   });
   return () => {
     unsubscribe();
+    stopOthers();
     clearTimeout(timer);
   };
 }
+
+/**
+ * The other copies of Boardkit (tabs, canvas frames): waits for the writer's
+ * lock and holds it until stopped or the page closes; hears when another copy
+ * changes the folder; and backs up changes made elsewhere, since the writer
+ * may not have the edited board open. Without Web Locks (older browsers)
+ * every copy writes, as before.
+ */
+function watchOtherCopies(): () => void {
+  const locks = (globalThis.navigator as Navigator | undefined)?.locks;
+  let release = () => {};
+  if (locks) {
+    const held = new Promise<void>((resolve) => (release = resolve));
+    void locks.request(WRITER_LOCK, () => {
+      writer = true;
+      // Taking over from a copy that closed: anything since its last file.
+      scheduleBackup();
+      return held;
+    });
+  } else {
+    writer = true;
+  }
+  if (typeof BroadcastChannel !== "undefined") {
+    channel = new BroadcastChannel(WRITER_LOCK);
+    // Another copy chose a folder, resumed, or turned backups off.
+    channel.onmessage = () => {
+      lastWritten = null;
+      void restoreFolder().then(scheduleBackup);
+    };
+  }
+  const onStorage = (event: StorageEvent) => {
+    if (event.key && BACKED_UP_KEYS.some((prefix) => event.key!.startsWith(prefix))) scheduleBackup();
+  };
+  const canListen = typeof window.addEventListener === "function";
+  if (canListen) window.addEventListener("storage", onStorage);
+  return () => {
+    writer = false;
+    release();
+    channel?.close();
+    channel = null;
+    if (canListen) window.removeEventListener("storage", onStorage);
+  };
+}
+
+const tellOthers = () => channel?.postMessage("folder");
 
 async function restoreFolder(): Promise<void> {
   try {
@@ -107,14 +167,14 @@ async function restoreFolder(): Promise<void> {
     not dozens. Deliberately no write on page close: the API is asynchronous
     and cannot be relied on to finish there. */
 function scheduleBackup(): void {
-  if (backup().status !== "active") return;
+  if (!writer || backup().status !== "active") return;
   clearTimeout(timer);
   timer = setTimeout(() => void runBackup(), QUIET_PERIOD_MS);
 }
 
 /** Only ever one write in flight; a change during a write earns one more. */
 async function runBackup(): Promise<void> {
-  if (!folder || backup().status !== "active") return;
+  if (!writer || !folder || backup().status !== "active") return;
   if (running) {
     rerun = true;
     return;
@@ -298,6 +358,7 @@ export async function chooseBackupFolder(): Promise<void> {
     toast.warning("This browser won't remember the folder, so it will need choosing again after a restart.");
   }
   backup().setAuto("active", chosen.name);
+  tellOthers();
   await runBackup();
   if (backup().status === "active") toast.success(`Backing up to ${chosen.name}`);
 }
@@ -330,6 +391,7 @@ export async function resumeBackups(): Promise<void> {
     return;
   }
   backup().setAuto("active", folder.name);
+  tellOthers();
   // Anything edited while backups were paused was never written.
   lastWritten = null;
   await runBackup();
@@ -347,4 +409,5 @@ export async function turnOffAutoBackup(): Promise<void> {
     // Already off in memory; a stale handle in IndexedDB is harmless, and the
     // next "Automatic backup…" replaces it.
   }
+  tellOthers();
 }
