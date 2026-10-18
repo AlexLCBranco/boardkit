@@ -15,7 +15,7 @@ files.
 
 | Item | Owner |
 |------|-------|
-| _nothing_ (moving title text into thots, v0.0.93, is done: `components/SelectionMenu.tsx`, `domain/thots.ts`) | — |
+| Embed mode for the gauntlet canvas (`?embed=1&id=<board id>`, gauntlet phase 3): `app/EmbedApp.tsx`, `app/embedBridge.ts`, `domain/embed.ts`, `store/embedStore.ts`, `store/persistRegistry.ts`, `store/boardStore.ts`, `features/board/autoBackup.ts`, `main.tsx` | Claude |
 
 ## Queued
 
