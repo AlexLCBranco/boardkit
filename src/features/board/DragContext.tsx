@@ -13,7 +13,7 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
-import { useState, type CSSProperties, type ReactNode } from "react";
+import { useRef, useState, type CSSProperties, type ReactNode } from "react";
 
 import { inkOf, specOf } from "../../domain/cardKinds";
 import { accentCss } from "../../domain/colors";
@@ -61,6 +61,12 @@ function dragDataOf(entity: { data: { current?: unknown } }): DragData | undefin
   return entity.data.current as DragData | undefined;
 }
 
+/** The list a card, or an empty list's drop zone, belongs to. */
+function listIdOf(entity: { data: { current?: unknown } }): ListId | undefined {
+  const data = dragDataOf(entity);
+  return data && "listId" in data ? data.listId : undefined;
+}
+
 /**
  * Owns the one `DndContext` the board uses, its sensors and its collision
  * strategy, so drag configuration never scatters across components. It now
@@ -81,6 +87,10 @@ export function BoardDragContext({ children }: { readonly children: ReactNode })
   const cancelCardDrag = useCancelCardDrag();
   const endCardDragInto = useEndCardDragInto();
   const reorderLists = useReorderLists();
+  // Where the pointer was at the last collision check, and when the card
+  // last crossed into another list (see handleDragOver).
+  const pointer = useRef<{ x: number; y: number } | null>(null);
+  const crossedAt = useRef<{ x: number; y: number } | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -100,6 +110,7 @@ export function BoardDragContext({ children }: { readonly children: ReactNode })
    * or pull a card onto the strip from halfway across the next column.
    */
   const collisionDetection: CollisionDetection = (args) => {
+    pointer.current = args.pointerCoordinates;
     const activeIsList = dragDataOf(args.active)?.type === "list";
     if (activeIsList) {
       return closestCenter({
@@ -116,16 +127,30 @@ export function BoardDragContext({ children }: { readonly children: ReactNode })
     if (onStrip.length > 0) {
       return onStrip;
     }
-    return closestCenter({
-      ...args,
-      droppableContainers: args.droppableContainers.filter((container) => {
-        const containerType = dragDataOf(container)?.type;
-        return containerType !== "list" && containerType !== "list-collapsed";
-      }),
+    const cardTargets = args.droppableContainers.filter((container) => {
+      const containerType = dragDataOf(container)?.type;
+      return containerType !== "list" && containerType !== "list-collapsed";
     });
+    // With a pointer, a card goes into the list whose column the pointer is
+    // in (between columns: stays in its own), never by nearest centre
+    // alone. Moving the card reflows both lists; nearest centre then could
+    // point back at the list it just left, and the card flipped between the
+    // two on every render until React gave up and the page went blank (a
+    // drop on the top edge of another list's first card).
+    if (args.pointerCoordinates) {
+      const lists = args.droppableContainers.filter((container) => dragDataOf(container)?.type === "list");
+      const under = pointerWithin({ ...args, droppableContainers: lists })[0];
+      const listId = under ? (under.id as ListId) : listIdOf(args.active);
+      const inList = cardTargets.filter((container) => listIdOf(container) === listId);
+      if (inList.length > 0) {
+        return closestCenter({ ...args, droppableContainers: inList });
+      }
+    }
+    return closestCenter({ ...args, droppableContainers: cardTargets });
   };
 
   function handleDragStart(event: DragStartEvent) {
+    crossedAt.current = null;
     const data = dragDataOf(event.active);
     if (data?.type === "list") {
       setActiveDrag({ kind: "list", id: event.active.id as ListId });
@@ -169,6 +194,16 @@ export function BoardDragContext({ children }: { readonly children: ReactNode })
     }
 
     const overCardId = overData.type === "card" ? (over.id as CardId) : null;
+    // One crossing per pointer position. Moving the card reflows both lists,
+    // which can make the collision point straight back at the list it left;
+    // without this the card flipped between the two on every render until
+    // React gave up (error #185) and the board crashed.
+    const at = pointer.current;
+    const last = crossedAt.current;
+    if (at && last && Math.abs(at.x - last.x) < 1 && Math.abs(at.y - last.y) < 1) {
+      return;
+    }
+    crossedAt.current = at;
     moveCardBetweenLists(active.id as CardId, activeData.listId, toListId, overCardId);
   }
 
