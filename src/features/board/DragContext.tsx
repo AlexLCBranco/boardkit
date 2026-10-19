@@ -13,7 +13,7 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
-import { createContext, useContext, useState, type CSSProperties, type ReactNode } from "react";
+import { createContext, useContext, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
 import { inkOf, specOf } from "../../domain/cardKinds";
@@ -121,6 +121,10 @@ export function BoardDragContext({
   const cancelCardDrag = useCancelCardDrag();
   const endCardDragInto = useEndCardDragInto();
   const reorderLists = useReorderLists();
+  // Where the pointer was at the last collision check, and when the card
+  // last crossed into another list (see handleDragOver).
+  const pointer = useRef<{ x: number; y: number } | null>(null);
+  const crossedAt = useRef<{ x: number; y: number } | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -140,6 +144,7 @@ export function BoardDragContext({
    * or pull a card onto the strip from halfway across the next column.
    */
   const collisionDetection: CollisionDetection = (args) => {
+    pointer.current = args.pointerCoordinates;
     const activeIsList = dragDataOf(args.active)?.type === "list";
     if (activeIsList) {
       return closestCenter({
@@ -179,6 +184,7 @@ export function BoardDragContext({
   };
 
   function handleDragStart(event: DragStartEvent) {
+    crossedAt.current = null;
     const target = event.activatorEvent?.target;
     setScale(boardScale(target instanceof Element ? target : null));
     const data = dragDataOf(event.active);
@@ -224,6 +230,16 @@ export function BoardDragContext({
     }
 
     const overCardId = overData.type === "card" ? (over.id as CardId) : null;
+    // One crossing per pointer position. Moving the card reflows both lists,
+    // which can make the collision point straight back at the list it left;
+    // without this the card flipped between the two on every render until
+    // React gave up (error #185) and the board crashed.
+    const at = pointer.current;
+    const last = crossedAt.current;
+    if (at && last && Math.abs(at.x - last.x) < 1 && Math.abs(at.y - last.y) < 1) {
+      return;
+    }
+    crossedAt.current = at;
     moveCardBetweenLists(active.id as CardId, activeData.listId, toListId, overCardId);
   }
 
