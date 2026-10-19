@@ -9,5 +9,6 @@ import "./prepare";
 export { WhiteboardBoard, type WhiteboardBoardProps } from "./WhiteboardBoard";
 export { flushBoard } from "../../store/boardStore";
 export { useThemeStore } from "../../store/themeStore";
+export { useSelectionStore } from "../../store/selectionStore";
 export { IconSprite } from "../../components/IconSprite";
 export { Toaster } from "../../components/ui/sonner";

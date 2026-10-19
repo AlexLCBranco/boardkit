@@ -13,7 +13,8 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
-import { useState, type CSSProperties, type ReactNode } from "react";
+import { createContext, useContext, useState, type CSSProperties, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 import { inkOf, specOf } from "../../domain/cardKinds";
 import { accentCss } from "../../domain/colors";
@@ -35,6 +36,7 @@ import {
   useReorderLists,
 } from "../../store/selectors";
 import { useResolvedTheme } from "../../store/themeStore";
+import { boardScale } from "./boardScale";
 import cardStyles from "./CardItem.module.css";
 import { CheckCircle } from "./CheckCircle";
 import { CollapsedStrip } from "./ListColumn";
@@ -73,8 +75,40 @@ function dragDataOf(entity: { data: { current?: unknown } }): DragData | undefin
  * interpret as a drag. The keyboard sensor is close to free once the pointer
  * sensor exists, and it is the only way to reorder a card without a mouse.
  */
-export function BoardDragContext({ children }: { readonly children: ReactNode }) {
+/**
+ * How much the board is scaled on screen while something is dragged (see
+ * `boardScale`): 1 in Boardkit. dnd-kit measures on screen, and a sortable
+ * item's transform is applied inside the scaled board, so cards and lists
+ * divide it back (`useUnscaledTransform`) or they would slide too far or
+ * not far enough on the gauntlet whiteboard.
+ */
+const DragScaleContext = createContext(1);
+
+export function useDragScale(): number {
+  return useContext(DragScaleContext);
+}
+
+/** dnd-kit's transform, from screen pixels back to the board's own. */
+export function unscaled<T extends { x: number; y: number } | null>(transform: T, scale: number): T {
+  return transform && scale !== 1 ? { ...transform, x: transform.x / scale, y: transform.y / scale } : transform;
+}
+
+/**
+ * `overlayToBody`: draw the lifted copy at the page's top level, scaled to
+ * match the board. The gauntlet whiteboard needs it: its boards sit inside
+ * CSS transforms, where a fixed-position overlay would be placed (and sized)
+ * relative to the transformed whiteboard instead of the window, and the
+ * card would vanish from under the pointer.
+ */
+export function BoardDragContext({
+  children,
+  overlayToBody = false,
+}: {
+  readonly children: ReactNode;
+  readonly overlayToBody?: boolean;
+}) {
   const [activeDrag, setActiveDrag] = useState<ActiveDrag>(null);
+  const [scale, setScale] = useState(1);
   const beginCardDrag = useBeginCardDrag();
   const moveCardBetweenLists = useMoveCardBetweenLists();
   const endCardDrag = useEndCardDrag();
@@ -126,6 +160,8 @@ export function BoardDragContext({ children }: { readonly children: ReactNode })
   };
 
   function handleDragStart(event: DragStartEvent) {
+    const target = event.activatorEvent?.target;
+    setScale(boardScale(target instanceof Element ? target : null));
     const data = dragDataOf(event.active);
     if (data?.type === "list") {
       setActiveDrag({ kind: "list", id: event.active.id as ListId });
@@ -217,6 +253,25 @@ export function BoardDragContext({ children }: { readonly children: ReactNode })
     cancelCardDrag();
   }
 
+  const lifted = (
+    <>
+      {activeDrag?.kind === "card" && <CardOverlay cardId={activeDrag.id} listId={activeDrag.listId} />}
+      {activeDrag?.kind === "list" && <ListOverlay listId={activeDrag.id} />}
+    </>
+  );
+  // dnd-kit sizes the overlay to the item as drawn on screen; the copy
+  // inside is laid out at the board's own size and scaled to fit it.
+  const overlay = (
+    <DragOverlay>
+      {activeDrag &&
+        (scale === 1 ? (
+          lifted
+        ) : (
+          <div style={{ width: `${100 / scale}%`, transform: `scale(${scale})`, transformOrigin: "0 0" }}>{lifted}</div>
+        ))}
+    </DragOverlay>
+  );
+
   return (
     <DndContext
       sensors={sensors}
@@ -226,13 +281,8 @@ export function BoardDragContext({ children }: { readonly children: ReactNode })
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
     >
-      {children}
-      <DragOverlay>
-        {activeDrag?.kind === "card" && (
-          <CardOverlay cardId={activeDrag.id} listId={activeDrag.listId} />
-        )}
-        {activeDrag?.kind === "list" && <ListOverlay listId={activeDrag.id} />}
-      </DragOverlay>
+      <DragScaleContext.Provider value={scale}>{children}</DragScaleContext.Provider>
+      {overlayToBody ? createPortal(overlay, document.body) : overlay}
     </DndContext>
   );
 }

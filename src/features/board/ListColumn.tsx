@@ -69,6 +69,7 @@ import { LIST_WIDTH_MAX, LIST_WIDTH_MIN } from "../../styles/layout";
 import { sortableTransition } from "../../styles/motion";
 import { toggleListCollapsed } from "./animateCollapse";
 import { CardItem } from "./CardItem";
+import { unscaled, useDragScale } from "./DragContext";
 import { copyAsImage } from "./copyAsImage";
 import styles from "./ListColumn.module.css";
 import { StatusBadge } from "./StatusBadge";
@@ -160,6 +161,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
     setColumnThotsMode((mode) => nextColumnThotsMode(mode, singleThots));
   }
 
+  const dragScale = useDragScale();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: listId,
     data: { type: "list" },
@@ -326,7 +328,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
   const color = previewColor ?? list.color;
   const accent = color ? accentCss(color) : undefined;
   const style: CSSProperties = {
-    transform: CSS.Transform.toString(transform),
+    transform: CSS.Transform.toString(unscaled(transform, dragScale)),
     transition,
     ...(accent ? ({ "--list-accent": accent } as CSSProperties) : {}),
     ...(list.width ? ({ "--column-width": `${list.width}px` } as CSSProperties) : {}),

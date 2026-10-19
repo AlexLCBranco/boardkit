@@ -35,6 +35,7 @@ import { sortableTransition } from "../../styles/motion";
 import styles from "./CardItem.module.css";
 import { CheckCircle } from "./CheckCircle";
 import { StatusBadge } from "./StatusBadge";
+import { unscaled, useDragScale } from "./DragContext";
 import { CardTransferContent } from "./TransferMenus";
 
 interface CardItemProps {
@@ -176,6 +177,7 @@ function CardItemImpl({
   // `data: { listId }` is read back in DragContext's onDragEnd -- a card
   // carries no list back-reference in the store, so the drag data is the
   // only place that membership is available at drop time.
+  const dragScale = useDragScale();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: cardId,
     data: { type: "card", listId },
@@ -193,7 +195,7 @@ function CardItemImpl({
   const highlight = previewHighlight ?? card.highlight;
   const highlightStyle = spec.highlightable ? highlightStyleOf({ ...card, highlight }) : undefined;
   const style: CSSProperties = {
-    transform: CSS.Transform.toString(transform),
+    transform: CSS.Transform.toString(unscaled(transform, dragScale)),
     transition,
     ...(color ? ({ "--card-accent": accentCss(color) } as CSSProperties) : {}),
     ...(highlight ? ({ "--card-highlight": accentCss(highlight) } as CSSProperties) : {}),

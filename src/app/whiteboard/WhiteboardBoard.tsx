@@ -1,5 +1,6 @@
 import { SortableContext, horizontalListSortingStrategy } from "@dnd-kit/sortable";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { StoreApi } from "zustand";
 
 import { Composer } from "../../components/Composer";
@@ -98,7 +99,7 @@ function BoardFrame({ editing }: { readonly editing: boolean }) {
     >
       <BoardBackdrop />
       {editing && <Shortcuts />}
-      <BoardDragContext>
+      <BoardDragContext overlayToBody>
         <div className={styles.rail} inert={!editing || readOnly}>
           <SortableContext items={[...listOrder]} strategy={horizontalListSortingStrategy}>
             {listOrder.map((listId) => (
@@ -108,12 +109,16 @@ function BoardFrame({ editing }: { readonly editing: boolean }) {
           <AddListSlot />
         </div>
       </BoardDragContext>
-      {editing && (
-        <>
-          <div ref={marqueeRef} className={canvasStyles.marquee} aria-hidden="true" />
-          <SelectionBar />
-        </>
-      )}
+      {/* Fixed to the window, so drawn at the page's top level: inside the
+          whiteboard's transforms "fixed" would mean fixed to the whiteboard. */}
+      {editing &&
+        createPortal(
+          <>
+            <div ref={marqueeRef} className={canvasStyles.marquee} aria-hidden="true" />
+            <SelectionBar />
+          </>,
+          document.body,
+        )}
     </div>
   );
 }
