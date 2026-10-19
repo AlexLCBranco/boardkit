@@ -169,8 +169,8 @@ export function BoardDragContext({
     // in (between columns: stays in its own), never by nearest centre
     // alone. Moving the card reflows both lists; nearest centre then could
     // point back at the list it just left, and the card flipped between the
-    // two on every render until React gave up (seen on the scaled gauntlet
-    // whiteboard, where moved cards measure off by the scale).
+    // two on every render until React gave up and the page went blank (a
+    // drop on the top edge of another list's first card).
     if (args.pointerCoordinates) {
       const lists = args.droppableContainers.filter((container) => dragDataOf(container)?.type === "list");
       const under = pointerWithin({ ...args, droppableContainers: lists })[0];
