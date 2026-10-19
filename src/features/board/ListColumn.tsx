@@ -68,6 +68,7 @@ import {
 import { LIST_WIDTH_MAX, LIST_WIDTH_MIN } from "../../styles/layout";
 import { sortableTransition } from "../../styles/motion";
 import { toggleListCollapsed } from "./animateCollapse";
+import { boardScale } from "./boardScale";
 import { CardItem } from "./CardItem";
 import { unscaled, useDragScale } from "./DragContext";
 import { copyAsImage } from "./copyAsImage";
@@ -208,14 +209,16 @@ function ListColumnImpl({ listId }: ListColumnProps) {
 
     const grabbedColumn = column;
     const matchThisColumn = event.shiftKey;
-    const columns = event.altKey || matchThisColumn ? getAllColumns() : [grabbedColumn];
+    const columns = event.altKey || matchThisColumn ? getAllColumns(grabbedColumn) : [grabbedColumn];
     const startX = event.clientX;
-    const startWidths = new Map(columns.map((col) => [col, col.getBoundingClientRect().width]));
+    // Screen pixels to the column's own (see boardScale; 1 in Boardkit).
+    const scale = boardScale(grabbedColumn);
+    const startWidths = new Map(columns.map((col) => [col, col.getBoundingClientRect().width / scale]));
     columns.forEach((col) => col.classList.add(styles.resizing));
     setIsResizing(true);
 
     function handlePointerMove(moveEvent: PointerEvent) {
-      const dx = moveEvent.clientX - startX;
+      const dx = (moveEvent.clientX - startX) / scale;
       if (matchThisColumn) {
         const sharedWidth = clamp(
           startWidths.get(grabbedColumn)! + dx,
@@ -240,7 +243,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
       const updates: Record<ListId, number> = {};
       let changed = false;
       columns.forEach((col) => {
-        const finalWidth = Math.round(col.getBoundingClientRect().width);
+        const finalWidth = Math.round(col.getBoundingClientRect().width / scale);
         if (finalWidth !== Math.round(startWidths.get(col)!)) {
           changed = true;
         }
@@ -270,9 +273,9 @@ function ListColumnImpl({ listId }: ListColumnProps) {
       if (!column) {
         return;
       }
-      const sharedWidth = Math.round(column.getBoundingClientRect().width);
+      const sharedWidth = Math.round(column.getBoundingClientRect().width / boardScale(column));
       const updates: Record<ListId, number> = {};
-      for (const col of getAllColumns()) {
+      for (const col of getAllColumns(column)) {
         updates[col.dataset.listId as ListId] = sharedWidth;
       }
       setListWidths(updates);
@@ -289,7 +292,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
     }
 
     const updates: Record<ListId, number | undefined> = {};
-    for (const col of getAllColumns()) {
+    for (const col of getAllColumns(column)) {
       const scroller = col.querySelector<HTMLElement>("[data-list-scroller]");
       if (!scroller) {
         continue;
@@ -754,8 +757,10 @@ function clamp(value: number, min: number, max: number): number {
     (drag data, this same handle's own lookup), so an Alt-modified resize or
     auto-fit can reach every other column without any new plumbing between
     sibling `ListColumn` instances. */
-function getAllColumns(): HTMLElement[] {
-  return Array.from(document.querySelectorAll<HTMLElement>("[data-list-id]"));
+function getAllColumns(from: HTMLElement | null): HTMLElement[] {
+  // On the gauntlet whiteboard, only this board's columns.
+  const scope = from?.closest("[data-boardkit-board]") ?? document;
+  return Array.from(scope.querySelectorAll<HTMLElement>("[data-list-id]"));
 }
 
 /**
@@ -787,8 +792,9 @@ function computeAutoFitWidth(column: HTMLElement, scroller: HTMLElement): number
     title.style.width = "max-content";
   });
   let maxTitleWidth = 0;
+  const scale = boardScale(column);
   titles.forEach((title) => {
-    maxTitleWidth = Math.max(maxTitleWidth, title.getBoundingClientRect().width);
+    maxTitleWidth = Math.max(maxTitleWidth, title.getBoundingClientRect().width / scale);
   });
   titles.forEach((title, index) => {
     title.style.width = previousWidths[index];
