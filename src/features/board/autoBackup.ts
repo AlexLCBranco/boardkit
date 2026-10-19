@@ -1,6 +1,7 @@
 import { toast } from "sonner";
 
 import { backupFileName, backupsNewestFirst, backupsToDelete } from "../../domain/backupStatus";
+import { isHomeAddress } from "../../domain/address";
 import { imageIdOf } from "../../domain/background";
 import {
   deserializeBackup,
@@ -64,8 +65,10 @@ let channel: BroadcastChannel | null = null;
     (Linkkit writes linked boards here too) and the board list. */
 const BACKED_UP_KEYS = ["boardkit:board:", "boardkit:registry"];
 
+/** Off on a preview of the gauntlet site, whose test boards must never
+    reach the real backup folder (`domain/address.ts`). */
 export function isAutoBackupSupported(): boolean {
-  return typeof (window as PickerWindow).showDirectoryPicker === "function";
+  return typeof (window as PickerWindow).showDirectoryPicker === "function" && isHomeAddress(window.location.hostname);
 }
 
 const backup = () => useBackupStore.getState();
@@ -340,7 +343,7 @@ export async function findLatestBackupWith(
     the folder picker requires one. */
 export async function chooseBackupFolder(): Promise<void> {
   const picker = (window as PickerWindow).showDirectoryPicker;
-  if (!picker) return;
+  if (!picker || !isAutoBackupSupported()) return;
   let chosen: Folder;
   try {
     chosen = await picker.call(window, { id: "boardkit-backup", mode: "readwrite" });

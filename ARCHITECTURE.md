@@ -416,6 +416,13 @@ Un-numbered, smaller changes landed after the milestone-9 grouping above.
   are skipped, so nothing saved there is written over or cleared; the
   board store still loads, which is what lets "Export everything saved
   here" reuse the ordinary backup export.
+- **Previews of the gauntlet site run the app (v0.0.95).** A preview
+  deployment of the `gauntlet-home` project (`gauntlet-home-…-alexlcbrancos-projects.vercel.app`,
+  `isPreviewAddress`) runs Boardkit, so a gauntlet change can be tried
+  there before it goes live. Automatic folder backups are off there
+  (`isAutoBackupSupported` is false, so the menu hides them and the picker
+  can't open): a preview's test boards must never be written into the
+  folder that backs up the real ones. Other preview URLs still get the notice.
 
 - **Storage shared with other apps.** On the shared site every app shares one
   origin, so one `localStorage` and one set of IndexedDB databases. Every

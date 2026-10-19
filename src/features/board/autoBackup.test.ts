@@ -134,6 +134,8 @@ function board(id: BoardId, name: string, card: string): BackupBoard {
 
 /** Runs every pending promise; timers stay frozen. `setImmediate` is Node's
     (left real by the fake timers); the app's types don't declare it. */
+/** Boardkit's home address (local development counts as home). */
+const HOME = { hostname: "localhost" };
 const { setImmediate } = globalThis as unknown as { setImmediate: (run: () => void) => void };
 const settle = () => new Promise<void>((resolve) => setImmediate(resolve));
 
@@ -167,7 +169,7 @@ beforeEach(async () => {
     removeItem: (key: string) => void data.delete(key),
   });
   picked = new FakeFolder("Backups");
-  vi.stubGlobal("window", { showDirectoryPicker: async () => picked.asFolder() });
+  vi.stubGlobal("window", { location: HOME, showDirectoryPicker: async () => picked.asFolder() });
   env.idb.clear();
 
   // A fresh copy of the module each time: it keeps the folder and the last
@@ -204,7 +206,19 @@ describe("choosing a folder", () => {
   });
 
   it("is unsupported, and stays quiet, where the browser has no folder picker", async () => {
-    vi.stubGlobal("window", {});
+    vi.stubGlobal("window", { location: HOME });
+    stopWatching = auto.initAutoBackup();
+    await auto.chooseBackupFolder();
+    expect(backupStore.getState().status).toBe("unsupported");
+    expect(picked.files.size).toBe(0);
+  });
+
+  it("is unsupported on a preview of the gauntlet site, so its test boards never reach the real backup folder", async () => {
+    vi.stubGlobal("window", {
+      location: { hostname: "gauntlet-home-git-phase-2-alexlcbrancos-projects.vercel.app" },
+      showDirectoryPicker: async () => picked.asFolder(),
+    });
+    expect(auto.isAutoBackupSupported()).toBe(false);
     stopWatching = auto.initAutoBackup();
     await auto.chooseBackupFolder();
     expect(backupStore.getState().status).toBe("unsupported");
@@ -268,7 +282,7 @@ describe("several copies of Boardkit open (tabs, canvas frames)", () => {
   }
 
   it("only one writes a backup for a change; another takes over when it closes", async () => {
-    const page = Object.assign(new EventTarget(), { showDirectoryPicker: async () => picked.asFolder() });
+    const page = Object.assign(new EventTarget(), { location: HOME, showDirectoryPicker: async () => picked.asFolder() });
     vi.stubGlobal("window", page);
     await startAndChoose();
     expect(picked.writes).toBe(1);
@@ -310,7 +324,7 @@ describe("several copies of Boardkit open (tabs, canvas frames)", () => {
   });
 
   it("backs up a change made in another copy, though this one's store didn't change", async () => {
-    const page = Object.assign(new EventTarget(), { showDirectoryPicker: async () => picked.asFolder() });
+    const page = Object.assign(new EventTarget(), { location: HOME, showDirectoryPicker: async () => picked.asFolder() });
     vi.stubGlobal("window", page);
     await startAndChoose();
     vi.setSystemTime(new Date(2026, 9, 16, 9, 41));

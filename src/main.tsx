@@ -9,7 +9,7 @@ import { EmbedApp } from "./app/EmbedApp";
 import { initEmbedBridge } from "./app/embedBridge";
 import { MovedNotice } from "./app/MovedNotice";
 import { IconSprite } from "./components/IconSprite";
-import { isHomeAddress } from "./domain/address";
+import { isHomeAddress, isPreviewAddress } from "./domain/address";
 import { initAutoBackup } from "./features/board/autoBackup";
 import { embedded } from "./store/embedStore";
 import { sweepUnusedImages } from "./store/imageStore";
@@ -23,13 +23,16 @@ if (!container) throw new Error("Root element #root not found");
 // the folder the new address backs up to, and no image sweep, so nothing
 // saved here is touched.
 const atHome = isHomeAddress(window.location.hostname);
+// A preview of the gauntlet site runs the app too, without automatic
+// backups (see `isPreviewAddress`).
+const runs = atHome || isPreviewAddress(window.location.hostname);
 // A frame on the gauntlet canvas (`?embed=1&id=…`): one board, no chrome.
 const embed = embedded();
 if (embed) document.documentElement.dataset.embed = "";
 
-if (atHome) {
+if (runs) {
   // Watches for changes to write automatic backups; a no-op where the browser
-  // cannot write to a folder.
+  // cannot write to a folder, or on a preview.
   initAutoBackup();
 
   // Deletes background images no board uses any more (replaced or removed
@@ -42,6 +45,6 @@ if (atHome) {
 createRoot(container).render(
   <StrictMode>
     <IconSprite />
-    {!atHome ? <MovedNotice /> : embed ? <EmbedApp /> : <App />}
+    {!runs ? <MovedNotice /> : embed ? <EmbedApp /> : <App />}
   </StrictMode>,
 );

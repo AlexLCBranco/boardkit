@@ -1,6 +1,6 @@
 # Boardkit — project summary
 
-_Last updated: 2026-10-18, v0.0.94_
+_Last updated: 2026-10-19, v0.0.95_
 
 ## What it is
 
@@ -48,6 +48,8 @@ normalised state.
   that text into the thots (asks pregame or postgame when there are two;
   1 / 2 on the keyboard). One undo puts it back (v0.0.93)
 - Multi-select cards with a selection bar
+- Runs on previews of the gauntlet site too (for trying changes before
+  they go live), with automatic backups off there (v0.0.95)
 - Collapse a list to a thin strip; cards can still be dropped on it
 - Deleted cards and lists go to the trash (up to 200 cards and 30 lists
   per board); when it is full, deleting asks first and names the oldest

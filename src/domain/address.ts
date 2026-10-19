@@ -19,6 +19,15 @@ export function isHomeAddress(hostname: string): boolean {
   return RUNS_ON.has(host) || host.endsWith(".localhost");
 }
 
+/** A preview of the gauntlet site (a Vercel deployment of its own project,
+    `gauntlet-home`, under the owner's team), used to try a change before it
+    goes live. The app runs there, but without automatic backups: a preview
+    is its own address with its own test boards, which must never be written
+    into the folder that backs up the real ones. */
+export function isPreviewAddress(hostname: string): boolean {
+  return /^gauntlet-home-[a-z0-9-]+-alexlcbrancos-projects\.vercel\.app$/.test(hostname.toLowerCase());
+}
+
 /** The address at home that matches this one: the query and hash carry over
     (`?damage-test`, say); the path does not, since there is only one page. */
 export function homeUrl(search: string, hash: string): string {

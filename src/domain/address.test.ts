@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { homeUrl, isHomeAddress } from "./address";
+import { homeUrl, isHomeAddress, isPreviewAddress } from "./address";
 
 describe("isHomeAddress", () => {
   it("runs at home and on local development hosts", () => {
@@ -18,6 +18,30 @@ describe("isHomeAddress", () => {
       "localhost.example.com",
     ]) {
       expect(isHomeAddress(host)).toBe(false);
+    }
+  });
+});
+
+describe("isPreviewAddress", () => {
+  it("is a preview of the gauntlet site", () => {
+    for (const host of [
+      "gauntlet-home-git-phase-2-alexlcbrancos-projects.vercel.app",
+      "gauntlet-home-8jc7nejqy-alexlcbrancos-projects.vercel.app",
+    ]) {
+      expect(isPreviewAddress(host)).toBe(true);
+      expect(isHomeAddress(host)).toBe(false);
+    }
+  });
+
+  it("is not home, Boardkit's own address, or a look-alike", () => {
+    for (const host of [
+      "gauntlet-home.vercel.app",
+      "boardkit-git-main-alexlcbrancos-projects.vercel.app",
+      "gauntlet-home-x-alexlcbrancos-projects.vercel.app.evil.com",
+      "gauntlet-home-x-someone-else.vercel.app",
+      "evil-gauntlet-home-x-alexlcbrancos-projects.vercel.app",
+    ]) {
+      expect(isPreviewAddress(host)).toBe(false);
     }
   });
 });
