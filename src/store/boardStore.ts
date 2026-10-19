@@ -977,6 +977,10 @@ useBoardStore.subscribe((state, previous) => {
     state.cards !== previous.cards ||
     state.listOrder !== previous.listOrder ||
     state.cardOrder !== previous.cardOrder ||
+    // A drop that changes nothing more (into an empty list, or where the
+    // preview already put the card) keeps the last preview's `cardOrder`,
+    // which was never saved: the drag ending is the change.
+    (previous.cardDragOrigin !== null && state.cardOrder !== previous.cardDragOrigin) ||
     state.trash !== previous.trash ||
     state.trashedLists !== previous.trashedLists ||
     state.background !== previous.background ||
