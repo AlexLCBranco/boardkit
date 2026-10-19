@@ -23,3 +23,13 @@ export function setEmbeddedForTests(next: Embed | null): void {
 export const useEmbedStatus = create<{ readonly status: EmbedStatus }>(() => ({ status: "ok" }));
 
 export const setEmbedStatus = (status: EmbedStatus): void => useEmbedStatus.setState({ status });
+
+/**
+ * The gauntlet whiteboard (`whiteboard/`): embed mode without an address.
+ * Called before the board store loads, so it opens no board at all (no
+ * first-run seed, nothing written); `openEmbeddedBoard` then opens the one
+ * being edited.
+ */
+export function setEmbedded(next: Embed): void {
+  embed = next;
+}

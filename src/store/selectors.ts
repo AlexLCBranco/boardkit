@@ -18,7 +18,7 @@ import type {
   TrashedListEntry,
 } from "../domain/types";
 import { useBackupStore } from "./backupStore";
-import { useBoardStore } from "./boardStore";
+import { useBoard } from "./boardContext";
 import { useRecentColorsStore } from "./recentColorsStore";
 import { useSearchDialogStore } from "./searchDialogStore";
 import { useSelectionStore } from "./selectionStore";
@@ -47,12 +47,12 @@ import { useShortcutsDialogStore } from "./shortcutsDialogStore";
 
 /** Left-to-right order of the columns. Stable array reference. */
 export function useListOrder(): readonly ListId[] {
-  return useBoardStore((state) => state.listOrder);
+  return useBoard((state) => state.listOrder);
 }
 
 /** One list's own data. Changes only when that list changes. */
 export function useList(listId: ListId): List {
-  return useBoardStore((state) => state.lists[listId]);
+  return useBoard((state) => state.lists[listId]);
 }
 
 /**
@@ -61,7 +61,7 @@ export function useList(listId: ListId): List {
  * card's title does not touch it.
  */
 export function useCardIds(listId: ListId): readonly CardId[] {
-  return useBoardStore((state) => state.cardOrder[listId]);
+  return useBoard((state) => state.cardOrder[listId]);
 }
 
 /** One card's own data. The narrowest subscription in the app. */
@@ -70,11 +70,11 @@ export function useCardIds(listId: ListId): readonly CardId[] {
  * list's tint) without re-rendering when the list is renamed or resized.
  */
 export function useListColor(listId: ListId): ItemColor | undefined {
-  return useBoardStore((state) => state.lists[listId].color);
+  return useBoard((state) => state.lists[listId].color);
 }
 
 export function useCard(cardId: CardId): Card {
-  return useBoardStore((state) => state.cards[cardId]);
+  return useBoard((state) => state.cards[cardId]);
 }
 
 /**
@@ -86,7 +86,7 @@ export function useCard(cardId: CardId): Card {
  * compute in a selector -- unlike a new array or object.
  */
 export function useCardCount(listId: ListId): number {
-  return useBoardStore((state) => state.cardOrder[listId].length);
+  return useBoard((state) => state.cardOrder[listId].length);
 }
 
 /**
@@ -96,7 +96,7 @@ export function useCardCount(listId: ListId): number {
  * trash entry whose list was permanently deleted) by reporting not-full.
  */
 export function useIsListFull(listId: ListId): boolean {
-  return useBoardStore((state) => {
+  return useBoard((state) => {
     const cardIds = state.cardOrder[listId];
     return cardIds !== undefined && isListFull(cardIds);
   });
@@ -113,53 +113,53 @@ export function useIsListFull(listId: ListId): boolean {
  * to functions instead of data.
  */
 export function useAddList() {
-  return useBoardStore((state) => state.addList);
+  return useBoard((state) => state.addList);
 }
 
 export function useAddCard() {
-  return useBoardStore((state) => state.addCard);
+  return useBoard((state) => state.addCard);
 }
 
 export function useRenameList() {
-  return useBoardStore((state) => state.renameList);
+  return useBoard((state) => state.renameList);
 }
 
 export function useRenameCard() {
-  return useBoardStore((state) => state.renameCard);
+  return useBoard((state) => state.renameCard);
 }
 
 export function useDeleteList() {
-  return useBoardStore((state) => state.deleteList);
+  return useBoard((state) => state.deleteList);
 }
 
 export function useDuplicateList() {
-  return useBoardStore((state) => state.duplicateList);
+  return useBoard((state) => state.duplicateList);
 }
 
 export function useDeleteCard() {
-  return useBoardStore((state) => state.deleteCard);
+  return useBoard((state) => state.deleteCard);
 }
 
 /** Trashed cards, oldest first. Stable array reference -- only changes on
     delete, restore, permanent delete or empty. */
 export function useTrash(): readonly TrashEntry[] {
-  return useBoardStore((state) => state.trash);
+  return useBoard((state) => state.trash);
 }
 
 export function useTrashCount(): number {
-  return useBoardStore((state) => state.trash.length);
+  return useBoard((state) => state.trash.length);
 }
 
 export function useRestoreCard() {
-  return useBoardStore((state) => state.restoreCard);
+  return useBoard((state) => state.restoreCard);
 }
 
 export function usePermanentlyDeleteCard() {
-  return useBoardStore((state) => state.permanentlyDeleteCard);
+  return useBoard((state) => state.permanentlyDeleteCard);
 }
 
 export function useEmptyTrash() {
-  return useBoardStore((state) => state.emptyTrash);
+  return useBoard((state) => state.emptyTrash);
 }
 
 /** Whether a list is currently on the board, as opposed to sitting in the
@@ -167,49 +167,49 @@ export function useEmptyTrash() {
     case, so this is what a trashed card's row checks before offering to
     restore into it. */
 export function useListIsOnBoard(listId: ListId): boolean {
-  return useBoardStore((state) => state.listOrder.includes(listId));
+  return useBoard((state) => state.listOrder.includes(listId));
 }
 
 /** Trashed lists, oldest first. Stable array reference -- only changes on
     delete, restore, permanent delete or empty. */
 export function useTrashedLists(): readonly TrashedListEntry[] {
-  return useBoardStore((state) => state.trashedLists);
+  return useBoard((state) => state.trashedLists);
 }
 
 export function useTrashedListsCount(): number {
-  return useBoardStore((state) => state.trashedLists.length);
+  return useBoard((state) => state.trashedLists.length);
 }
 
 export function useRestoreList() {
-  return useBoardStore((state) => state.restoreList);
+  return useBoard((state) => state.restoreList);
 }
 
 export function usePermanentlyDeleteList() {
-  return useBoardStore((state) => state.permanentlyDeleteList);
+  return useBoard((state) => state.permanentlyDeleteList);
 }
 
 export function useEmptyListTrash() {
-  return useBoardStore((state) => state.emptyListTrash);
+  return useBoard((state) => state.emptyListTrash);
 }
 
 export function useBeginCardDrag() {
-  return useBoardStore((state) => state.beginCardDrag);
+  return useBoard((state) => state.beginCardDrag);
 }
 
 export function useEndCardDrag() {
-  return useBoardStore((state) => state.endCardDrag);
+  return useBoard((state) => state.endCardDrag);
 }
 
 export function useCancelCardDrag() {
-  return useBoardStore((state) => state.cancelCardDrag);
+  return useBoard((state) => state.cancelCardDrag);
 }
 
 export function useMoveCardBetweenLists() {
-  return useBoardStore((state) => state.moveCardBetweenLists);
+  return useBoard((state) => state.moveCardBetweenLists);
 }
 
 export function useReorderLists() {
-  return useBoardStore((state) => state.reorderLists);
+  return useBoard((state) => state.reorderLists);
 }
 
 /**
@@ -224,7 +224,7 @@ export function useReorderLists() {
  * whose number changed re-render.
  */
 export function useCardNumbers(listId: ListId): readonly (number | null)[] {
-  return useBoardStore(
+  return useBoard(
     useShallow((state) =>
       numberCards(
         state.cardOrder[listId],
@@ -242,7 +242,7 @@ export function useCardNumbers(listId: ListId): readonly (number | null)[] {
  * card across lists mid-drag, so it can't take a fixed list id.
  */
 export function useCardNumber(cardId: CardId): number | null {
-  return useBoardStore((state) => {
+  return useBoard((state) => {
     const listId = state.listOrder.find((id) => state.cardOrder[id]?.includes(cardId));
     // A hidden list's cards still count toward the numbers after them, but
     // show none of their own.
@@ -262,176 +262,176 @@ export function useCardNumber(cardId: CardId): number | null {
     continue numbering from. A boolean, so reordering other lists never
     re-renders this one. */
 export function useIsFirstList(listId: ListId): boolean {
-  return useBoardStore((state) => state.listOrder[0] === listId);
+  return useBoard((state) => state.listOrder[0] === listId);
 }
 
 /** Whether the list to the right continues this one's numbering -- so this
     list is the start (or middle) of a run and shows its number range too. */
 export function useIsNumberingContinued(listId: ListId): boolean {
-  return useBoardStore((state) => {
+  return useBoard((state) => {
     const next = state.listOrder[state.listOrder.indexOf(listId) + 1];
     return next !== undefined && state.lists[next]?.continuesNumbering === true;
   });
 }
 
 export function useSetListContinuesNumbering() {
-  return useBoardStore((state) => state.setListContinuesNumbering);
+  return useBoard((state) => state.setListContinuesNumbering);
 }
 
 export function useSetListNumberFormat() {
-  return useBoardStore((state) => state.setListNumberFormat);
+  return useBoard((state) => state.setListNumberFormat);
 }
 
 export function useSetListNumbersHidden() {
-  return useBoardStore((state) => state.setListNumbersHidden);
+  return useBoard((state) => state.setListNumbersHidden);
 }
 
 export function useSetListHasChecks() {
-  return useBoardStore((state) => state.setListHasChecks);
+  return useBoard((state) => state.setListHasChecks);
 }
 
 export function useSetListSingleThots() {
-  return useBoardStore((state) => state.setListSingleThots);
+  return useBoard((state) => state.setListSingleThots);
 }
 
 export function useSetCardCheck() {
-  return useBoardStore((state) => state.setCardCheck);
+  return useBoard((state) => state.setCardCheck);
 }
 
 export function useSetListColor() {
-  return useBoardStore((state) => state.setListColor);
+  return useBoard((state) => state.setListColor);
 }
 
 export function useSetListIcon() {
-  return useBoardStore((state) => state.setListIcon);
+  return useBoard((state) => state.setListIcon);
 }
 
 export function useSetListWidths() {
-  return useBoardStore((state) => state.setListWidths);
+  return useBoard((state) => state.setListWidths);
 }
 
 /** A boolean, so a column re-renders only when its own flag flips. */
 export function useIsListCollapsed(listId: ListId): boolean {
-  return useBoardStore((state) => isCollapsed(state.collapsedLists, listId));
+  return useBoard((state) => isCollapsed(state.collapsedLists, listId));
 }
 
 export function useExpandListOf() {
-  return useBoardStore((state) => state.expandListOf);
+  return useBoard((state) => state.expandListOf);
 }
 
 export function useEndCardDragInto() {
-  return useBoardStore((state) => state.endCardDragInto);
+  return useBoard((state) => state.endCardDragInto);
 }
 
 export function useBackground(): BoardBackground | undefined {
-  return useBoardStore((state) => state.background);
+  return useBoard((state) => state.background);
 }
 
 export function useSetBackground() {
-  return useBoardStore((state) => state.setBackground);
+  return useBoard((state) => state.setBackground);
 }
 
 export function useSetCardKind() {
-  return useBoardStore((state) => state.setCardKind);
+  return useBoard((state) => state.setCardKind);
 }
 
 export function useSetCardColor() {
-  return useBoardStore((state) => state.setCardColor);
+  return useBoard((state) => state.setCardColor);
 }
 
 export function useSetCardsHighlight() {
-  return useBoardStore((state) => state.setCardsHighlight);
+  return useBoard((state) => state.setCardsHighlight);
 }
 
 export function useSetCardsHighlightStyle() {
-  return useBoardStore((state) => state.setCardsHighlightStyle);
+  return useBoard((state) => state.setCardsHighlightStyle);
 }
 
 export function useResetCardsStyle() {
-  return useBoardStore((state) => state.resetCardsStyle);
+  return useBoard((state) => state.resetCardsStyle);
 }
 
 export function useSetCardsNumberEmphasis() {
-  return useBoardStore((state) => state.setCardsNumberEmphasis);
+  return useBoard((state) => state.setCardsNumberEmphasis);
 }
 
 export function useSetCardDescription() {
-  return useBoardStore((state) => state.setCardDescription);
+  return useBoard((state) => state.setCardDescription);
 }
 
 export function useSetCardPostgameDescription() {
-  return useBoardStore((state) => state.setCardPostgameDescription);
+  return useBoard((state) => state.setCardPostgameDescription);
 }
 
 export function useUndo() {
-  return useBoardStore((state) => state.undo);
+  return useBoard((state) => state.undo);
 }
 
 export function useRedo() {
-  return useBoardStore((state) => state.redo);
+  return useBoard((state) => state.redo);
 }
 
 /** Booleans, not the stacks themselves -- a component that only needs to
  * know whether a button should be enabled must not re-render on every
  * change to a stack it never reads the contents of. */
 export function useCanUndo(): boolean {
-  return useBoardStore((state) => state.history.past.length > 0);
+  return useBoard((state) => state.history.past.length > 0);
 }
 
 export function useCanRedo(): boolean {
-  return useBoardStore((state) => state.history.future.length > 0);
+  return useBoard((state) => state.history.future.length > 0);
 }
 
 /** The active board's id. Changes only when the user switches or creates a
     board, never on an ordinary edit. */
 export function useBoardId(): BoardId {
-  return useBoardStore((state) => state.boardId);
+  return useBoard((state) => state.boardId);
 }
 
 /** Every board's id and name, for a switcher to list. Stable array
     reference -- it only changes on create, switch or rename. */
 export function useBoards(): readonly BoardSummary[] {
-  return useBoardStore((state) => state.boards);
+  return useBoard((state) => state.boards);
 }
 
 /** The active board's own name, derived from `boards` rather than stored
     twice. A plain string, so `Object.is` still holds (rule 1 above). */
 export function useActiveBoardName(): string {
-  return useBoardStore(
+  return useBoard(
     (state) => state.boards.find((board) => board.id === state.boardId)?.name ?? "Untitled board",
   );
 }
 
 export function useCreateBoard() {
-  return useBoardStore((state) => state.createBoard);
+  return useBoard((state) => state.createBoard);
 }
 
 export function useDuplicateBoard() {
-  return useBoardStore((state) => state.duplicateBoard);
+  return useBoard((state) => state.duplicateBoard);
 }
 
 export function useCreateBoardFromLayout() {
-  return useBoardStore((state) => state.createBoardFromLayout);
+  return useBoard((state) => state.createBoardFromLayout);
 }
 
 export function useDeleteBoard() {
-  return useBoardStore((state) => state.deleteBoard);
+  return useBoard((state) => state.deleteBoard);
 }
 
 export function useSwitchBoard() {
-  return useBoardStore((state) => state.switchBoard);
+  return useBoard((state) => state.switchBoard);
 }
 
 export function useRenameBoard() {
-  return useBoardStore((state) => state.renameBoard);
+  return useBoard((state) => state.renameBoard);
 }
 
 export function useSendCardToBoard() {
-  return useBoardStore((state) => state.sendCardToBoard);
+  return useBoard((state) => state.sendCardToBoard);
 }
 
 export function useSendListToBoard() {
-  return useBoardStore((state) => state.sendListToBoard);
+  return useBoard((state) => state.sendListToBoard);
 }
 
 /* Selection and the copy clipboard live in their own store
@@ -537,5 +537,5 @@ export function useForgetColor() {
 }
 
 export function useMoveTitleTextToThots() {
-  return useBoardStore((state) => state.moveTitleTextToThots);
+  return useBoard((state) => state.moveTitleTextToThots);
 }

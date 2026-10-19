@@ -40,7 +40,7 @@ import type {
   NumberEmphasis,
   NumberFormat,
 } from "../domain/types";
-import { embedded, setEmbedStatus, useEmbedStatus } from "./embedStore";
+import { embedded, setEmbedded, setEmbedStatus, useEmbedStatus } from "./embedStore";
 import { releaseImageIfUnused } from "./imageStore";
 import { findLinkedMap } from "./linkedMap";
 import {
@@ -932,6 +932,28 @@ export const useBoardStore = create<BoardStore>()(readOnlyGuard((set, get) => ({
       boards: state.boards.map((board) => (board.id === state.boardId ? { ...board, name } : board)),
     })),
 })));
+
+/**
+ * The gauntlet whiteboard: shows `boardId` in this store, the one board
+ * being edited there (embed mode, `setEmbedded`). The board open before is
+ * saved first. Its undo history starts empty.
+ */
+export function openEmbeddedBoard(boardId: BoardId): void {
+  if (!embedded()) throw new Error("openEmbeddedBoard is for embed mode only");
+  const state = useBoardStore.getState();
+  if (state.boardId === boardId && useEmbedStatus.getState().status === "ok") return;
+  if (state.cardDragOrigin) state.cancelCardDrag();
+  flushPersist();
+  setEmbedded({ id: boardId });
+  setEmbedStatus("ok");
+  const next = embeddedState(boardId);
+  useBoardStore.setState({ ...next.board, boardId, boards: next.boards, history: EMPTY_HISTORY });
+}
+
+/** Saves the open board now (the whiteboard, when editing ends). */
+export function flushBoard(): void {
+  flushPersist();
+}
 
 // The only subscribers that exist outside a component: persist whichever
 // slice changed, debounced, to `localStorage`. `history` is deliberately

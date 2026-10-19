@@ -14,7 +14,7 @@ import { findShortcut } from "./registry";
  *  - The drag wins: while a card or list is held with the keyboard, the arrow
  *    keys and Space are dnd-kit's, so nothing here fires.
  */
-export function useShortcuts(): void {
+export function useShortcuts(skip: readonly string[] = NONE): void {
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       // Already handled by something closer to the key press (dnd-kit's
@@ -24,7 +24,7 @@ export function useShortcuts(): void {
       }
       const target = focusTargetOf(event.target);
       const shortcut = findShortcut(event, target.scope, isEditableTarget(event.target));
-      if (!shortcut) {
+      if (!shortcut || skip.includes(shortcut.id)) {
         return;
       }
       event.preventDefault();
@@ -37,5 +37,9 @@ export function useShortcuts(): void {
       document.removeEventListener("pointermove", recordPointer);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, []);
+  }, [skip]);
 }
+
+/** `skip`: shortcut ids left out (the gauntlet whiteboard's board leaves out
+    the app's own search and help). */
+const NONE: readonly string[] = [];

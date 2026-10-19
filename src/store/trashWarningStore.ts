@@ -2,6 +2,7 @@ import { create } from "zustand";
 
 import { cardTrashOverflow, listTrashOverflow } from "../domain/trash";
 import { useBoardStore } from "./boardStore";
+import { useBoard } from "./boardContext";
 
 export type TrashKind = "card" | "list";
 
@@ -61,5 +62,5 @@ function describeErased(state: BoardSnapshot, kind: TrashKind): string {
     when the words change, and always current (an undo can change the trash
     while a dialog is open). `null` reads nothing and returns "". */
 export function useErasedDescription(kind: TrashKind | null): string {
-  return useBoardStore((state) => (kind ? describeErased(state, kind) : ""));
+  return useBoard((state) => (kind ? describeErased(state, kind) : ""));
 }
