@@ -5,12 +5,10 @@ import type { StoreApi } from "zustand";
 
 import { Composer } from "../../components/Composer";
 import type { BoardId } from "../../domain/types";
-import { BoardBackdrop } from "../../features/board/BoardBackdrop";
 import canvasStyles from "../../features/board/BoardCanvas.module.css";
 import { BoardDragContext } from "../../features/board/DragContext";
 import { ListColumn } from "../../features/board/ListColumn";
 import { SelectionBar } from "../../features/board/SelectionBar";
-import { useBackgroundChrome } from "../../features/board/useBoardBackdrop";
 import { useMarqueeSelection } from "../../features/board/useMarqueeSelection";
 import { useShortcuts } from "../../features/shortcuts/useShortcuts";
 import { BoardStoreContext } from "../../store/boardContext";
@@ -37,7 +35,9 @@ export interface WhiteboardBoardProps {
  * One Boardkit board on the gauntlet whiteboard: Boardkit's own lists and
  * cards (`ListColumn`, `CardItem`, the drag context, every menu), without
  * the app's toolbar (undo/redo, zoom, search, shortcuts, copy and download
- * the board), at natural size. The whiteboard scales it.
+ * the board), at natural size. The whiteboard scales it. No panel or board
+ * background behind the lists: they sit on the whiteboard itself, and a
+ * background set in Boardkit shows only there (owner, 2026-10-19).
  *
  * Only one board is edited at a time, so the board being edited lives in
  * Boardkit's own store (`openEmbeddedBoard`), with its saving, merging with
@@ -97,7 +97,6 @@ function BoardFrame({ editing }: { readonly editing: boolean }) {
       data-editing={editing ? "true" : "false"}
       onPointerDown={editing ? handlePointerDown : undefined}
     >
-      <BoardBackdrop />
       {editing && <Shortcuts />}
       <BoardDragContext overlayToBody>
         <div className={styles.rail} inert={!editing || readOnly}>
@@ -130,14 +129,8 @@ function Shortcuts() {
 
 function AddListSlot() {
   const addList = useAddList();
-  const chrome = useBackgroundChrome();
   return (
-    <div
-      className={canvasStyles.addListSlot}
-      data-scheme={chrome?.scheme}
-      data-ink={chrome?.ink}
-      data-capture-exclude="true"
-    >
+    <div className={canvasStyles.addListSlot} data-capture-exclude="true">
       <Composer label="Add a list" placeholder="Enter list title…" onSubmit={addList} />
     </div>
   );

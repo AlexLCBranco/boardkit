@@ -1,6 +1,7 @@
 /* A board on the gauntlet whiteboard: Boardkit's own canvas, drawn at its
    natural size (every list and card shown, nothing scrolls), for the
-   whiteboard to scale as a whole. */
+   whiteboard to scale as a whole. Transparent: the lists sit on the
+   whiteboard's own background, with no panel behind them. */
 .board {
   position: relative;
   isolation: isolate;
@@ -11,8 +12,7 @@
   line-height: var(--line-normal);
   -webkit-font-smoothing: antialiased;
   user-select: none;
-  background: var(--surface-app);
-  border-radius: var(--radius-lg);
+  background: none;
 }
 
 .rail {
