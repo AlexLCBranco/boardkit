@@ -63,6 +63,12 @@ function dragDataOf(entity: { data: { current?: unknown } }): DragData | undefin
   return entity.data.current as DragData | undefined;
 }
 
+/** The list a card, or an empty list's drop zone, belongs to. */
+function listIdOf(entity: { data: { current?: unknown } }): ListId | undefined {
+  const data = dragDataOf(entity);
+  return data && "listId" in data ? data.listId : undefined;
+}
+
 /**
  * Owns the one `DndContext` the board uses, its sensors and its collision
  * strategy, so drag configuration never scatters across components. It now
@@ -150,13 +156,26 @@ export function BoardDragContext({
     if (onStrip.length > 0) {
       return onStrip;
     }
-    return closestCenter({
-      ...args,
-      droppableContainers: args.droppableContainers.filter((container) => {
-        const containerType = dragDataOf(container)?.type;
-        return containerType !== "list" && containerType !== "list-collapsed";
-      }),
+    const cardTargets = args.droppableContainers.filter((container) => {
+      const containerType = dragDataOf(container)?.type;
+      return containerType !== "list" && containerType !== "list-collapsed";
     });
+    // With a pointer, a card goes into the list whose column the pointer is
+    // in (between columns: stays in its own), never by nearest centre
+    // alone. Moving the card reflows both lists; nearest centre then could
+    // point back at the list it just left, and the card flipped between the
+    // two on every render until React gave up (seen on the scaled gauntlet
+    // whiteboard, where moved cards measure off by the scale).
+    if (args.pointerCoordinates) {
+      const lists = args.droppableContainers.filter((container) => dragDataOf(container)?.type === "list");
+      const under = pointerWithin({ ...args, droppableContainers: lists })[0];
+      const listId = under ? (under.id as ListId) : listIdOf(args.active);
+      const inList = cardTargets.filter((container) => listIdOf(container) === listId);
+      if (inList.length > 0) {
+        return closestCenter({ ...args, droppableContainers: inList });
+      }
+    }
+    return closestCenter({ ...args, droppableContainers: cardTargets });
   };
 
   function handleDragStart(event: DragStartEvent) {
