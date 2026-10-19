@@ -261,14 +261,18 @@ export function BoardDragContext({
   );
   // dnd-kit sizes the overlay to the item as drawn on screen; the copy
   // inside is laid out at the board's own size and scaled to fit it.
+  // `data-boardkit-lifted` tells a host page (the whiteboard) that a drag is
+  // under way, whether it started from the pointer or the keyboard.
   const overlay = (
     <DragOverlay>
-      {activeDrag &&
-        (scale === 1 ? (
-          lifted
-        ) : (
-          <div style={{ width: `${100 / scale}%`, transform: `scale(${scale})`, transformOrigin: "0 0" }}>{lifted}</div>
-        ))}
+      {activeDrag && (
+        <div
+          data-boardkit-lifted=""
+          style={scale === 1 ? undefined : { width: `${100 / scale}%`, transform: `scale(${scale})`, transformOrigin: "0 0" }}
+        >
+          {lifted}
+        </div>
+      )}
     </DragOverlay>
   );
 
