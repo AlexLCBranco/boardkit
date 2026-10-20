@@ -53,6 +53,22 @@ describe("findLinkedMap", () => {
     expect(findLinkedMap(BOARD, read)?.name).toBe("From the list");
   });
 
+  it("names the map after the board as Boardkit's list has it now (renamed here; Linkkit's record still has the old name)", () => {
+    const read = storage({
+      "boardkit:registry": { version: 1, boards: [{ id: BOARD, name: "Relocate" }], activeBoardId: BOARD },
+      "linkkit:registry": registry({ id: "m1", name: "Move?" }),
+      "linkkit:map:m1": linked("Move?", BOARD),
+    });
+    expect(findLinkedMap(BOARD, read)).toEqual({ name: "Relocate", inTrash: false });
+    // A blank board name leaves Linkkit's.
+    const blank = storage({
+      "boardkit:registry": { version: 1, boards: [{ id: BOARD, name: " " }], activeBoardId: BOARD },
+      "linkkit:registry": registry({ id: "m1", name: "Move?" }),
+      "linkkit:map:m1": linked("Move?", BOARD),
+    });
+    expect(findLinkedMap(BOARD, blank)?.name).toBe("Move?");
+  });
+
   it("treats damaged or unknown records as no link", () => {
     const read = storage({
       "linkkit:registry": registry({ id: "m1", name: "A" }, { id: "m2", name: "B" }, { id: "m3", name: "C" }),

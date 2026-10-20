@@ -15,7 +15,7 @@ files.
 
 | Item | Owner |
 |------|-------|
-| _nothing_ (embed mode for the gauntlet canvas, v0.0.94, is done: `app/EmbedApp.tsx`, `app/embedBridge.ts`, `store/embedStore.ts`) | — |
+| _nothing_ (v0.0.98, done: deleting a board linked to a Linkkit map names that map after the board as it is now, from `boardkit:registry`, since Linkkit's own copy keeps an old board name until the map is next edited there; `store/linkedMap.ts`. Earlier: embed mode for the gauntlet canvas, v0.0.94) | — |
 
 ## Queued
 

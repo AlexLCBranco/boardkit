@@ -13,6 +13,12 @@ import type { BoardId } from "../domain/types";
  *                        whose records stay saved until erased
  *   linkkit:map:<id>     a linked map is { version: 2, map: { name, linkedBoard } }
  *
+ * A linked map is named after its board, and renaming the board here renames
+ * it only in Boardkit's list (`boardkit:registry`): Linkkit's record keeps
+ * the old name until the map is next edited there. So the name given is the
+ * board's, from that list, as Linkkit shows it; Linkkit's only when the list
+ * has none.
+ *
  * A deleted map is still found: restored in Linkkit, it would come back as an
  * ordinary tree, and the question should say that before it happens.
  */
@@ -21,6 +27,7 @@ const REGISTRY_KEY = "linkkit:registry";
 const MAP_TRASH_KEY = "linkkit:trash:maps";
 const MAP_KEY_PREFIX = "linkkit:map:";
 const LINKED_MAP_VERSION = 2;
+const BOARD_LIST_KEY = "boardkit:registry";
 
 export interface LinkedMap {
   readonly name: string;
@@ -59,6 +66,13 @@ function linkedName(data: unknown, boardId: BoardId): string | null {
   return typeof data.map.name === "string" ? data.map.name : "";
 }
 
+/** The board's name in Boardkit's list, or "" when it has none. */
+function boardName(data: unknown, boardId: BoardId): string {
+  if (!isObject(data) || !Array.isArray(data.boards)) return "";
+  const entry: unknown = data.boards.find((b: unknown) => isObject(b) && b.id === boardId);
+  return isObject(entry) && typeof entry.name === "string" ? entry.name.trim() : "";
+}
+
 export function findLinkedMap(boardId: BoardId, read: Read = (key) => localStorage.getItem(key)): LinkedMap | null {
   try {
     const sources = [
@@ -69,8 +83,9 @@ export function findLinkedMap(boardId: BoardId, read: Read = (key) => localStora
       for (const entry of entries) {
         const name = linkedName(parse(read(MAP_KEY_PREFIX + entry.id)), boardId);
         if (name === null) continue;
-        // The record's own name is the newest; the list's is the fallback.
-        return { name: name.trim() || entry.name.trim() || "Untitled map", inTrash };
+        // The board's name now, else the record's own, else Linkkit's list's.
+        const board = boardName(parse(read(BOARD_LIST_KEY)), boardId);
+        return { name: board || name.trim() || entry.name.trim() || "Untitled map", inTrash };
       }
     }
   } catch {
