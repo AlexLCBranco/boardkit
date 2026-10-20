@@ -950,6 +950,48 @@ export function openEmbeddedBoard(boardId: BoardId): void {
   useBoardStore.setState({ ...next.board, boardId, boards: next.boards, history: EMPTY_HISTORY });
 }
 
+/**
+ * The gauntlet whiteboard's "New board": an empty board, as "+ New board"
+ * makes one, stored at once with its entry in the board list. Not opened
+ * (the whiteboard opens a board only while it is edited), and the board the
+ * app opens next stays as it was. Returns its id, or `null` when it could
+ * not be stored.
+ */
+export function createWhiteboardBoard(name: string): BoardId | null {
+  if (!embedded()) throw new Error("createWhiteboardBoard is for embed mode only");
+  const boardId = createBoardId();
+  if (!savePersistedBoardNow(createEmptyBoard(), boardId)) return null;
+  // A list save still waiting (the open board renamed, say) goes first:
+  // the list taken from storage below would otherwise replace it.
+  flushPersistRegistry();
+  const listed = loadPersistedRegistry()?.boards ?? [];
+  savePersistedRegistryNow([...listed, { id: boardId, name }], boardId);
+  return takeStoredBoardList().some((board) => board.id === boardId) ? boardId : null;
+}
+
+/**
+ * The gauntlet whiteboard renames a board it shows, open or not. Like a
+ * rename in the app, it is not an undo step.
+ */
+export function renameWhiteboardBoard(boardId: BoardId, name: string): void {
+  if (!embedded()) throw new Error("renameWhiteboardBoard is for embed mode only");
+  flushPersistRegistry();
+  const stored = loadPersistedRegistry();
+  if (!stored?.boards.some((board) => board.id === boardId)) return;
+  const boards = stored.boards.map((board) => (board.id === boardId ? { ...board, name } : board));
+  savePersistedRegistryNow(boards, stored.activeBoardId);
+  takeStoredBoardList();
+}
+
+/** This page wrote the board list itself (no `storage` event comes for
+    that): the store takes it as stored, so its next write of the list
+    starts from it rather than from an older copy. */
+function takeStoredBoardList(): readonly BoardSummary[] {
+  const boards = loadPersistedRegistry()?.boards ?? [];
+  useBoardStore.setState({ boards });
+  return boards;
+}
+
 /** Saves the open board now (the whiteboard, when editing ends). */
 export function flushBoard(): void {
   flushPersist();

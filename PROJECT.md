@@ -1,6 +1,6 @@
 # Boardkit — project summary
 
-_Last updated: 2026-10-19, v0.0.95_
+_Last updated: 2026-10-20, v0.0.99_
 
 ## What it is
 
@@ -130,6 +130,9 @@ normalised state.
   Linkkit. Frames talk to the canvas by `postMessage` (`domain/embed.ts`).
   Tested in `src/store/embed.test.ts`, `autoBackup.test.ts`, and end to
   end in Linkkit's `e2e/embed.e2e.ts`
+- The gauntlet whiteboard can make a new board (its "+ New board"): an
+  empty board named "Untitled", in this same storage, so it shows here
+  like any other; it is renamed there by typing its name (v0.0.99)
 
 ## What's next
 
