@@ -15,7 +15,8 @@ files.
 
 | Item | Owner |
 |------|-------|
-| _nothing_ (v0.0.98, done: deleting a board linked to a Linkkit map names that map after the board as it is now, from `boardkit:registry`, since Linkkit's own copy keeps an old board name until the map is next edited there; `store/linkedMap.ts`. Earlier: embed mode for the gauntlet canvas, v0.0.94) | — |
+| Create a board from the gauntlet whiteboard ("New board"): whiteboard entry points to create a board and rename it without opening it, `app/whiteboard/` | Claude |
+| _done_ (v0.0.98: deleting a board linked to a Linkkit map names that map after the board as it is now, from `boardkit:registry`, since Linkkit's own copy keeps an old board name until the map is next edited there; `store/linkedMap.ts`. Earlier: embed mode for the gauntlet canvas, v0.0.94) | — |
 
 ## Queued
 
