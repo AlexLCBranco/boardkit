@@ -460,10 +460,18 @@
 /* ---- On the gauntlet whiteboard only (`whiteboardMode.ts`). The hover
    marks (`data-pointer-over`, `data-pointer-over-header`) are set by the
    whiteboard's board (app/whiteboard/WhiteboardBoard.tsx), from the
-   pointer's position: there a board not being edited ignores the pointer. */
+   pointer's position: there a board not being edited ignores the pointer.
+   Nothing sits on a border: every control is clearly inside a list or
+   clearly outside it (owner, 2026-10-21). */
 
-/* The header shows its title and count; the other controls only while the
-   pointer is over that header (or a control has the keyboard). */
+/* The header: title, then the card count at its right end. The other
+   controls keep their room (hidden) just before the count and show only
+   while the pointer is over that header (or one has the keyboard), so
+   neither the title nor the count ever moves. */
+.whiteboard .header > .count {
+  order: 1;
+}
+
 .whiteboard .header > button {
   visibility: hidden;
 }
@@ -479,33 +487,48 @@
   min-height: 0;
 }
 
-/* Every card shows (the board is drawn at its natural size), and the slim
-   "+" below sits outside the list. */
+/* Every card shows (the board is drawn at its natural size). */
 .whiteboard .scroller {
   overflow: visible;
 }
 
-/* The slim "+ Add a card": on the list's bottom edge, taking no room,
-   shown only on the list the pointer is over. */
+/* "+ Add a card" as a faint full-width row inside the list, at its bottom,
+   in room the list always keeps (so showing it never makes the list
+   taller): only on the list the pointer is over, a bit stronger when the
+   pointer is on it. */
+.whiteboard .scroller:has(> .composerSlot > [data-slim]) {
+  padding-bottom: 26px;
+}
+
 .whiteboard .composerSlot:has(> [data-slim]) {
   margin-top: 0;
 }
 
-.whiteboard [data-slim] {
+.whiteboard .composerSlot > [data-slim] {
   position: absolute;
-  left: 50%;
-  bottom: -9px;
-  z-index: 1;
-  width: 40px;
+  left: var(--space-2);
+  right: var(--space-2);
+  bottom: 4px;
   height: 18px;
-  transform: translateX(-50%);
+  border: none;
+  border-radius: var(--radius-md);
+  background: color-mix(in oklab, var(--text-primary) 6%, transparent);
+  color: var(--text-muted);
   font-size: var(--font-size-sm);
+  font-weight: var(--weight-medium);
   opacity: 0;
   pointer-events: none;
-  transition: opacity var(--duration-fast) var(--ease-standard);
+  transition:
+    opacity var(--duration-fast) var(--ease-standard),
+    background-color var(--duration-fast) var(--ease-standard);
 }
 
-.whiteboard[data-pointer-over] [data-slim] {
+.whiteboard[data-pointer-over] .composerSlot > [data-slim] {
   opacity: 1;
   pointer-events: auto;
+}
+
+.whiteboard .composerSlot > [data-slim]:hover {
+  background: color-mix(in oklab, var(--text-primary) 13%, transparent);
+  color: var(--text-primary);
 }

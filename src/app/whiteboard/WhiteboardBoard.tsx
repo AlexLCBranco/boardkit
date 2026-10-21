@@ -106,6 +106,7 @@ function BoardFrame({ editing, active }: { readonly editing: boolean; readonly a
   const rootRef = useRef<HTMLDivElement>(null);
   const handlePointerDown = useMarqueeSelection(marqueeRef);
   usePointerOverMarks(rootRef);
+  useLastListHeight(rootRef);
   return (
     <WhiteboardModeContext.Provider value={true}>
       <div
@@ -142,11 +143,41 @@ function BoardFrame({ editing, active }: { readonly editing: boolean; readonly a
   );
 }
 
+/** The last list's height, as `--last-list-height` on the board, for the
+    "+ Add a list" ghost column beside it (WhiteboardBoard.module.css). */
+function useLastListHeight(rootRef: RefObject<HTMLDivElement | null>) {
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    const measure = () => {
+      const lists = root.querySelectorAll<HTMLElement>("section[data-list-id]");
+      const last = lists[lists.length - 1];
+      if (last) root.style.setProperty("--last-list-height", `${last.offsetHeight}px`);
+    };
+    measure();
+    const sizes = new ResizeObserver(measure);
+    const watch = () => {
+      sizes.disconnect();
+      for (const list of root.querySelectorAll("section[data-list-id]")) sizes.observe(list);
+      measure();
+    };
+    // Lists come and go (added, deleted, reordered): watch the new last one.
+    const isList = (n: Node) => n instanceof HTMLElement && n.matches("section[data-list-id]");
+    const lists = new MutationObserver((changes) => {
+      if (changes.some((c) => [...c.addedNodes, ...c.removedNodes].some(isList))) watch();
+    });
+    lists.observe(root, { childList: true, subtree: true });
+    watch();
+    return () => {
+      sizes.disconnect();
+      lists.disconnect();
+    };
+  }, [rootRef]);
+}
+
 /** How far around the board (screen pixels) the pointer still counts as
     over it: its name above, its slim "+" buttons just outside. */
-const AROUND = { top: 36, right: 32, bottom: 16, left: 8 };
-/** Below a list, its slim "+ Add a card" still counts as on the list. */
-const BELOW_LIST = 14;
+const AROUND = { top: 36, right: 56, bottom: 16, left: 8 };
 
 /** Where the pointer was last seen, for a board drawn anew under it (e.g.
     when editing starts: a press on a slim "+" must find it still showing). */
@@ -187,7 +218,7 @@ function usePointerOverMarks(rootRef: RefObject<HTMLDivElement | null>) {
       mark(root, "data-pointer-over", true);
       for (const list of root.querySelectorAll("section[data-list-id]")) {
         const l = list.getBoundingClientRect();
-        const onList = x >= l.left && x <= l.right && y >= l.top && y <= l.bottom + BELOW_LIST;
+        const onList = x >= l.left && x <= l.right && y >= l.top && y <= l.bottom;
         const h = list.querySelector("[data-list-header]")?.getBoundingClientRect();
         mark(list, "data-pointer-over", onList);
         mark(list, "data-pointer-over-header", onList && !!h && y >= h.top && y <= h.bottom);

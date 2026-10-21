@@ -24,9 +24,12 @@
   width: max-content;
 }
 
-/* The slim "+ Add a list": on the last list's right edge, taking no room
-   (the gap before it is taken back), shown while the pointer is over the
-   board or the board is selected. Open, the field takes a list's place. */
+/* "+ Add a list" as a faint ghost column just right of the last list (a
+   gap away from it: clearly outside the list and the widget's box, which
+   it takes no room in), as tall as that list (`--last-list-height`, set by
+   WhiteboardBoard.tsx), its "+" at the top in line with the list titles.
+   Shown while the pointer is over the board or the board is selected.
+   Open, the field takes a list's place. */
 .addListSlim {
   position: relative;
   flex: 0 0 0;
@@ -37,20 +40,33 @@
 
 .addListSlim > [data-slim] {
   position: absolute;
-  top: var(--space-2);
-  left: 5px;
-  width: 18px;
-  height: 40px;
-  font-size: var(--font-size-sm);
+  top: 0;
+  left: var(--space-2);
+  width: 40px;
+  height: var(--last-list-height, 64px);
+  align-items: flex-start;
+  padding-top: var(--space-3);
+  border: 1px dashed color-mix(in oklab, var(--text-primary) 16%, transparent);
+  border-radius: var(--radius-lg);
+  background: color-mix(in oklab, var(--text-primary) 4%, transparent);
+  color: var(--text-muted);
+  font-size: var(--font-size-md);
   opacity: 0;
   pointer-events: none;
-  transition: opacity var(--duration-fast) var(--ease-standard);
+  transition:
+    opacity var(--duration-fast) var(--ease-standard),
+    background-color var(--duration-fast) var(--ease-standard);
 }
 
 .board[data-pointer-over] .addListSlim > [data-slim],
 .board[data-active] .addListSlim > [data-slim] {
   opacity: 1;
   pointer-events: auto;
+}
+
+.addListSlim > [data-slim]:hover {
+  background: color-mix(in oklab, var(--text-primary) 10%, transparent);
+  color: var(--text-primary);
 }
 
 .addListSlim:has(textarea) {
