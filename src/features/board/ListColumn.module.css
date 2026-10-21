@@ -456,3 +456,56 @@
 .column[data-cut] .stripTitle {
   opacity: var(--cut-opacity);
 }
+
+/* ---- On the gauntlet whiteboard only (`whiteboardMode.ts`). The hover
+   marks (`data-pointer-over`, `data-pointer-over-header`) are set by the
+   whiteboard's board (app/whiteboard/WhiteboardBoard.tsx), from the
+   pointer's position: there a board not being edited ignores the pointer. */
+
+/* The header shows its title and count; the other controls only while the
+   pointer is over that header (or a control has the keyboard). */
+.whiteboard .header > button {
+  visibility: hidden;
+}
+
+.whiteboard[data-pointer-over-header] .header > button,
+.whiteboard .header:focus-within > button {
+  visibility: visible;
+}
+
+/* A list is as tall as what is in it: an empty one is its header and its
+   "+ Add a card". */
+.whiteboard .emptyDropZone {
+  min-height: 0;
+}
+
+/* Every card shows (the board is drawn at its natural size), and the slim
+   "+" below sits outside the list. */
+.whiteboard .scroller {
+  overflow: visible;
+}
+
+/* The slim "+ Add a card": on the list's bottom edge, taking no room,
+   shown only on the list the pointer is over. */
+.whiteboard .composerSlot:has(> [data-slim]) {
+  margin-top: 0;
+}
+
+.whiteboard [data-slim] {
+  position: absolute;
+  left: 50%;
+  bottom: -9px;
+  z-index: 1;
+  width: 40px;
+  height: 18px;
+  transform: translateX(-50%);
+  font-size: var(--font-size-sm);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-fast) var(--ease-standard);
+}
+
+.whiteboard[data-pointer-over] [data-slim] {
+  opacity: 1;
+  pointer-events: auto;
+}

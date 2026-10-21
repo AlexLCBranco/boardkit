@@ -6,6 +6,12 @@ interface ComposerProps {
   readonly label: string;
   readonly placeholder?: string;
   readonly onSubmit: (title: string) => void;
+  /** What it adds, as a fixed marker (`data-add`) on the button, for code
+      that must find it whatever its text (the gauntlet whiteboard). */
+  readonly adds?: "list" | "card";
+  /** The button is a slim "+" (labelled for screen readers), placed by the
+      caller's CSS (`data-slim`); open, the field is the usual one. */
+  readonly slim?: boolean;
 }
 
 /**
@@ -27,7 +33,7 @@ interface ComposerProps {
  * the Add button) creates something, so a stray click elsewhere can't leave
  * behind an accidental card. The title may be blank.
  */
-export function Composer({ label, placeholder, onSubmit }: ComposerProps) {
+export function Composer({ label, placeholder, onSubmit, adds, slim = false }: ComposerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [draft, setDraft] = useState("");
   const [submitCount, setSubmitCount] = useState(0);
@@ -69,8 +75,15 @@ export function Composer({ label, placeholder, onSubmit }: ComposerProps) {
   }
 
   if (!isOpen) {
+    if (slim) {
+      return (
+        <button type="button" className={styles.slim} onClick={open} data-add={adds} data-slim="" aria-label={label} title={label}>
+          +
+        </button>
+      );
+    }
     return (
-      <button type="button" className={styles.trigger} onClick={open}>
+      <button type="button" className={styles.trigger} onClick={open} data-add={adds}>
         + {label}
       </button>
     );

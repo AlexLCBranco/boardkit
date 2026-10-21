@@ -121,3 +121,31 @@
   background: var(--surface-hover);
   color: var(--text-primary);
 }
+
+/* The slim "+" (`slim`): only its look here; where it sits and when it
+   shows is the caller's (the gauntlet whiteboard's board,
+   app/whiteboard/WhiteboardBoard.module.css). */
+.slim {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  background: var(--surface-raised, var(--surface-sunken));
+  color: var(--text-secondary);
+  font: inherit;
+  font-weight: var(--weight-bold);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.slim:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.slim:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}

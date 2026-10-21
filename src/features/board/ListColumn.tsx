@@ -76,6 +76,7 @@ import styles from "./ListColumn.module.css";
 import { StatusBadge } from "./StatusBadge";
 import { ListTransferItems } from "./TransferMenus";
 import { useErasedDescription } from "../../store/trashWarningStore";
+import { useWhiteboardMode } from "./whiteboardMode";
 
 interface ListColumnProps {
   readonly listId: ListId;
@@ -134,6 +135,17 @@ function ListColumnImpl({ listId }: ListColumnProps) {
   // link) but shows and behaves as if it weren't.
   const continuesNumbering = !isFirstList && list.continuesNumbering === true;
   const isCollapsed = useIsListCollapsed(listId);
+  // On the gauntlet whiteboard: slim "+", a "⋯" menu, hover-only controls.
+  const whiteboard = useWhiteboardMode();
+  const headerRef = useRef<HTMLElement>(null);
+
+  // "⋯" (whiteboard): the header's own right-click menu, opened under it.
+  function openListMenu(event: ReactMouseEvent<HTMLButtonElement>) {
+    const at = event.currentTarget.getBoundingClientRect();
+    headerRef.current?.dispatchEvent(
+      new MouseEvent("contextmenu", { bubbles: true, cancelable: true, button: 2, clientX: at.left, clientY: at.bottom }),
+    );
+  }
 
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
   // A colour being tried in the customise panel's picker, shown before it is
@@ -370,7 +382,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
         Just one thots box per card
       </ContextMenuCheckboxItem>
       <ListTransferItems listId={listId} />
-      {isCollapsed && (
+      {(isCollapsed || whiteboard) && (
         <>
           <ContextMenuSeparator />
           <ContextMenuItem variant="destructive" onSelect={() => setIsDeleteConfirmOpen(true)}>
@@ -417,7 +429,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
       <section
         ref={setColumnRefs}
         style={style}
-        className={`${styles.column} ${styles.collapsed} ${isDragging ? styles.dragging : ""}`}
+        className={`${styles.column} ${styles.collapsed} ${isDragging ? styles.dragging : ""} ${whiteboard ? styles.whiteboard : ""}`}
         data-list-id={listId}
         data-cut={listCut ? "" : undefined}
       >
@@ -437,7 +449,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
     <section
       ref={setColumnRefs}
       style={style}
-      className={`${styles.column} ${isDragging ? styles.dragging : ""} ${isResizing ? styles.resizing : ""}`}
+      className={`${styles.column} ${isDragging ? styles.dragging : ""} ${isResizing ? styles.resizing : ""} ${whiteboard ? styles.whiteboard : ""}`}
       data-list-id={listId}
       data-cut={listCut ? "" : undefined}
     >
@@ -445,7 +457,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
           clicks inside it never bubble through the header's drag listeners. */}
       <ContextMenu>
         <ContextMenuTrigger asChild>
-      <header className={styles.header} data-list-header {...attributes} {...listeners}>
+      <header ref={headerRef} className={styles.header} data-list-header {...attributes} {...listeners}>
         {list.status && <StatusBadge status={list.status} />}
         {list.icon && <Icon name={list.icon} className={styles.headerIcon} />}
         <h2 className={styles.title}>
@@ -515,15 +527,28 @@ function ListColumnImpl({ listId }: ListColumnProps) {
         >
           <span className={styles.customizeSwatch} style={accent ? { background: accent } : undefined} />
         </button>
-        <button
-          type="button"
-          className={styles.deleteButton}
-          onClick={() => setIsDeleteConfirmOpen(true)}
-          data-capture-exclude="true"
-          aria-label="Delete list"
-        >
-          ×
-        </button>
+        {whiteboard ? (
+          <button
+            type="button"
+            className={styles.deleteButton}
+            onClick={openListMenu}
+            data-capture-exclude="true"
+            aria-label="List actions"
+            title="More: duplicate, move, delete…"
+          >
+            ⋯
+          </button>
+        ) : (
+          <button
+            type="button"
+            className={styles.deleteButton}
+            onClick={() => setIsDeleteConfirmOpen(true)}
+            data-capture-exclude="true"
+            aria-label="Delete list"
+          >
+            ×
+          </button>
+        )}
       </header>
         </ContextMenuTrigger>
         {menuContent}
@@ -608,6 +633,8 @@ function ListColumnImpl({ listId }: ListColumnProps) {
               label="Add a card"
               placeholder="Enter a title for this card…"
               onSubmit={(title) => addCard(listId, title)}
+              adds="card"
+              slim={whiteboard && cardIds.length > 0}
             />
           )}
         </div>

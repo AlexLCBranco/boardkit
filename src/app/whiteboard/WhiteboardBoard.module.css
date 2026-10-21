@@ -15,12 +15,49 @@
   background: none;
 }
 
+/* No padding: the whiteboard's box around the board hugs its lists. */
 .rail {
   display: flex;
   align-items: flex-start;
   gap: var(--board-gutter);
-  padding: var(--space-4);
+  padding: 0;
   width: max-content;
+}
+
+/* The slim "+ Add a list": on the last list's right edge, taking no room
+   (the gap before it is taken back), shown while the pointer is over the
+   board or the board is selected. Open, the field takes a list's place. */
+.addListSlim {
+  position: relative;
+  flex: 0 0 0;
+  width: 0;
+  align-self: stretch;
+  margin-left: calc(-1 * var(--board-gutter));
+}
+
+.addListSlim > [data-slim] {
+  position: absolute;
+  top: var(--space-2);
+  left: 5px;
+  width: 18px;
+  height: 40px;
+  font-size: var(--font-size-sm);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-fast) var(--ease-standard);
+}
+
+.board[data-pointer-over] .addListSlim > [data-slim],
+.board[data-active] .addListSlim > [data-slim] {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.addListSlim:has(textarea) {
+  flex: 0 0 var(--list-width);
+  width: var(--list-width);
+  margin-left: 0;
+  padding: var(--space-2);
 }
 
 /* Not being edited: a picture of the board. Nothing inside reacts to the

@@ -107,7 +107,7 @@ function AddListSlot() {
       data-ink={chrome?.ink}
       data-capture-exclude="true"
     >
-      <Composer label="Add a list" placeholder="Enter list title…" onSubmit={addList} />
+      <Composer label="Add a list" placeholder="Enter list title…" onSubmit={addList} adds="list" />
     </div>
   );
 }

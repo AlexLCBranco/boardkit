@@ -7,7 +7,9 @@ import "./prepare";
  * `WhiteboardBoard.tsx`.
  */
 export { WhiteboardBoard, type WhiteboardBoardProps } from "./WhiteboardBoard";
-export { createWhiteboardBoard, flushBoard, renameWhiteboardBoard } from "../../store/boardStore";
+export { SaveFailedBanner } from "./SaveFailedBanner";
+export { onBoardHistory, redoBoard, undoBoard } from "./history";
+export { createWhiteboardBoard, deleteEmptyWhiteboardBoard, flushBoard, renameWhiteboardBoard } from "../../store/boardStore";
 export { useThemeStore } from "../../store/themeStore";
 export { useSelectionStore } from "../../store/selectionStore";
 export { IconSprite } from "../../components/IconSprite";

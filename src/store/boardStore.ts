@@ -50,6 +50,7 @@ import {
   flushPersist,
   forgetBoardDeletedElsewhere,
   loadLegacyPersistedBoard,
+  loadPersistedBoard,
   onBoardMerged,
   openPersistedBoard,
   removeOrphanedSetAside,
@@ -957,9 +958,8 @@ export function openEmbeddedBoard(boardId: BoardId): void {
  * app opens next stays as it was. Returns its id, or `null` when it could
  * not be stored.
  */
-export function createWhiteboardBoard(name: string): BoardId | null {
+export function createWhiteboardBoard(name: string, boardId: BoardId = createBoardId()): BoardId | null {
   if (!embedded()) throw new Error("createWhiteboardBoard is for embed mode only");
-  const boardId = createBoardId();
   if (!savePersistedBoardNow(createEmptyBoard(), boardId)) return null;
   // A list save still waiting (the open board renamed, say) goes first:
   // the list taken from storage below would otherwise replace it.
@@ -967,6 +967,37 @@ export function createWhiteboardBoard(name: string): BoardId | null {
   const listed = loadPersistedRegistry()?.boards ?? [];
   savePersistedRegistryNow([...listed, { id: boardId, name }], boardId);
   return takeStoredBoardList().some((board) => board.id === boardId) ? boardId : null;
+}
+
+/**
+ * The gauntlet whiteboard takes back a board its "New board" made, once
+ * that board's widget is gone (its creation undone, or it was deleted), if
+ * the board is still as it was made: no lists, nothing in its trash, still
+ * named `name` (owner, 2026-10-20). Deleted for good, as Boardkit's own
+ * board delete is (there is no board trash). A board with anything in it is
+ * never deleted here, nor the last board in the list (as in Boardkit: the
+ * app always has one to show). Returns whether it was. `createWhiteboardBoard(name,
+ * boardId)` puts it back, same id, if the widget comes back (a redo).
+ */
+export function deleteEmptyWhiteboardBoard(boardId: BoardId, name: string): boolean {
+  if (!embedded()) throw new Error("deleteEmptyWhiteboardBoard is for embed mode only");
+  // Its latest edit stored first, if it is the one open: that is what counts.
+  if (useBoardStore.getState().boardId === boardId) flushPersist();
+  flushPersistRegistry();
+  const stored = loadPersistedRegistry();
+  const entry = stored?.boards.find((board) => board.id === boardId);
+  const board = loadPersistedBoard(boardId);
+  if (!stored || !entry || entry.name !== name || !board || stored.boards.length <= 1) return false;
+  if (board.listOrder.length > 0 || board.trash.length > 0 || board.trashedLists.length > 0) return false;
+  // Its content first: the list is then written without it (only boards
+  // whose content is stored are listed).
+  removePersistedBoard(boardId);
+  savePersistedRegistryNow(
+    stored.boards.filter((b) => b.id !== boardId),
+    stored.activeBoardId,
+  );
+  takeStoredBoardList();
+  return true;
 }
 
 /**

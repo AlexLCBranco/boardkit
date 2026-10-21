@@ -134,3 +134,43 @@ describe("renameWhiteboardBoard", () => {
     expect(localStorage.getItem("boardkit:registry")).toBe(before);
   });
 });
+
+describe("deleteEmptyWhiteboardBoard", () => {
+  it("deletes a new board still as made (no lists, empty trash, still named), and createWhiteboardBoard puts it back with the same id", async () => {
+    twoBoards();
+    const store = await whiteboardStore();
+    const id = store.createWhiteboardBoard("Untitled")!;
+    expect(store.deleteEmptyWhiteboardBoard(id, "Untitled")).toBe(true);
+    expect(localStorage.getItem(`boardkit:board:${id}`)).toBeNull();
+    expect(registry().boards.map((b) => b.id)).toEqual([A, B]);
+    expect(registry().activeBoardId).toBe(B);
+    expect(store.createWhiteboardBoard("Untitled", id)).toBe(id);
+    expect(registry().boards.map((b) => b.name)).toEqual(["Week 36", "Sprint", "Untitled"]);
+  });
+
+  it("never deletes a board with anything in it, a renamed one, or one that isn't there", async () => {
+    twoBoards();
+    const store = await whiteboardStore();
+    expect(store.deleteEmptyWhiteboardBoard(A, "Week 36")).toBe(false); // has a list
+    const renamed = store.createWhiteboardBoard("Untitled")!;
+    store.renameWhiteboardBoard(renamed, "Mine");
+    expect(store.deleteEmptyWhiteboardBoard(renamed, "Untitled")).toBe(false);
+    expect(store.deleteEmptyWhiteboardBoard("nope" as BoardId, "Untitled")).toBe(false);
+    // Never the last board in the list.
+    localStorage.clear();
+    const only = store.createWhiteboardBoard("Untitled")!;
+    expect(store.deleteEmptyWhiteboardBoard(only, "Untitled")).toBe(false);
+    expect(localStorage.getItem(`boardkit:board:${only}`)).not.toBeNull();
+    twoBoards();
+    // A list added, then deleted: it is in the board's trash, so kept.
+    const used = store.createWhiteboardBoard("Untitled")!;
+    store.openEmbeddedBoard(used);
+    store.useBoardStore.getState().addList("Gone");
+    const listId = store.useBoardStore.getState().listOrder[0];
+    store.useBoardStore.getState().deleteList(listId);
+    expect(store.deleteEmptyWhiteboardBoard(used, "Untitled")).toBe(false);
+    expect(registry().boards.map((b) => b.id)).toEqual([A, B, used]);
+    const a = readBoard(JSON.parse(localStorage.getItem(`boardkit:board:${A}`)!));
+    expect(a.status === "ok" && a.board.listOrder).toHaveLength(1);
+  });
+});
