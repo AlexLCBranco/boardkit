@@ -1,11 +1,15 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import styles from "./Composer.module.css";
+import { useClickAway } from "./useClickAway";
+
+/** How a title was given: Enter (or the Add button), or a click away. */
+export type SubmitHow = "enter" | "away";
 
 interface ComposerProps {
   readonly label: string;
   readonly placeholder?: string;
-  readonly onSubmit: (title: string) => void;
+  readonly onSubmit: (title: string, how: SubmitHow) => void;
   /** What it adds, as a fixed marker (`data-add`) on the button, for code
       that must find it whatever its text (the gauntlet whiteboard). */
   readonly adds?: "list" | "card";
@@ -37,9 +41,10 @@ interface ComposerProps {
  * layout shifts, so without this a full-height list would leave the field --
  * and the cards being typed -- below the fold.
  *
- * Escape or blur closes the composer and discards the draft. Only Enter (or
- * the Add button) creates something, so a stray click elsewhere can't leave
- * behind an accidental card. The title may be blank.
+ * A click away (or the field losing focus) adds what was typed, as Enter
+ * does, and closes it (owner, 2026-10-21: typed text is never lost); with
+ * nothing typed it only closes, so a stray click leaves no blank card or
+ * list. Escape closes it and discards the draft. Enter may add a blank one.
  */
 export function Composer({ label, placeholder, onSubmit, adds, slim = false, closeAfterSubmit = false, openNow = false, onOpenedNow }: ComposerProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -49,6 +54,9 @@ export function Composer({ label, placeholder, onSubmit, adds, slim = false, clo
   const [submitCount, setSubmitCount] = useState(0);
   const composerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  // Set once a click away has added or closed, so the blur that follows the
+  // same press does nothing more.
+  const awayRef = useRef(false);
 
   // Runs in the same commit as the new card (the store write and this state
   // change are batched), so the layout it measures already includes the card.
@@ -65,8 +73,9 @@ export function Composer({ label, placeholder, onSubmit, adds, slim = false, clo
     }
   }, [isOpen]);
 
-  useEffect(() => {
+      useEffect(() => {
     if (!openNow) return;
+    awayRef.current = false;
     setDraft("");
     setIsOpen(true);
     setEmptyCloses(true);
@@ -75,12 +84,14 @@ export function Composer({ label, placeholder, onSubmit, adds, slim = false, clo
   }, [openNow, onOpenedNow]);
 
   function open() {
+    awayRef.current = false;
     setDraft("");
     setEmptyCloses(false);
     setIsOpen(true);
   }
 
   function close() {
+    awayRef.current = true;
     setIsOpen(false);
     setEmptyCloses(false);
     setDraft("");
@@ -93,7 +104,7 @@ export function Composer({ label, placeholder, onSubmit, adds, slim = false, clo
     }
     // A blank title is allowed: Enter on an empty field adds an empty card
     // or list. Escape, blur and × are how you close without adding.
-    onSubmit(draft.trim());
+    onSubmit(draft.trim(), "enter");
     if (closeAfterSubmit) {
       close();
       return;
@@ -102,6 +113,16 @@ export function Composer({ label, placeholder, onSubmit, adds, slim = false, clo
     setSubmitCount((count) => count + 1);
     textareaRef.current?.focus();
   }
+
+  /** A click away: what was typed is added, as Enter does; nothing typed,
+      nothing added. Either way it closes. */
+  function away() {
+    if (awayRef.current) return;
+    const title = draft.trim();
+    if (title) onSubmit(title, "away");
+    close();
+  }
+  useClickAway(composerRef, isOpen, away);
 
   if (!isOpen) {
     if (slim) {
@@ -128,7 +149,7 @@ export function Composer({ label, placeholder, onSubmit, adds, slim = false, clo
           placeholder={placeholder}
           rows={1}
           onChange={(event) => setDraft(event.target.value)}
-          onBlur={close}
+          onBlur={away}
           onKeyDown={(event) => {
             if (event.key === "Enter" && !event.shiftKey) {
               event.preventDefault();

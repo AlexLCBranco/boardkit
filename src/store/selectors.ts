@@ -121,11 +121,13 @@ export function useAddList() {
     card" field opens for its first card (`cardFieldStore.ts`). */
 export function useAddListThenItsFirstCard() {
   const store = useBoardApi();
-  return (title: string) => {
+  // Only Enter opens the new list's card field: a click away just adds it
+  // (owner, 2026-10-21).
+  return (title: string, how: "enter" | "away" = "enter") => {
     const before = store.getState().listOrder.length;
     store.getState().addList(title);
     const { listOrder } = store.getState();
-    if (listOrder.length === before + 1) useCardFieldRequest.setState({ listId: listOrder[listOrder.length - 1] });
+    if (how === "enter" && listOrder.length === before + 1) useCardFieldRequest.setState({ listId: listOrder[listOrder.length - 1] });
   };
 }
 

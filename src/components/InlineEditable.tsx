@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { linkLabel, splitLinks } from "../domain/links";
 
 import { SelectionMenu } from "./SelectionMenu";
+import { useClickAway } from "./useClickAway";
 
 import styles from "./InlineEditable.module.css";
 
@@ -79,6 +80,10 @@ export function InlineEditable({
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(value);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fieldRef = useRef<HTMLSpanElement>(null);
+  // Set once an edit has ended, so the blur that follows a click away (the
+  // same press) does not commit it a second time.
+  const endedRef = useRef(false);
   // Set when Enter or Esc ends an edit, so focus can go back to whatever
   // owned this field once the textarea is gone -- see the effect below.
   const returnFocusRef = useRef<HTMLElement | null>(null);
@@ -150,11 +155,14 @@ export function InlineEditable({
   }, [isEditing]);
 
   function startEditing() {
+    endedRef.current = false;
     setDraft(value);
     setIsEditing(true);
   }
 
   function commit() {
+    if (endedRef.current) return;
+    endedRef.current = true;
     setIsEditing(false);
     const trimmed = draft.trim();
     if (trimmed === value) return;
@@ -195,9 +203,17 @@ export function InlineEditable({
   }
 
   function cancel() {
+    endedRef.current = true;
     setDraft(value);
     setIsEditing(false);
   }
+
+  // A press anywhere outside the field keeps what was typed, as Enter does
+  // (owner, 2026-10-21), even where that press never blurs the field. Not
+  // while the selection menu is open: a press there is the menu's.
+  useClickAway(fieldRef, isEditing, () => {
+    if (!menuOpenRef.current) commit();
+  });
 
   if (!isEditing) {
     const isPlaceholder = !value && Boolean(placeholder);
@@ -270,6 +286,7 @@ export function InlineEditable({
 
   return (
     <span
+      ref={fieldRef}
       className={[styles.autosize, className].filter(Boolean).join(" ")}
       data-value={draft || " "}
     >
@@ -320,6 +337,7 @@ export function InlineEditable({
             hint: action.hint,
             onPick: () => {
               closeMenu();
+              endedRef.current = true;
               setIsEditing(false);
               action.onPick(draft, menu.start, menu.end);
             },

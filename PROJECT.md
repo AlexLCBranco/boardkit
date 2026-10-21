@@ -1,6 +1,6 @@
 # Boardkit — project summary
 
-_Last updated: 2026-10-21, v0.0.103_
+_Last updated: 2026-10-21, v0.0.104_
 
 ## What it is
 
@@ -27,6 +27,13 @@ normalised state.
 
 ## What works now
 
+- A click away saves what was typed, as Enter does, in every inline field
+  (a new list or card, renaming a list, a card, the board): seen first on
+  the window (`useClickAway`), so it is kept even where the press never
+  blurs the field. An empty new list or card field just closes; Escape
+  still cancels. A new list saved by a click away opens no card field.
+  List header buttons carry fixed markers (`data-control`) for the
+  gauntlet whiteboard (v0.0.104, owner 2026-10-21).
 - On the gauntlet whiteboard, Boardkit and Linkkit share one page: each
   tells the other of its own writes there (`store/storedHere.ts`,
   `app/whiteboard/bridge.ts`; the browser's `storage` event only reaches

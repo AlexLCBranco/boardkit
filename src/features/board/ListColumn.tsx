@@ -483,10 +483,13 @@ function ListColumnImpl({ listId }: ListColumnProps) {
         ) : (
           <span className={styles.count}>{cardCount}</span>
         )}
+        {/* Each control here has a fixed marker (`data-control`), for code
+            that must find it whatever its text (the gauntlet whiteboard). */}
         <button
           type="button"
           className={styles.collapseButton}
           onClick={toggleCollapsed}
+          data-control="collapse"
           data-capture-exclude="true"
           aria-label="Collapse list"
           title="Collapse list"
@@ -497,6 +500,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
           type="button"
           className={styles.thotsButton}
           onClick={cycleColumnThotsMode}
+          data-control="thots"
           data-capture-exclude="true"
           aria-label={
             nextColumnThotsMode(columnThotsMode, singleThots) === "hidden"
@@ -514,6 +518,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
           type="button"
           className={styles.copyButton}
           onClick={handleCopyImage}
+          data-control="copy"
           data-capture-exclude="true"
           aria-label="Copy list as image"
           title="Copy list as image"
@@ -525,6 +530,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
           type="button"
           className={styles.customizeButton}
           onClick={() => setIsCustomizeOpen((open) => !open)}
+          data-control="customise"
           data-capture-exclude="true"
           aria-label="Customise list"
         >
@@ -535,6 +541,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
             type="button"
             className={styles.deleteButton}
             onClick={openListMenu}
+            data-control="menu"
             data-capture-exclude="true"
             aria-label="List actions"
             title="More: duplicate, move, delete…"
@@ -546,6 +553,7 @@ function ListColumnImpl({ listId }: ListColumnProps) {
             type="button"
             className={styles.deleteButton}
             onClick={() => setIsDeleteConfirmOpen(true)}
+            data-control="delete"
             data-capture-exclude="true"
             aria-label="Delete list"
           >
