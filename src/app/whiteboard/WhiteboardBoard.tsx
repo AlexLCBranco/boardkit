@@ -16,7 +16,7 @@ import { BoardStoreContext } from "../../store/boardContext";
 import { useBoardStore, type BoardStore } from "../../store/boardStore";
 import { useEmbedStatus } from "../../store/embedStore";
 import { useIsReadOnly } from "../../store/recoveryStore";
-import { useAddList, useListOrder } from "../../store/selectors";
+import { useAddListThenItsFirstCard, useListOrder } from "../../store/selectors";
 import { onStoredElsewhere, readDisplayBoard, type DisplayBoard } from "./displayStore";
 import { onStoredHere, openWhiteboardBoard } from "./history";
 import styles from "./WhiteboardBoard.module.css";
@@ -249,10 +249,10 @@ function Shortcuts() {
     list's right edge that takes no room (shown on hover or while the board
     is selected). */
 function AddListSlot({ slim }: { readonly slim: boolean }) {
-  const addList = useAddList();
+  const addList = useAddListThenItsFirstCard();
   return (
     <div className={slim ? styles.addListSlim : canvasStyles.addListSlot} data-capture-exclude="true">
-      <Composer label="Add a list" placeholder="Enter list title…" onSubmit={addList} adds="list" slim={slim} />
+      <Composer label="Add a list" placeholder="Enter list title…" onSubmit={addList} adds="list" slim={slim} closeAfterSubmit />
     </div>
   );
 }

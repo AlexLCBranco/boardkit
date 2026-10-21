@@ -12,6 +12,14 @@ interface ComposerProps {
   /** The button is a slim "+" (labelled for screen readers), placed by the
       caller's CSS (`data-slim`); open, the field is the usual one. */
   readonly slim?: boolean;
+  /** Closes after Enter adds, instead of staying open for the next one
+      (the add-a-list field: the new list's card field opens instead). */
+  readonly closeAfterSubmit?: boolean;
+  /** Opens it now, focused (`onOpenedNow` then clears the request). Opened
+      this way, Enter on an empty field closes it rather than adding a
+      blank one. */
+  readonly openNow?: boolean;
+  readonly onOpenedNow?: () => void;
 }
 
 /**
@@ -33,8 +41,10 @@ interface ComposerProps {
  * the Add button) creates something, so a stray click elsewhere can't leave
  * behind an accidental card. The title may be blank.
  */
-export function Composer({ label, placeholder, onSubmit, adds, slim = false }: ComposerProps) {
+export function Composer({ label, placeholder, onSubmit, adds, slim = false, closeAfterSubmit = false, openNow = false, onOpenedNow }: ComposerProps) {
   const [isOpen, setIsOpen] = useState(false);
+  // Opened by `openNow`: an empty Enter closes it.
+  const [emptyCloses, setEmptyCloses] = useState(false);
   const [draft, setDraft] = useState("");
   const [submitCount, setSubmitCount] = useState(0);
   const composerRef = useRef<HTMLDivElement>(null);
@@ -55,20 +65,39 @@ export function Composer({ label, placeholder, onSubmit, adds, slim = false }: C
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!openNow) return;
+    setDraft("");
+    setIsOpen(true);
+    setEmptyCloses(true);
+    textareaRef.current?.focus();
+    onOpenedNow?.();
+  }, [openNow, onOpenedNow]);
+
   function open() {
     setDraft("");
+    setEmptyCloses(false);
     setIsOpen(true);
   }
 
   function close() {
     setIsOpen(false);
+    setEmptyCloses(false);
     setDraft("");
   }
 
   function submit() {
+    if (emptyCloses && draft.trim() === "") {
+      close();
+      return;
+    }
     // A blank title is allowed: Enter on an empty field adds an empty card
     // or list. Escape, blur and × are how you close without adding.
     onSubmit(draft.trim());
+    if (closeAfterSubmit) {
+      close();
+      return;
+    }
     setDraft("");
     setSubmitCount((count) => count + 1);
     textareaRef.current?.focus();

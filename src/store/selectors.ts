@@ -18,7 +18,8 @@ import type {
   TrashedListEntry,
 } from "../domain/types";
 import { useBackupStore } from "./backupStore";
-import { useBoard } from "./boardContext";
+import { useBoard, useBoardApi } from "./boardContext";
+import { useCardFieldRequest } from "./cardFieldStore";
 import { useRecentColorsStore } from "./recentColorsStore";
 import { useSearchDialogStore } from "./searchDialogStore";
 import { useSelectionStore } from "./selectionStore";
@@ -114,6 +115,18 @@ export function useIsListFull(listId: ListId): boolean {
  */
 export function useAddList() {
   return useBoard((state) => state.addList);
+}
+
+/** "Add a list" as the add-a-list field does it: the list, then its "Add a
+    card" field opens for its first card (`cardFieldStore.ts`). */
+export function useAddListThenItsFirstCard() {
+  const store = useBoardApi();
+  return (title: string) => {
+    const before = store.getState().listOrder.length;
+    store.getState().addList(title);
+    const { listOrder } = store.getState();
+    if (listOrder.length === before + 1) useCardFieldRequest.setState({ listId: listOrder[listOrder.length - 1] });
+  };
 }
 
 export function useAddCard() {

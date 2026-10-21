@@ -77,6 +77,7 @@ import { StatusBadge } from "./StatusBadge";
 import { ListTransferItems } from "./TransferMenus";
 import { useErasedDescription } from "../../store/trashWarningStore";
 import { useWhiteboardMode } from "./whiteboardMode";
+import { useCardFieldRequest } from "../../store/cardFieldStore";
 
 interface ListColumnProps {
   readonly listId: ListId;
@@ -135,6 +136,8 @@ function ListColumnImpl({ listId }: ListColumnProps) {
   // link) but shows and behaves as if it weren't.
   const continuesNumbering = !isFirstList && list.continuesNumbering === true;
   const isCollapsed = useIsListCollapsed(listId);
+  // Just made with "Add a list" + Enter: its card field opens at once.
+  const cardFieldWanted = useCardFieldRequest((s) => s.listId === listId);
   // On the gauntlet whiteboard: slim "+", a "⋯" menu, hover-only controls.
   const whiteboard = useWhiteboardMode();
   const headerRef = useRef<HTMLElement>(null);
@@ -635,6 +638,8 @@ function ListColumnImpl({ listId }: ListColumnProps) {
               onSubmit={(title) => addCard(listId, title)}
               adds="card"
               slim={whiteboard && cardIds.length > 0}
+              openNow={cardFieldWanted}
+              onOpenedNow={clearCardFieldRequest}
             />
           )}
         </div>
@@ -655,6 +660,11 @@ function ListColumnImpl({ listId }: ListColumnProps) {
 }
 
 export const ListColumn = memo(ListColumnImpl);
+
+/** Done: the card field it asked for is open. */
+function clearCardFieldRequest() {
+  useCardFieldRequest.setState({ listId: null });
+}
 
 /**
  * The drop target an empty list needs. A list with cards already offers its

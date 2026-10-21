@@ -12,6 +12,11 @@ import { useBoardStore, type BoardStore } from "./boardStore";
  */
 export const BoardStoreContext = createContext<StoreApi<BoardStore> | null>(null);
 
+/** The board store in context itself, for reading it right after an action. */
+export function useBoardApi(): StoreApi<BoardStore> {
+  return useContext(BoardStoreContext) ?? useBoardStore;
+}
+
 /** `useBoardStore(selector)`, from the board store in context. */
 export function useBoard<T>(selector: (state: BoardStore) => T): T {
   const store = useContext(BoardStoreContext) ?? useBoardStore;

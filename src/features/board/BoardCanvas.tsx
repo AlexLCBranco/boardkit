@@ -3,7 +3,7 @@ import { useRef, useState } from "react";
 
 import { Composer } from "../../components/Composer";
 import { useIsReadOnly } from "../../store/recoveryStore";
-import { useAddList, useListOrder } from "../../store/selectors";
+import { useAddListThenItsFirstCard, useListOrder } from "../../store/selectors";
 import { SearchDialog } from "../search/SearchDialog";
 import { ShortcutsDialog } from "../shortcuts/ShortcutsDialog";
 import { useShortcuts } from "../shortcuts/useShortcuts";
@@ -98,7 +98,7 @@ function BoardToolbar({
 /** "Add a list", on the same terms as the toolbar: it has no surface of its
     own, so it follows the background's scheme. */
 function AddListSlot() {
-  const addList = useAddList();
+  const addList = useAddListThenItsFirstCard();
   const chrome = useBackgroundChrome();
   return (
     <div
@@ -107,7 +107,7 @@ function AddListSlot() {
       data-ink={chrome?.ink}
       data-capture-exclude="true"
     >
-      <Composer label="Add a list" placeholder="Enter list title…" onSubmit={addList} adds="list" />
+      <Composer label="Add a list" placeholder="Enter list title…" onSubmit={addList} adds="list" closeAfterSubmit />
     </div>
   );
 }
