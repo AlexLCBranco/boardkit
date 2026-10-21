@@ -4,6 +4,7 @@ import { EMPTY_HISTORY } from "../../domain/history";
 import { readBoard } from "../../domain/persistence";
 import type { BoardId, BoardState } from "../../domain/types";
 import type { BoardStore } from "../../store/boardStore";
+import { onLinkkitStored } from "./bridge";
 
 /** What a board on the whiteboard shows while nobody edits it. */
 export type DisplayStatus = "ok" | "missing" | "damaged" | "newer";
@@ -60,11 +61,16 @@ function displayState(boardId: BoardId, board: BoardState): BoardStore {
 }
 
 /** Calls `listener` with the board id whenever another tab (or Boardkit on
-    another page) saves a board. */
+    another page, or Linkkit on this one: a linked map) saves a board. */
 export function onStoredElsewhere(listener: (boardId: BoardId) => void): () => void {
-  const handle = (event: StorageEvent) => {
-    if (event.key?.startsWith(KEY_PREFIX)) listener(event.key.slice(KEY_PREFIX.length) as BoardId);
+  const take = (key: string | null) => {
+    if (key?.startsWith(KEY_PREFIX)) listener(key.slice(KEY_PREFIX.length) as BoardId);
   };
+  const handle = (event: StorageEvent) => take(event.key);
   window.addEventListener("storage", handle);
-  return () => window.removeEventListener("storage", handle);
+  const stopLinkkit = onLinkkitStored(take);
+  return () => {
+    window.removeEventListener("storage", handle);
+    stopLinkkit();
+  };
 }

@@ -1,6 +1,6 @@
 # Boardkit — project summary
 
-_Last updated: 2026-10-20, v0.0.99_
+_Last updated: 2026-10-21, v0.0.103_
 
 ## What it is
 
@@ -27,6 +27,11 @@ normalised state.
 
 ## What works now
 
+- On the gauntlet whiteboard, Boardkit and Linkkit share one page: each
+  tells the other of its own writes there (`store/storedHere.ts`,
+  `app/whiteboard/bridge.ts`; the browser's `storage` event only reaches
+  other tabs), so a card edited in a board shows at once in its linked map
+  on the same page, and the other way round (gauntlet phase 3, v0.0.103).
 - Lists and cards: add, rename, delete, inline editing
 - Drag cards within and between lists, and drag whole lists; one drag is
   one undo step, and Esc puts the card back

@@ -1194,17 +1194,27 @@ onBoardMerged((boardId, from, merged) =>
 );
 onBoardListMerged((from, merged) => queueMicrotask(() => adoptBoardList(from, merged)));
 
+/**
+ * Another tab stored (or removed, `removed`) storage key `key`; on the
+ * gauntlet whiteboard also Linkkit on the same page (a map linked to a
+ * board), which the browser's `storage` event never tells of.
+ */
+export function takeStoredElsewhere(key: string, removed: boolean): void {
+  if (!mayWrite()) return;
+  if (isBoardListKey(key)) {
+    const { boards } = useBoardStore.getState();
+    const merged = catchUpBoardList(boards);
+    if (merged) adoptBoardList(boards, merged);
+    return;
+  }
+  const boardId = boardIdOfKey(key);
+  if (boardId) pullBoard(boardId, removed);
+}
+
 if (typeof window !== "undefined") {
   window.addEventListener("storage", (event) => {
     // `key` is null when another tab cleared all of storage: nothing to merge.
-    if (event.key === null || event.storageArea !== localStorage || !mayWrite()) return;
-    if (isBoardListKey(event.key)) {
-      const { boards } = useBoardStore.getState();
-      const merged = catchUpBoardList(boards);
-      if (merged) adoptBoardList(boards, merged);
-      return;
-    }
-    const boardId = boardIdOfKey(event.key);
-    if (boardId) pullBoard(boardId, event.newValue === null);
+    if (event.key === null || event.storageArea !== localStorage) return;
+    takeStoredElsewhere(event.key, event.newValue === null);
   });
 }

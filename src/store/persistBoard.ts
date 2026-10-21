@@ -11,6 +11,7 @@ import { createEmptyBoard } from "../domain/seed";
 import type { BoardId, BoardState } from "../domain/types";
 import { useSaveHealth } from "./saveHealthStore";
 import { useSyncNotice } from "./syncNoticeStore";
+import { wroteHere } from "./storedHere";
 
 /**
  * The only place that touches `localStorage` for a board's own content.
@@ -100,6 +101,7 @@ function writeBoard(board: BoardState, boardId: BoardId, track = true): boolean 
     // write would only raise `rev` and make the other tab read it back.
     if (!(base?.board && base.rev === rev && sameBoard(written, base.board))) {
       localStorage.setItem(key, JSON.stringify(serializeBoard(written, rev + 1)));
+      wroteHere(key);
       synced.set(boardId, { rev: rev + 1, board: written });
     }
   } catch {
@@ -414,6 +416,7 @@ export function releaseHeldBoard(boardId: BoardId): void {
 export function savePersistedRawBoard(saved: unknown, boardId: BoardId): void {
   try {
     localStorage.setItem(STORAGE_KEY_PREFIX + boardId, JSON.stringify(saved));
+    wroteHere(STORAGE_KEY_PREFIX + boardId);
   } catch {
     // Same as `writeBoard`.
   }
@@ -425,6 +428,7 @@ export function savePersistedRawBoard(saved: unknown, boardId: BoardId): void {
 export function removePersistedBoard(boardId: BoardId): void {
   try {
     localStorage.removeItem(STORAGE_KEY_PREFIX + boardId);
+    wroteHere(STORAGE_KEY_PREFIX + boardId);
     // Its set-aside damaged originals go too: with the board gone they can
     // never be used, and would only take up storage.
     removeSetAside((owner) => owner === boardId);

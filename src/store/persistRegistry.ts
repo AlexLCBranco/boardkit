@@ -4,6 +4,7 @@ import type { BoardId, BoardSummary } from "../domain/types";
 import { embedded } from "./embedStore";
 import { isBoardStored, onBoardStored } from "./persistBoard";
 import { useSaveHealth } from "./saveHealthStore";
+import { wroteHere } from "./storedHere";
 
 /**
  * The only place that touches `localStorage` for the registry -- the list of
@@ -105,6 +106,7 @@ function writeRegistry(mine: readonly BoardSummary[], requestedActive: BoardId):
     const sameActive = current?.activeBoardId === active || active === writtenActive;
     if (!(current && sameActive && sameValue(current.boards, stored))) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(serializeRegistry(stored, active)));
+      wroteHere(STORAGE_KEY);
     }
     synced = stored;
   } catch {
