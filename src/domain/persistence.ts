@@ -38,15 +38,15 @@ export interface PersistedBoardV2 {
  * back over the live store on load, e.g. an old board list overwriting the
  * current one when switching boards.
  *
- * `background` and `collapsedLists` are always present as keys, even when it is `undefined`: a
+ * `background`, `collapsedLists` and `url` are always present as keys, even when it is `undefined`: a
  * loaded board is spread over the live store, and a key that is merely
  * missing would leave the *previous* board's background showing.
  * `JSON.stringify` drops an undefined value, so nothing extra is saved.
  */
 export function boardContent(board: BoardState): BoardState {
-  const { lists, cards, listOrder, cardOrder, trash, trashedLists, background, collapsedLists, extras } =
+  const { lists, cards, listOrder, cardOrder, trash, trashedLists, background, collapsedLists, url, extras } =
     board;
-  return { lists, cards, listOrder, cardOrder, trash, trashedLists, background, collapsedLists, extras };
+  return { lists, cards, listOrder, cardOrder, trash, trashedLists, background, collapsedLists, url, extras };
 }
 
 /** Fields this build doesn't know (`extras`) go back where they came from,

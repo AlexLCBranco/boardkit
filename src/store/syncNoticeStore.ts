@@ -20,7 +20,7 @@ interface SyncNotice {
 
 const quoted = (title: string) => `“${title}”`;
 
-const nameOf = (conflict: MergeConflict) => (conflict.kind === "background" ? conflict.title : quoted(conflict.title));
+const nameOf = (conflict: MergeConflict) => (conflict.kind === "background" || conflict.kind === "link" ? conflict.title : quoted(conflict.title));
 
 /** "“Rent” was just changed in another tab, so that version was kept." */
 export function conflictText(conflicts: readonly MergeConflict[]): string {

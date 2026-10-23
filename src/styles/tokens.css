@@ -63,6 +63,12 @@
   /* ---- Check marks (domain/check.ts) ---- */
   --check-size: 16px;
   --check-icon-size: 11px;
+  /* The link icon on a card, list or board (components/LinkIcon.tsx), and
+     the room round it that takes the click. */
+  --link-icon-size: 12px;
+  --link-icon-hit: 18px;
+  /* The link field (components/LinkPrompt.tsx). */
+  --link-prompt-width: 300px;
 
   /* ---- Layout constants the board engine depends on ---- */
   --list-width: 288px;

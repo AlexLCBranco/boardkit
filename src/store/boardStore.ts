@@ -159,6 +159,11 @@ export interface BoardActions {
   expandListOf: (cardId: CardId) => void;
   /** `undefined` goes back to the theme's own background. One undo step. */
   setBackground: (background: BoardBackground | undefined) => void;
+  /** A card's, a list's or the board's link (`domain/url.ts`, already
+      checked); `undefined` removes it. One undo step each. */
+  setCardUrl: (cardId: CardId, url: string | undefined) => void;
+  setListUrl: (listId: ListId, url: string | undefined) => void;
+  setBoardUrl: (url: string | undefined) => void;
   /** `undefined` makes it a normal card again. One undo step. */
   setCardKind: (cardId: CardId, kind: CardKind | undefined) => void;
   setCardColor: (cardId: CardId, color: ItemColor | undefined) => void;
@@ -363,6 +368,7 @@ const CONTENT_KEYS = [
   "trashedLists",
   "background",
   "collapsedLists",
+  "url",
   "history",
   "cardDragOrigin",
 ] as const satisfies readonly (keyof BoardStore)[];
@@ -689,6 +695,18 @@ export const useBoardStore = create<BoardStore>()(readOnlyGuard((set, get) => ({
 
   setBackground: (background) => set((state) => withHistory(state, { background })),
 
+  setCardUrl: (cardId, url) =>
+    set((state) =>
+      state.cards[cardId] ? withHistory(state, { cards: { ...state.cards, [cardId]: { ...state.cards[cardId], url } } }) : state,
+    ),
+
+  setListUrl: (listId, url) =>
+    set((state) =>
+      state.lists[listId] ? withHistory(state, { lists: { ...state.lists, [listId]: { ...state.lists[listId], url } } }) : state,
+    ),
+
+  setBoardUrl: (url) => set((state) => withHistory(state, { url })),
+
   setCardKind: (cardId, kind) =>
     set((state) =>
       withHistory(state, {
@@ -816,6 +834,7 @@ export const useBoardStore = create<BoardStore>()(readOnlyGuard((set, get) => ({
         trashedLists: [],
         background: state.background,
         collapsedLists: state.collapsedLists,
+        url: state.url,
         extras: state.extras,
       };
       const boards = [...state.boards, { id: boardId, name }];
@@ -923,6 +942,7 @@ export const useBoardStore = create<BoardStore>()(readOnlyGuard((set, get) => ({
         trash: board.trash,
         trashedLists: board.trashedLists,
         background: board.background,
+        url: board.url,
       }),
       collapsedLists: board.collapsedLists,
       extras: board.extras,
@@ -1057,6 +1077,7 @@ useBoardStore.subscribe((state, previous) => {
     state.trash !== previous.trash ||
     state.trashedLists !== previous.trashedLists ||
     state.background !== previous.background ||
+    state.url !== previous.url ||
     state.collapsedLists !== previous.collapsedLists
   ) {
     schedulePersist(state, state.boardId);

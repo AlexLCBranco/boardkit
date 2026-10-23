@@ -254,6 +254,9 @@ export function InlineEditable({
                 target="_blank"
                 rel="noopener noreferrer"
                 draggable={false}
+                // The gauntlet whiteboard opens it from a board only shown
+                // (that board ignores the pointer).
+                data-link-open=""
                 // A click on a link opens it; it must not also reach the
                 // field's onClick and switch to editing.
                 onClick={(event) => event.stopPropagation()}

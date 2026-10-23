@@ -1400,3 +1400,22 @@ depends on it.
 - **Protocol.** `app/embedBridge.ts` speaks the canvas protocol in
   `domain/embed.ts` (same as Linkkit's): ready / status / scroll (of
   `[data-board-canvas]`) / flushed with `busy` while a text field has focus.
+
+## Links on cards, lists and the board (2026-10-23, v0.0.105)
+
+- `url` is an optional field on `Card`, `List` and `BoardState` (the board's
+  own, a top-level field of the saved board like `background`). Only links
+  `domain/url.ts` accepts (http/https) are ever stored; `repair.ts` drops any
+  other on load, silently, as it does for unknown colours.
+- The board's `url` is a content slice: it is in `boardContent`, the store's
+  save trigger and `CONTENT_KEYS`, undone as a patch, and merged on its own
+  like the background (both tabs changing it is a `link` conflict).
+- UI: `components/LinkIcon` (a plain `<a target=_blank rel=noopener>` that
+  stops presses, marked `data-link-open`), `components/LinkPrompt` (the
+  field), `store/linkPromptStore` (which field is open), and
+  `features/board/links.tsx` / `LinkPromptHost.tsx` (menu items, the host
+  drawn once per board view). The card's right-click is now a
+  `SelectionMenu` (thots, link).
+- The gauntlet whiteboard sets and reads links of a board it only shows
+  through `app/whiteboard/links.ts` (`setWhiteboardItemUrl`,
+  `whiteboardItemUrl`, `useWhiteboardBoardUrl`), one undo step in the store.

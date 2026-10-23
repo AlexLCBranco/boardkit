@@ -1,6 +1,6 @@
 # Boardkit — project summary
 
-_Last updated: 2026-10-21, v0.0.104_
+_Last updated: 2026-10-23, v0.0.105_
 
 ## What it is
 
@@ -27,6 +27,20 @@ normalised state.
 
 ## What works now
 
+- Links on cards, lists and the board (v0.0.105, owner 2026-10-23, the
+  gauntlet's "links on everything"). Right-click a card, a list header, the
+  board's name or empty board space → "Add link…" / "Edit link…" /
+  "Remove link"; or Ctrl+K on a focused card or list header, on the board's
+  name, or with one card picked (otherwise Ctrl+K still searches). A small
+  field takes the link: only http and https are kept (`domain/url.ts`; a
+  typed "example.com" gets https://), anything else is refused with a short
+  message. A small link icon after the title opens it in a new tab; a click
+  on the card still does what it always did. Web addresses typed or pasted
+  into a card's or list's title now show as links too. A card's right-click
+  menu replaces the old "right-click toggles thots": "Show / Hide thots" is
+  its first item. Saved with the board, undone, merged with other tabs,
+  kept by copy, duplicate and backups; the gauntlet whiteboard and a
+  linked Linkkit map show the same links.
 - A click away saves what was typed, as Enter does, in every inline field
   (a new list or card, renaming a list, a card, the board): seen first on
   the window (`useClickAway`), so it is kept even where the press never

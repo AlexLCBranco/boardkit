@@ -1,0 +1,32 @@
+.icon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  width: var(--link-icon-hit);
+  height: var(--link-icon-hit);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.icon svg {
+  width: var(--link-icon-size);
+  height: var(--link-icon-size);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.icon:hover {
+  background: var(--surface-hover);
+  color: var(--text-link-underline);
+}
+
+.icon:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}

@@ -1,5 +1,6 @@
 import { createListId } from "./ids";
 import { MAX_CARDS_PER_LIST } from "./limits";
+import { isWebUrl } from "./url";
 import {
   CHECK_MARKS,
   ICON_KEYS,
@@ -161,6 +162,7 @@ export function repairBoard(raw: Raw): { board: BoardState; report: RepairReport
       trashedLists,
       background: raw.background as BoardState["background"],
       collapsedLists: raw.collapsedLists as BoardState["collapsedLists"],
+      url: isWebUrl(raw.url) ? raw.url : undefined,
       extras: unknownBoardFields(raw),
     },
     report: { lost, fixed },
@@ -180,6 +182,7 @@ const BOARD_FIELDS = new Set([
   "trashedLists",
   "background",
   "collapsedLists",
+  "url",
   "extras",
   "boards",
   "boardId",
@@ -248,6 +251,7 @@ function repairList(key: string, value: Raw, fix: () => void): List {
     hasChecks: isBoolean,
     singleThots: isBoolean,
     status: oneOf(ITEM_STATUSES),
+    url: isWebUrl,
   }) as unknown as List;
 }
 
@@ -258,5 +262,6 @@ function repairCard(key: string, value: Raw, fix: () => void): Card {
     numberEmphasis: oneOf(NUMBER_EMPHASES),
     status: oneOf(ITEM_STATUSES),
     check: oneOf(CHECK_MARKS),
+    url: isWebUrl,
   }) as unknown as Card;
 }

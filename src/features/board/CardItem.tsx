@@ -4,6 +4,8 @@ import { memo, useEffect, useRef, useState, type CSSProperties } from "react";
 
 import { CustomizePanel } from "../../components/CustomizePanel";
 import { InlineEditable, type SelectionAction } from "../../components/InlineEditable";
+import { LinkIcon } from "../../components/LinkIcon";
+import { SelectionMenu, type SelectionMenuItem } from "../../components/SelectionMenu";
 import { DropdownMenu, DropdownMenuTrigger } from "../../components/ui/dropdown-menu";
 import { inkOf, specOf } from "../../domain/cardKinds";
 import { accentCss } from "../../domain/colors";
@@ -29,6 +31,7 @@ import {
   useSetCardPostgameDescription,
   useMoveTitleTextToThots,
 } from "../../store/selectors";
+import { useBoardApi } from "../../store/boardContext";
 import { useResolvedTheme } from "../../store/themeStore";
 import { guardTrash } from "../../store/trashWarningStore";
 import { sortableTransition } from "../../styles/motion";
@@ -36,6 +39,7 @@ import styles from "./CardItem.module.css";
 import { CheckCircle } from "./CheckCircle";
 import { StatusBadge } from "./StatusBadge";
 import { unscaled, useDragScale } from "./DragContext";
+import { linkMenuItems } from "./links";
 import { CardTransferContent } from "./TransferMenus";
 
 interface CardItemProps {
@@ -101,6 +105,9 @@ function CardItemImpl({
   const setCardPostgameDescription = useSetCardPostgameDescription();
   const moveTitleTextToThots = useMoveTitleTextToThots();
   const isSelected = useIsCardSelected(cardId);
+  const boardApi = useBoardApi();
+  // The right-click menu, while open: where it opened.
+  const [menuAt, setMenuAt] = useState<{ x: number; y: number } | null>(null);
 
   const listColor = useListColor(listId);
 
@@ -162,17 +169,21 @@ function CardItemImpl({
     setIsDescriptionOpen(true);
   }, [thotsMode]);
 
-  // Right-click toggles the thots section instead of opening the browser's
-  // context menu -- the only way in while it's collapsed, since the row
-  // below isn't in the DOM at all until then (no reserved space, nothing to
-  // hover or click). Always intercepted, so the native menu never shows on
-  // a card.
+  // Right-click opens the card's own menu instead of the browser's: its
+  // thots (the only way in while they're collapsed, since the row below
+  // isn't in the DOM at all until then) and its link (owner, 2026-10-23).
+  // Always intercepted, so the native menu never shows on a card.
   function handleCardContextMenu(event: React.MouseEvent<HTMLElement>) {
     event.preventDefault();
-    if (spec.hasThots) {
-      setIsDescriptionOpen((open) => !open);
-    }
+    setMenuAt({ x: event.clientX, y: event.clientY });
   }
+
+  const menuItems = (at: { x: number; y: number }): SelectionMenuItem[] => [
+    ...(spec.hasThots
+      ? [{ label: `${isDescriptionOpen ? "Hide" : "Show"} ${thotsLabel(thotsSlot, singleThots)}`, onPick: () => setIsDescriptionOpen((open) => !open) }]
+      : []),
+    ...linkMenuItems(boardApi.getState(), { kind: "card", cardId }, at),
+  ];
 
   // `data: { listId }` is read back in DragContext's onDragEnd -- a card
   // carries no list back-reference in the store, so the drag data is the
@@ -238,7 +249,9 @@ function CardItemImpl({
           ariaLabel="Card title"
           allowEmpty
           selectionActions={spec.hasThots ? thotsMoveActions : undefined}
+          linkify
         />
+        {card.url && <LinkIcon url={card.url} />}
       </p>
       {showsThots && (
         <div className={styles.descriptionRow}>
@@ -352,6 +365,18 @@ function CardItemImpl({
           highlightStyle={card.highlightStyle}
           onHighlightStyleChange={(style) => setCardsHighlightStyle([cardId], style)}
           onClose={() => setIsCustomizeOpen(false)}
+        />
+      )}
+      {menuAt && (
+        <SelectionMenu
+          x={menuAt.x}
+          y={menuAt.y}
+          heading={card.title ? `Card “${card.title.length > 32 ? `${card.title.slice(0, 31)}…` : card.title}”` : "Card"}
+          items={menuItems(menuAt).map((item) => ({ ...item, onPick: () => {
+            setMenuAt(null);
+            item.onPick();
+          } }))}
+          onDismiss={() => setMenuAt(null)}
         />
       )}
     </article>

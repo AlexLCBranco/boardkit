@@ -15,6 +15,9 @@ import { Composer } from "../../components/Composer";
 import { CustomizePanel } from "../../components/CustomizePanel";
 import { Icon } from "../../components/Icon";
 import { InlineEditable } from "../../components/InlineEditable";
+import { LinkIcon } from "../../components/LinkIcon";
+import { useBoardApi } from "../../store/boardContext";
+import { openLinkPromptBelow, useLinkPromptStore } from "../../store/linkPromptStore";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -106,6 +109,7 @@ interface ListColumnProps {
  */
 function ListColumnImpl({ listId }: ListColumnProps) {
   const list = useList(listId);
+  const boardApi = useBoardApi();
   const listCut = listLooksCut(list);
   const cardIds = useCardIds(listId);
   const cardCount = useCardCount(listId);
@@ -359,10 +363,22 @@ function ListColumnImpl({ listId }: ListColumnProps) {
   // The same menu on the header and on the collapsed strip, so folding a
   // list away never hides what can be done with it.
   const menuContent = (
-    <ContextMenuContent>
+    <ContextMenuContent
+      // The link field takes the focus as the menu closes: not given back.
+      onCloseAutoFocus={(event) => {
+        if (useLinkPromptStore.getState().target) event.preventDefault();
+      }}
+    >
       <ContextMenuItem onSelect={toggleCollapsed}>
         {isCollapsed ? "Expand list" : "Collapse list"}
       </ContextMenuItem>
+      <ContextMenuSeparator />
+      <ContextMenuItem onSelect={() => openLinkPromptBelow({ kind: "list", listId }, headerRef.current)}>
+        {list.url ? "Edit link…" : "Add link…"}
+      </ContextMenuItem>
+      {list.url && (
+        <ContextMenuItem onSelect={() => boardApi.getState().setListUrl(listId, undefined)}>Remove link</ContextMenuItem>
+      )}
       <ContextMenuSeparator />
       <ContextMenuItem onSelect={() => duplicateList(listId)}>Duplicate list</ContextMenuItem>
       <ContextMenuCheckboxItem
@@ -469,8 +485,10 @@ function ListColumnImpl({ listId }: ListColumnProps) {
             onCommit={(title) => renameList(listId, title)}
             ariaLabel="List title"
             allowEmpty
+            linkify
           />
         </h2>
+        {list.url && <LinkIcon url={list.url} className={styles.linkIcon} />}
         {!numbersHidden && (continuesNumbering || isNumberingContinued) ? (
           <span
             className={styles.count}

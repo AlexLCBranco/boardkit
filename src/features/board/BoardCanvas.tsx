@@ -11,6 +11,8 @@ import { BoardBackdrop } from "./BoardBackdrop";
 import styles from "./BoardCanvas.module.css";
 import { CopyBoardButton } from "./CopyBoardButton";
 import { BoardDragContext } from "./DragContext";
+import { LinkPromptHost } from "./LinkPromptHost";
+import { useBoardLinkMenu } from "./links";
 import { ListColumn } from "./ListColumn";
 import { SaveBoardButton } from "./SaveBoardButton";
 import { SelectionBar } from "./SelectionBar";
@@ -40,13 +42,19 @@ export function BoardCanvas() {
   const railRef = useRef<HTMLDivElement>(null);
   const marqueeRef = useRef<HTMLDivElement>(null);
   const handleCanvasPointerDown = useMarqueeSelection(marqueeRef);
+  const linkMenu = useBoardLinkMenu();
   useShortcuts();
 
   return (
     <div className={styles.canvas}>
       <BoardBackdrop />
       <BoardToolbar zoom={zoom} onZoomChange={setZoom} railRef={railRef} />
-      <div className={styles.scrollArea} data-board-canvas onPointerDown={handleCanvasPointerDown}>
+      <div
+        className={styles.scrollArea}
+        data-board-canvas
+        onPointerDown={handleCanvasPointerDown}
+        onContextMenu={linkMenu.onContextMenu}
+      >
         <BoardDragContext>
           {/* A board a newer Boardkit saved can be looked at, not changed: inert
               stops drags and editors starting (scrolling still works). */}
@@ -62,6 +70,8 @@ export function BoardCanvas() {
       </div>
       <div ref={marqueeRef} className={styles.marquee} aria-hidden="true" />
       <SelectionBar />
+      <LinkPromptHost />
+      {linkMenu.menu}
     </div>
   );
 }

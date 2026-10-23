@@ -7,6 +7,8 @@ import { Composer } from "../../components/Composer";
 import type { BoardId } from "../../domain/types";
 import canvasStyles from "../../features/board/BoardCanvas.module.css";
 import { BoardDragContext } from "../../features/board/DragContext";
+import { LinkPromptHost } from "../../features/board/LinkPromptHost";
+import { useBoardLinkMenu } from "../../features/board/links";
 import { ListColumn } from "../../features/board/ListColumn";
 import { SelectionBar } from "../../features/board/SelectionBar";
 import { useMarqueeSelection } from "../../features/board/useMarqueeSelection";
@@ -105,6 +107,7 @@ function BoardFrame({ editing, active }: { readonly editing: boolean; readonly a
   const marqueeRef = useRef<HTMLDivElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const handlePointerDown = useMarqueeSelection(marqueeRef);
+  const linkMenu = useBoardLinkMenu();
   usePointerOverMarks(rootRef);
   useLastListHeight(rootRef);
   return (
@@ -116,6 +119,7 @@ function BoardFrame({ editing, active }: { readonly editing: boolean; readonly a
         data-editing={editing ? "true" : "false"}
         data-active={active ? "" : undefined}
         onPointerDown={editing ? handlePointerDown : undefined}
+        onContextMenu={editing ? linkMenu.onContextMenu : undefined}
       >
         {editing && <Shortcuts />}
         <BoardDragContext overlayToBody>
@@ -135,6 +139,8 @@ function BoardFrame({ editing, active }: { readonly editing: boolean; readonly a
             <>
               <div ref={marqueeRef} className={canvasStyles.marquee} aria-hidden="true" />
               <SelectionBar />
+              <LinkPromptHost />
+              {linkMenu.menu}
             </>,
             document.body,
           )}

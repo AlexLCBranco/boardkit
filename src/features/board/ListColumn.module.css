@@ -104,6 +104,11 @@
   overflow-wrap: anywhere;
 }
 
+/* A list with a link: its icon right after the title (components/LinkIcon). */
+.linkIcon {
+  flex: none;
+}
+
 .count {
   flex: 0 0 auto;
   min-width: 22px;

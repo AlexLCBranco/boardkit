@@ -39,7 +39,7 @@ import type {
 
 /** An item both tabs changed, where the other tab's version was kept. */
 export interface MergeConflict {
-  readonly kind: "card" | "list" | "background" | "board";
+  readonly kind: "card" | "list" | "background" | "link" | "board";
   /** The board's id, for a `board` conflict (the board list). */
   readonly id?: string;
   /** What to call it in a message: its title as the other tab has it, or as
@@ -81,6 +81,7 @@ const CONTENT_KEYS = [
   "trashedLists",
   "background",
   "collapsedLists",
+  "url",
   "extras",
 ] as const satisfies readonly (keyof BoardState)[];
 
@@ -149,6 +150,7 @@ interface Changes {
   readonly cards: Set<CardId>;
   readonly lists: Set<ListId>;
   readonly background: boolean;
+  readonly url: boolean;
 }
 
 function changesOf(base: BoardState, side: BoardState): Changes {
@@ -175,7 +177,7 @@ function changesOf(base: BoardState, side: BoardState): Changes {
     }
   }
 
-  return { cards, lists, background: !sameValue(base.background, side.background) };
+  return { cards, lists, background: !sameValue(base.background, side.background), url: base.url !== side.url };
 }
 
 function idsOf<K extends string>(...records: Readonly<Record<K, unknown>>[]): Set<K> {
@@ -318,6 +320,13 @@ export function mergeBoards(base: BoardState, mine: BoardState, theirs: BoardSta
     }
   }
 
+  // The board's own link, the same way.
+  let url = theirs.url;
+  if (myChanges.url) {
+    if (!theirChanges.url) url = mine.url;
+    else if (mine.url !== theirs.url) conflicts.push({ kind: "link", title: "The board's link" });
+  }
+
   return {
     board: {
       lists,
@@ -327,6 +336,7 @@ export function mergeBoards(base: BoardState, mine: BoardState, theirs: BoardSta
       trash,
       trashedLists,
       background,
+      url,
       collapsedLists: mergeCollapsed(base, mine, theirs, lists),
       // Fields this build doesn't know: whole, this tab's only if it alone
       // changed them (it never does itself; a copy restored from a backup can).
@@ -372,6 +382,7 @@ export function shareUnchanged(previous: BoardState, next: BoardState): BoardSta
     collapsedLists: sameValue(previous.collapsedLists, next.collapsedLists)
       ? previous.collapsedLists
       : next.collapsedLists,
+    url: next.url,
   };
   return sameBoard(previous, shared) ? previous : shared;
 }

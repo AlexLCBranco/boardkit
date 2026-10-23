@@ -47,6 +47,7 @@ export function createBoard(blueprints: readonly ListBlueprint[]): BoardState {
     trashedLists: [],
     background: undefined,
     collapsedLists: undefined,
+    url: undefined,
     extras: undefined,
   };
 }

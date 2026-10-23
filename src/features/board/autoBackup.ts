@@ -93,6 +93,7 @@ export function initAutoBackup(): () => void {
       state.trash !== previous.trash ||
       state.trashedLists !== previous.trashedLists ||
       state.background !== previous.background ||
+      state.url !== previous.url ||
       state.boards !== previous.boards ||
       state.boardId !== previous.boardId
     ) {

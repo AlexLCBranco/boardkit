@@ -354,6 +354,16 @@ export function useSetCardColor() {
   return useBoard((state) => state.setCardColor);
 }
 
+/** Just a list's link, for its header's link icon. */
+export function useListUrl(listId: ListId): string | undefined {
+  return useBoard((state) => state.lists[listId]?.url);
+}
+
+/** The board's own link. */
+export function useBoardUrl(): string | undefined {
+  return useBoard((state) => state.url);
+}
+
 export function useSetCardsHighlight() {
   return useBoard((state) => state.setCardsHighlight);
 }

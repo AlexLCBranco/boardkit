@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { MAX_CARDS_PER_LIST } from "../../domain/limits";
 import type { CardId } from "../../domain/types";
 import { useBoardStore } from "../../store/boardStore";
+import { openLinkPromptBelow } from "../../store/linkPromptStore";
 import { useSearchDialogStore } from "../../store/searchDialogStore";
 import { useSelectionStore } from "../../store/selectionStore";
 import { useShortcutsDialogStore } from "../../store/shortcutsDialogStore";
@@ -13,6 +14,7 @@ import {
   cardElement,
   focusCard,
   focusListHeader,
+  listHeaderElement,
   listUnderPointer,
   type FocusTarget,
 } from "./dom";
@@ -140,9 +142,22 @@ export const SHORTCUTS: readonly Shortcut[] = [
   ),
   // Ctrl+F stays the browser's own find-in-page. Works while typing: the
   // combo has a modifier, so it never steals a plain letter from a text field.
-  global("search.open", "mod+k", "Search every board", () => useSearchDialogStore.getState().setOpen(true), {
-    whileTyping: true,
-  }),
+  // Ctrl+K on something that can hold a link edits its link instead (owner,
+  // 2026-10-23): a focused card or list has its own entry below; here, one
+  // picked card, or the board's name.
+  global(
+    "search.open",
+    "mod+k",
+    "Search every board (with one card picked, or on the board's name: its link)",
+    () => {
+      const picked = Object.keys(selection().selected) as CardId[];
+      const name = document.activeElement?.closest("[data-board-name]");
+      if (picked.length === 1) openLinkPromptBelow({ kind: "card", cardId: picked[0] }, cardElement(picked[0]));
+      else if (name) openLinkPromptBelow({ kind: "board" }, name);
+      else useSearchDialogStore.getState().setOpen(true);
+    },
+    { whileTyping: true },
+  ),
   global("help.open", "?", "Show keyboard shortcuts", () => useShortcutsDialogStore.getState().setOpen(true)),
 
   // --- Card -----------------------------------------------------------------
@@ -153,6 +168,9 @@ export const SHORTCUTS: readonly Shortcut[] = [
   card("card.new-below", "n", "New card directly below", (target) => addCardNextTo(target, 1)),
   card("card.new-above", "shift+n", "New card directly above", (target) => addCardNextTo(target, 0)),
   card("card.rename", ["e", "f2"], "Rename the card", ({ cardId }) => startRename(cardId)),
+  card("card.link", "mod+k", "Add or edit the card's link", ({ cardId }) =>
+    openLinkPromptBelow({ kind: "card", cardId }, cardElement(cardId)),
+  ),
   // The card's own toggle button is the one place that knows how thots
   // open and close (it is local state in `CardItem`), so this presses it.
   card("card.toggle-thots", "t", "Open or close its thots", ({ cardId }) =>
@@ -177,6 +195,9 @@ export const SHORTCUTS: readonly Shortcut[] = [
   list("list.focus-right", "arrowright", "Focus the list to the right", ({ listId }) => focusListBeside(listId, 1), { allowRepeat: true }),
   list("list.focus-cards", "arrowdown", "Focus the list's first card", ({ listId }) => focusFirstCard(listId)),
   list("list.duplicate", "d", "Duplicate the list", ({ listId }) => board().duplicateList(listId)),
+  list("list.link", "mod+k", "Add or edit the list's link", ({ listId }) =>
+    openLinkPromptBelow({ kind: "list", listId }, listHeaderElement(listId)),
+  ),
   list("list.collapse", "c", "Collapse or expand the list", ({ listId }) => toggleListCollapsed(listId)),
 ];
 

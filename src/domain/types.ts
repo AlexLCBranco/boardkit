@@ -167,6 +167,9 @@ export interface Card {
       without checks, or its list turns them off: hidden, not cleared, so
       turning checks back on brings the marks back. Absent means unchecked. */
   readonly check?: CheckMark;
+  /** A web link this card holds (domain/url.ts: http or https only),
+      opened from its link icon in a new tab. Absent means none. */
+  readonly url?: string;
 }
 
 export interface List {
@@ -197,6 +200,9 @@ export interface List {
   readonly singleThots?: boolean;
   /** Keep / maybe / cut (`ItemStatus`). */
   readonly status?: ItemStatus;
+  /** A web link this list holds (domain/url.ts: http or https only),
+      opened from its link icon in a new tab. Absent means none. */
+  readonly url?: string;
 }
 
 /**
@@ -240,6 +246,9 @@ export interface BoardState {
       kept apart from `lists` so undo never touches it; saved with the board.
       Absent means every list is open. */
   readonly collapsedLists?: Readonly<Record<ListId, true>>;
+  /** A web link the board itself holds, as a card's (`Card.url`). Absent
+      means none. Undone and merged like the background. */
+  readonly url?: string;
   /** Fields of the saved board this build doesn't know (a newer Boardkit's,
       or Linkkit's, on the shared site), kept whole so a save by this build
       never drops them. Never read or changed here; written back at the top

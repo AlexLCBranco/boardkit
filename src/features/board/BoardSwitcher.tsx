@@ -18,9 +18,12 @@ import {
   DropdownMenuTrigger,
 } from "../../components/ui/dropdown-menu";
 import { InlineEditable } from "../../components/InlineEditable";
+import { LinkIcon } from "../../components/LinkIcon";
+import { openLinkPromptBelow, useLinkPromptStore } from "../../store/linkPromptStore";
 import {
   useActiveBoardName,
   useBoardId,
+  useBoardUrl,
   useBoards,
   useCreateBoard,
   useCreateBoardFromLayout,
@@ -34,6 +37,7 @@ import { BackgroundPanel } from "./BackgroundPanel";
 import { exportBackup, importBackup } from "./backup";
 import { AutomaticBackupItems, BackupStatusLine, useBackupAttention } from "./BackupMenuItems";
 import styles from "./BoardSwitcher.module.css";
+import { useBoardLinkMenu } from "./links";
 import { NewBoardDialog } from "./NewBoardDialog";
 
 /**
@@ -58,6 +62,8 @@ export function BoardSwitcher() {
   const duplicateBoard = useDuplicateBoard();
   const deleteBoard = useDeleteBoard();
   const backupNeedsAttention = useBackupAttention();
+  const boardUrl = useBoardUrl();
+  const linkMenu = useBoardLinkMenu();
   const fileInput = useRef<HTMLInputElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [choosingBackground, setChoosingBackground] = useState(false);
@@ -87,8 +93,11 @@ export function BoardSwitcher() {
   }
 
   return (
-    <div className={styles.switcher}>
+    // `data-board-name`: Ctrl+K here edits the board's link (features/shortcuts).
+    <div className={styles.switcher} data-board-name="" onContextMenu={linkMenu.onContextMenu}>
       <InlineEditable value={name} onCommit={renameBoard} ariaLabel="Board name" className={styles.name} />
+      {boardUrl && <LinkIcon url={boardUrl} />}
+      {linkMenu.menu}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
@@ -101,7 +110,14 @@ export function BoardSwitcher() {
             ▾
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="min-w-56">
+        <DropdownMenuContent
+          align="start"
+          className="min-w-56"
+          // The link field takes the focus as the menu closes: not given back.
+          onCloseAutoFocus={(event) => {
+            if (useLinkPromptStore.getState().target) event.preventDefault();
+          }}
+        >
           {newestFirst.map((board) => (
             <DropdownMenuItem key={board.id} onSelect={() => switchBoard(board.id)}>
               {board.id === boardId ? "✓ " : ""}
@@ -111,6 +127,9 @@ export function BoardSwitcher() {
           <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={() => setNamingNewBoard(true)}>
             + New board
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => openLinkPromptBelow({ kind: "board" }, triggerRef.current)}>
+            {boardUrl ? "Edit this board's link…" : "Add a link to this board…"}
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={() => duplicateBoard(`${name} (copy)`)}>
             Duplicate this board
