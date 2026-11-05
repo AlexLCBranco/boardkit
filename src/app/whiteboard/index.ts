@@ -15,5 +15,6 @@ export { useThemeStore } from "../../store/themeStore";
 export { useSelectionStore } from "../../store/selectionStore";
 export { setWhiteboardItemUrl, useWhiteboardBoardUrl, whiteboardItemUrl, type WhiteboardLinkTarget } from "./links";
 export { checkUrl } from "../../domain/url";
+export { readWidgetRef, widgetRefUrl, type WidgetRef } from "../../domain/widgetRef";
 export { IconSprite } from "../../components/IconSprite";
 export { Toaster } from "../../components/ui/sonner";

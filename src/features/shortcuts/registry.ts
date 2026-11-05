@@ -2,6 +2,7 @@ import { flushSync } from "react-dom";
 import { toast } from "sonner";
 
 import { MAX_CARDS_PER_LIST } from "../../domain/limits";
+import { widgetRefUrl } from "../../domain/widgetRef";
 import type { CardId } from "../../domain/types";
 import { useBoardStore } from "../../store/boardStore";
 import { openLinkPromptBelow } from "../../store/linkPromptStore";
@@ -118,6 +119,26 @@ export const SHORTCUTS: readonly Shortcut[] = [
     // With text highlighted, that Ctrl+C belongs to the browser.
     when: () => Object.keys(selection().selected).length > 0 && !hasSelectedText(),
   }),
+  // No card picked, no text highlighted: the board, or the list under the
+  // pointer, as an address the gauntlet whiteboard pastes as that live
+  // board or list (its Edges round, item 3b). Not in the whiteboard's own
+  // boards (WhiteboardBoard's APP_SHORTCUTS).
+  global(
+    "widget.copy",
+    "mod+c",
+    "Copy this board (or the list under the pointer) for the whiteboard",
+    () => {
+      const boardId = board().boardId;
+      if (!boardId) return;
+      const list = listUnderPointer() ?? undefined;
+      const text = widgetRefUrl(location.origin, { board: boardId, list });
+      void navigator.clipboard?.writeText(text).then(
+        () => toast(list ? "List copied: paste it on the whiteboard" : "Board copied: paste it on the whiteboard"),
+        () => toast.error("Couldn't copy"),
+      );
+    },
+    { when: () => Object.keys(selection().selected).length === 0 && !hasSelectedText() },
+  ),
   global(
     "selection.paste",
     "mod+v",

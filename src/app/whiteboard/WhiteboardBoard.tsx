@@ -27,7 +27,7 @@ import styles from "./WhiteboardBoard.module.css";
     (owner, 2026-10-19), and undo/redo, which the whiteboard keeps for the
     whole page in the order things were done (history.ts; owner,
     2026-10-20). */
-const APP_SHORTCUTS = ["search.open", "help.open", "history.undo", "history.redo"];
+const APP_SHORTCUTS = ["search.open", "help.open", "history.undo", "history.redo", "widget.copy"];
 
 export interface WhiteboardBoardProps {
   readonly boardId: string;
@@ -37,6 +37,9 @@ export interface WhiteboardBoardProps {
   /** Selected (or edited) on the whiteboard: its slim "+ Add a list" shows
       even without the pointer over it. */
   readonly active?: boolean;
+  /** One list of the board only (a list widget, the gauntlet's Edges round
+      item 3c): the same list as in the board, edited in the same record. */
+  readonly listId?: string;
 }
 
 /**
@@ -52,7 +55,7 @@ export interface WhiteboardBoardProps {
  * other tabs, undo, trash and recovery. The others are drawn by the same
  * components from read-only copies of their saved records.
  */
-export function WhiteboardBoard({ boardId, editing, active = false }: WhiteboardBoardProps) {
+export function WhiteboardBoard({ boardId, editing, active = false, listId }: WhiteboardBoardProps) {
   const id = boardId as BoardId;
   const [display, setDisplay] = useState<DisplayBoard>(() => readDisplayBoard(id));
   const displayStore = useRef<StoreApi<BoardStore> | null>(display.store);
@@ -79,16 +82,16 @@ export function WhiteboardBoard({ boardId, editing, active = false }: Whiteboard
     };
   }, [id, editing]);
 
-  if (editing) return <EditingBoard boardId={id} active={active} />;
+  if (editing) return <EditingBoard boardId={id} active={active} listId={listId} />;
   if (display.status !== "ok" && display.status !== "newer") return <Problem status={display.status} />;
   return (
     <BoardStoreContext.Provider value={display.store}>
-      <BoardFrame editing={false} active={active} />
+      <BoardFrame editing={false} active={active} listId={listId} />
     </BoardStoreContext.Provider>
   );
 }
 
-function EditingBoard({ boardId, active }: { readonly boardId: BoardId; readonly active: boolean }) {
+function EditingBoard({ boardId, active, listId }: { readonly boardId: BoardId; readonly active: boolean; readonly listId?: string }) {
   const [opened, setOpened] = useState(false);
   useEffect(() => {
     openWhiteboardBoard(boardId);
@@ -98,11 +101,13 @@ function EditingBoard({ boardId, active }: { readonly boardId: BoardId; readonly
   const shownId = useBoardStore((s) => s.boardId);
   if (!opened || shownId !== boardId) return null;
   if (status !== "ok") return <Problem status="missing" />;
-  return <BoardFrame editing active={active} />;
+  return <BoardFrame editing active={active} listId={listId} />;
 }
 
-function BoardFrame({ editing, active }: { readonly editing: boolean; readonly active: boolean }) {
-  const listOrder = useListOrder();
+function BoardFrame({ editing, active, listId }: { readonly editing: boolean; readonly active: boolean; readonly listId?: string }) {
+  const allLists = useListOrder();
+  // A list widget: that list alone (gone from the board: nothing).
+  const listOrder = listId ? allLists.filter((l) => l === listId) : allLists;
   const readOnly = useIsReadOnly();
   const marqueeRef = useRef<HTMLDivElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -116,6 +121,7 @@ function BoardFrame({ editing, active }: { readonly editing: boolean; readonly a
         ref={rootRef}
         className={styles.board}
         data-boardkit-board=""
+        data-list-widget={listId ? "" : undefined}
         data-editing={editing ? "true" : "false"}
         data-active={active ? "" : undefined}
         onPointerDown={editing ? handlePointerDown : undefined}
@@ -129,7 +135,7 @@ function BoardFrame({ editing, active }: { readonly editing: boolean; readonly a
                 <ListColumn key={listId} listId={listId} />
               ))}
             </SortableContext>
-            <AddListSlot slim={listOrder.length > 0} />
+            {!listId && <AddListSlot slim={listOrder.length > 0} />}
           </div>
         </BoardDragContext>
         {/* Fixed to the window, so drawn at the page's top level: inside the
