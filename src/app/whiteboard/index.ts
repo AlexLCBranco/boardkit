@@ -10,7 +10,7 @@ export { WhiteboardBoard, type WhiteboardBoardProps } from "./WhiteboardBoard";
 export { SaveFailedBanner } from "./SaveFailedBanner";
 export { onBoardHistory, redoBoard, undoBoard } from "./history";
 export { keyStoredElsewhere, onWroteHere } from "./bridge";
-export { createWhiteboardBoard, deleteEmptyWhiteboardBoard, flushBoard, renameWhiteboardBoard } from "../../store/boardStore";
+export { createWhiteboardBoard, deleteEmptyWhiteboardBoard, deleteWhiteboardBoard, flushBoard, readWhiteboardBoard, renameWhiteboardBoard, writeWhiteboardBoard, type WhiteboardBoardRecord } from "../../store/boardStore";
 export { useThemeStore } from "../../store/themeStore";
 export { useSelectionStore } from "../../store/selectionStore";
 export { setWhiteboardItemUrl, useWhiteboardBoardUrl, whiteboardItemUrl, type WhiteboardLinkTarget } from "./links";

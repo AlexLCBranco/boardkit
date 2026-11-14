@@ -1020,6 +1020,66 @@ export function deleteEmptyWhiteboardBoard(boardId: BoardId, name: string): bool
   return true;
 }
 
+/** A stored board as the gauntlet whiteboard reads and writes it whole. */
+export interface WhiteboardBoardRecord {
+  readonly name: string;
+  readonly board: BoardState;
+}
+
+/**
+ * A stored board, its latest edit included, and its name in the board
+ * list: what the gauntlet whiteboard copies when a board widget is copied
+ * there (its speed session Part 6), and keeps to put a copy back. `null`
+ * when it is not stored or not listed.
+ */
+export function readWhiteboardBoard(boardId: BoardId): WhiteboardBoardRecord | null {
+  if (!embedded()) throw new Error("readWhiteboardBoard is for embed mode only");
+  if (useBoardStore.getState().boardId === boardId) flushPersist();
+  flushPersistRegistry();
+  const entry = loadPersistedRegistry()?.boards.find((board) => board.id === boardId);
+  const board = loadPersistedBoard(boardId);
+  return entry && board ? { name: entry.name, board } : null;
+}
+
+/**
+ * Stores `board` as board `boardId` (a new id by default), listed under
+ * `name` (kept if it is listed already): a copy the whiteboard made, or
+ * one it puts back (a redo). Its trash is not carried over, as Boardkit's
+ * own "Duplicate this board" leaves it. Not opened, and the board the app
+ * opens next stays as it was. Its id, or `null` when it could not be stored.
+ */
+export function writeWhiteboardBoard(name: string, board: BoardState, boardId: BoardId = createBoardId()): BoardId | null {
+  if (!embedded()) throw new Error("writeWhiteboardBoard is for embed mode only");
+  if (!savePersistedBoardNow({ ...board, trash: [], trashedLists: [] }, boardId)) return null;
+  flushPersistRegistry();
+  const stored = loadPersistedRegistry();
+  const listed = stored?.boards ?? [];
+  if (!listed.some((b) => b.id === boardId)) savePersistedRegistryNow([...listed, { id: boardId, name }], stored?.activeBoardId ?? boardId);
+  return takeStoredBoardList().some((b) => b.id === boardId) ? boardId : null;
+}
+
+/**
+ * Deletes board `boardId` for good, its content and its entry in the board
+ * list, as Boardkit's own board delete does (there is no board trash): the
+ * whiteboard takes back a copy it made once the copy is undone. Never the
+ * last board. Its background image stays (the board it was copied from
+ * shows it, and a redo brings the copy back). Returns whether it was.
+ */
+export function deleteWhiteboardBoard(boardId: BoardId): boolean {
+  if (!embedded()) throw new Error("deleteWhiteboardBoard is for embed mode only");
+  if (useBoardStore.getState().boardId === boardId) flushPersist();
+  flushPersistRegistry();
+  const stored = loadPersistedRegistry();
+  if (!stored || !stored.boards.some((b) => b.id === boardId) || stored.boards.length <= 1) return false;
+  removePersistedBoard(boardId);
+  savePersistedRegistryNow(
+    stored.boards.filter((b) => b.id !== boardId),
+    stored.activeBoardId === boardId ? stored.boards.find((b) => b.id !== boardId)!.id : stored.activeBoardId,
+  );
+  takeStoredBoardList();
+  return true;
+}
+
 /**
  * The gauntlet whiteboard renames a board it shows, open or not. Like a
  * rename in the app, it is not an undo step.

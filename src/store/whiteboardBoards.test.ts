@@ -174,3 +174,37 @@ describe("deleteEmptyWhiteboardBoard", () => {
     expect(a.status === "ok" && a.board.listOrder).toHaveLength(1);
   });
 });
+
+describe("readWhiteboardBoard / writeWhiteboardBoard / deleteWhiteboardBoard (copies on the whiteboard)", () => {
+  it("copies a board under a new id and name, its trash left behind; the app's active board stays", async () => {
+    twoBoards();
+    const store = await whiteboardStore();
+    const from = store.readWhiteboardBoard(A)!;
+    expect(from.name).toBe("Week 36");
+    const copy = store.writeWhiteboardBoard("Week 36 (copy)", { ...from.board, trash: [{ cardId: "x", listId: "y", deletedAt: 1 } as never] })!;
+    expect(copy).not.toBe(A);
+    expect(registry().boards.map((b) => b.name)).toEqual(["Week 36", "Sprint", "Week 36 (copy)"]);
+    expect(registry().activeBoardId).toBe(B);
+    const read = store.readWhiteboardBoard(copy)!;
+    expect(read.board.listOrder).toEqual(from.board.listOrder);
+    expect(read.board.cards).toEqual(from.board.cards);
+    expect(read.board.trash).toEqual([]);
+    // The original is untouched.
+    expect(store.readWhiteboardBoard(A)!.board).toEqual(from.board);
+  });
+
+  it("deletes a board for good and puts it back under the same id and name", async () => {
+    twoBoards();
+    const store = await whiteboardStore();
+    const kept = store.readWhiteboardBoard(A)!;
+    expect(store.deleteWhiteboardBoard(A)).toBe(true);
+    expect(localStorage.getItem(`boardkit:board:${A}`)).toBeNull();
+    expect(registry().boards.map((b) => b.id)).toEqual([B]);
+    expect(store.readWhiteboardBoard(A)).toBeNull();
+    // Never the last one.
+    expect(store.deleteWhiteboardBoard(B)).toBe(false);
+    expect(store.writeWhiteboardBoard(kept.name, kept.board, A)).toBe(A);
+    expect(store.readWhiteboardBoard(A)).toEqual(kept);
+    expect(registry().boards.map((b) => b.name)).toEqual(["Sprint", "Week 36"]);
+  });
+});
