@@ -1,6 +1,6 @@
 # Boardkit — project summary
 
-_Last updated: 2026-10-23, v0.0.105_
+_Last updated: 2026-11-14, v0.0.107_
 
 ## What it is
 
@@ -47,7 +47,10 @@ normalised state.
   blurs the field. An empty new list or card field just closes; Escape
   still cancels. A new list saved by a click away opens no card field.
   List header buttons carry fixed markers (`data-control`) for the
-  gauntlet whiteboard (v0.0.104, owner 2026-10-21).
+  gauntlet whiteboard (v0.0.104, owner 2026-10-21). On the whiteboard a
+  card under the pointer gets its hover look and its buttons (marked
+  `data-pointer-over`; the buttons carry `data-control` too), as here
+  (v0.0.107, gauntlet speed session Part 5).
 - On the gauntlet whiteboard, Boardkit and Linkkit share one page: each
   tells the other of its own writes there (`store/storedHere.ts`,
   `app/whiteboard/bridge.ts`; the browser's `storage` event only reaches

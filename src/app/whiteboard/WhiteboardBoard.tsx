@@ -198,8 +198,8 @@ let lastPointer: { readonly x: number; readonly y: number } | null = null;
 /**
  * Marks where the pointer is, for what shows only on hover
  * (WhiteboardBoard.module.css, ListColumn.module.css): `data-pointer-over`
- * on the board and on the list it is over, `data-pointer-over-header` on
- * that list when it is over its header. Worked out from the pointer's
+ * on the board, on the list it is over and on the card it is over,
+ * `data-pointer-over-header` on that list when it is over its header. Worked out from the pointer's
  * position, not CSS :hover, since a board not being edited ignores the
  * pointer (the whiteboard selects and moves it as a whole).
  */
@@ -234,6 +234,10 @@ function usePointerOverMarks(rootRef: RefObject<HTMLDivElement | null>) {
         const h = list.querySelector("[data-list-header]")?.getBoundingClientRect();
         mark(list, "data-pointer-over", onList);
         mark(list, "data-pointer-over-header", onList && !!h && y >= h.top && y <= h.bottom);
+        for (const card of list.querySelectorAll("article[data-card-id]")) {
+          const c = card.getBoundingClientRect();
+          mark(card, "data-pointer-over", onList && x >= c.left && x <= c.right && y >= c.top && y <= c.bottom);
+        }
       }
     };
     const onMove = (event: PointerEvent) => {

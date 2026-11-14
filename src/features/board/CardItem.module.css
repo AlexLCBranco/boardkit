@@ -41,7 +41,11 @@
     opacity var(--duration-fast) var(--ease-standard);
 }
 
-.card:hover {
+/* `data-pointer-over`: the same hover on the gauntlet whiteboard, where a
+   board not being edited ignores the pointer (app/whiteboard/
+   WhiteboardBoard.tsx marks the card under it). */
+.card:hover,
+.card[data-pointer-over] {
   box-shadow: var(--highlight-ring), var(--shadow-md), inset 0 0 0 1px var(--accent);
   transform: translateY(-1px);
 }
@@ -149,7 +153,8 @@
    so it reads on every tint and never fights the card's own colour. Only
    box-shadow changes, and it already transitions above. */
 .selected,
-.selected:hover {
+.selected:hover,
+.selected[data-pointer-over] {
   box-shadow:
     var(--highlight-ring),
     var(--shadow-md),
@@ -276,7 +281,8 @@
   border-style: dashed;
 }
 
-.card[data-cut]:hover:not(.dragging) {
+.card[data-cut]:hover:not(.dragging),
+.card[data-cut][data-pointer-over]:not(.dragging) {
   opacity: 1;
 }
 
@@ -536,6 +542,10 @@
 }
 
 .card:hover .moveButton,
+.card[data-pointer-over] .moveButton,
+.card[data-pointer-over] .thotsButton,
+.card[data-pointer-over] .customizeButton,
+.card[data-pointer-over] .deleteButton,
 .moveButton:focus-visible,
 /* Stays visible while its menu is open, even with the pointer over the menu. */
 .moveButton[data-state="open"],

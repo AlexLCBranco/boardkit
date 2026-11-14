@@ -306,6 +306,7 @@ function CardItemImpl({
           <button
             type="button"
             className={styles.moveButton}
+            data-control="move"
             aria-label="Move or copy card to another board"
           >
             →
@@ -317,6 +318,7 @@ function CardItemImpl({
         <button
           type="button"
           className={styles.thotsButton}
+          data-control="thots"
           onClick={() => setIsDescriptionOpen((open) => !open)}
           data-thots-toggle
           aria-label={`${isDescriptionOpen ? "Hide" : "Show"} ${thotsLabel(thotsSlot, singleThots)}`}
@@ -329,6 +331,7 @@ function CardItemImpl({
         ref={customizeTriggerRef}
         type="button"
         className={styles.customizeButton}
+        data-control="customise"
         onClick={() => setIsCustomizeOpen((open) => !open)}
         aria-label="Customise card"
       >
@@ -337,6 +340,7 @@ function CardItemImpl({
       <button
         type="button"
         className={styles.deleteButton}
+        data-control="delete"
         onClick={() => guardTrash("card", () => deleteCard(listId, cardId))}
         aria-label="Delete card"
       >
