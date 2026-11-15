@@ -167,6 +167,8 @@ normalised state.
 
 ## What's next
 
+Planned work: `FEATURE_BACKLOG.md` (only there). Shipped: `BUILT.md`. Ideas: `IDEAS.md`.
+
 - Linking with Linkkit (steps 20-27 in Linkkit's PROJECT.md) is done:
   the last, step 27 (undo that survives another tab's or Linkkit's
   change), shipped in v0.0.86

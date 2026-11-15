@@ -1,5 +1,8 @@
 # Boardkit — Work in progress
 
+> **History.** Planned work: `FEATURE_BACKLOG.md`. Shipped: `BUILT.md`. Ideas: `IDEAS.md`. Only the
+> "In flight" claim table below is still live (so Claude and Codex don't edit the same files).
+
 What is queued, what is in flight, and what is deliberately not being built.
 
 The milestone roadmap that built the project's first version is retired — it
@@ -58,7 +61,7 @@ effort.
    ids with no list, synthesise a missing `cardOrder[listId]` as `[]` — and
    reject only genuinely unsalvageable structure.
 
-6. **Unused shadcn components.** 62 files in `src/components/ui/`; only
+6. **Unused shadcn components.** Moved to `FEATURE_BACKLOG.md` as BK-1. 62 files in `src/components/ui/`; only
    `dropdown-menu` is imported by app code (`BoardSwitcher.tsx`). Worth
    noting the payoff is smaller than it looks: Rollup already tree-shakes the
    unimported ones out of the JS bundle, so this is a CSS-weight and
@@ -71,7 +74,5 @@ effort.
 Hard scope boundaries live in [`CLAUDE.md`](./CLAUDE.md) and are not
 negotiable here.
 
-These are merely un-started — the architecture stays open to them, but do not
-begin one without an explicit request: filtering the
-board, a command palette, touch refinement, manually
-reordering the board list (it is newest-first only).
+The un-started ones (filtering the board, a command palette, touch refinement, reordering the board
+list by hand) moved to `IDEAS.md` (I-1 to I-4) on 2026-11-15.

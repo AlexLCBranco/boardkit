@@ -1,5 +1,7 @@
 # Feature plans
 
+> **History (reference specs).** Planned work: `FEATURE_BACKLOG.md`. Shipped: `BUILT.md`. Ideas: `IDEAS.md`.
+
 Standalone plans for features the owner approved on 2026-09-19. Each one is
 built in **its own chat**. They're separate from `PLAN.md` (the live work
 queue); the decisions behind them are in [`feature-review.md`](./feature-review.md).
