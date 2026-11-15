@@ -61,7 +61,7 @@ effort.
    ids with no list, synthesise a missing `cardOrder[listId]` as `[]` — and
    reject only genuinely unsalvageable structure.
 
-6. **Unused shadcn components.** Moved to `FEATURE_BACKLOG.md` as BK-1. 62 files in `src/components/ui/`; only
+6. **Unused shadcn components.** Moved to `FEATURE_BACKLOG.md` as BD-1. 62 files in `src/components/ui/`; only
    `dropdown-menu` is imported by app code (`BoardSwitcher.tsx`). Worth
    noting the payoff is smaller than it looks: Rollup already tree-shakes the
    unimported ones out of the JS bundle, so this is a CSS-weight and
